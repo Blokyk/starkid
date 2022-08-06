@@ -1,0 +1,17 @@
+# VS Code
+.vscode/
+.idea/
+
+# Visual studio
+.vs/
+
+# git folder
+.git/
+
+# Build artifact
+bin/
+obj/
+
+# Misc
+*.old
+omnisharp.json
