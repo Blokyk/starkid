@@ -1,0 +1,238 @@
+namespace CLIGen.Generator;
+
+internal static partial class Utils
+{
+    internal static INamedTypeSymbol BOOL = null!;
+    internal static INamedTypeSymbol INT32 = null!;
+    internal static INamedTypeSymbol CHAR = null!;
+    internal static INamedTypeSymbol STR = null!;
+    internal static INamedTypeSymbol VOID = null!;
+
+    internal static void UpdatePredefTypes(Compilation compilation) {
+        Utils.BOOL = compilation.GetSpecialType(SpecialType.System_Boolean);
+        Utils.INT32 = compilation.GetSpecialType(SpecialType.System_Int32);
+        Utils.CHAR = compilation.GetSpecialType(SpecialType.System_Char);
+        Utils.STR = compilation.GetSpecialType(SpecialType.System_String);
+        Utils.VOID = compilation.GetSpecialType(SpecialType.System_Void);
+    }
+
+    public static bool HasName(this AttributeSyntax attrib, string name, SemanticModel model)
+        => model.GetSymbolInfo(attrib).Symbol is IMethodSymbol symbol
+        && symbol.ContainingType.ToDisplayString() == name;
+
+    public static bool HasAttribute(this INamedTypeSymbol type, string name)
+        => type.GetAttributes().Any(a => a.AttributeClass?.Name == name);
+
+    public static bool TryGetAttribute(this INamedTypeSymbol type, string name, out AttributeData attr) {
+        attr = type.GetAttributes().FirstOrDefault(a => a.AttributeClass?.Name == name)!;
+
+        return attr is not null;
+    }
+
+    public static bool TryGetConstantValue<T>(this SemanticModel model, SyntaxNode node, out T value) {
+        var opt = model.GetConstantValue(node);
+
+        if (!opt.HasValue || opt.Value is not T tVal) {
+            value = default(T)!;
+            return false;
+        }
+
+        value = tVal;
+        return true;
+    }
+
+    // determine the namespace the class/enum/struct is declared in, if any
+    public static string? GetNamespace(BaseTypeDeclarationSyntax syntax) {
+        // If we don't have a namespace at all we'll return an empty string
+        // This accounts for the "default namespace" case
+        string? nameSpace = null;
+
+        // Get the containing syntax node for the type declaration
+        // (could be a nested type, for example)
+        SyntaxNode? potentialNamespaceParent = syntax.Parent;
+
+        // Keep moving "out" of nested classes etc until we get to a namespace
+        // or until we run out of parents
+        while (potentialNamespaceParent != null &&
+                potentialNamespaceParent is not NamespaceDeclarationSyntax
+                && potentialNamespaceParent is not FileScopedNamespaceDeclarationSyntax) {
+            potentialNamespaceParent = potentialNamespaceParent.Parent;
+        }
+
+        // Build up the final namespace by looping until we no longer have a namespace declaration
+        if (potentialNamespaceParent is BaseNamespaceDeclarationSyntax namespaceParent) {
+            // We have a namespace. Use that as the type
+            nameSpace = namespaceParent.Name.ToString();
+
+            // Keep moving "out" of the namespace declarations until we 
+            // run out of nested namespace declarations
+            while (true) {
+                if (namespaceParent.Parent is not NamespaceDeclarationSyntax parent) {
+                    break;
+                }
+
+                // Add the outer namespace as a prefix to the final namespace
+                nameSpace = $"{namespaceParent.Name}.{nameSpace}";
+                namespaceParent = parent;
+            }
+        }
+
+        // return the final namespace
+        return nameSpace;
+    }
+
+    public static bool TryGetCLIClassDecNode(INamedTypeSymbol symbol, out ClassDeclarationSyntax node) {
+        var decNodeRefs = symbol.DeclaringSyntaxReferences;
+
+        node = null!;
+
+        if (decNodeRefs.Length == 0) {
+            return false;
+        } else if (decNodeRefs.Length == 1) {
+            var syntax = decNodeRefs[0].GetSyntax();
+
+            if (syntax is not ClassDeclarationSyntax classDecNode)
+                return false;
+
+            node = classDecNode;
+        } else {
+            foreach (var synRef in decNodeRefs) {
+                var syn = synRef.GetSyntax();
+
+                if (syn is not ClassDeclarationSyntax classDecNode)
+                    continue;
+
+                foreach (var attrib in classDecNode.AttributeLists.SelectMany(l => l.Attributes)) {
+                    if (attrib.Name.ToString() is "CLI" or "CLIAttribute") {
+                        node = classDecNode;
+                        break;
+                    }
+                }
+
+                if (node is not null)
+                    break;
+            }
+        }
+
+        return node is not null;
+    }
+
+    public static bool TryGetDescription(AttributeData descAttrib, out string? desc)
+        => TryGetCtorArg<string?>(descAttrib, 0, STR, out desc);
+
+    public static bool TryGetAppName(AttributeData cliAttrib, out string appName)
+        => TryGetCtorArg<string>(cliAttrib, 0, STR, out appName);
+
+    public static bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, out T val) {
+        val = default!;
+
+        var ctorArgs = attrib.ConstructorArguments;
+
+        if (ctorArgs.Length < ctorIdx + 1) {
+            return false;
+        }
+
+        if (!Utils.Equals(ctorArgs[ctorIdx].Type, type) || ctorArgs[ctorIdx].Value is not T)
+            return false;
+
+        val = (T)ctorArgs[ctorIdx].Value!;
+
+        return true;
+    }
+
+    public static bool TryGetProp<T>(AttributeData attrib, string propName, INamedTypeSymbol type, T defaultVal, out T val) {
+        val = defaultVal;
+
+        var namedArgs = attrib.NamedArguments;
+
+        if (namedArgs.IsDefaultOrEmpty)
+            return true;
+
+        var arg = namedArgs.FirstOrDefault(
+            kv => kv.Key == propName
+        ).Value;
+
+        if (arg.Equals(default))
+            return true;
+
+        if (Utils.Equals(arg.Type, type) || arg.Value is not T)
+            return false;
+
+        val = (T)arg.Value!;
+
+        return true;
+    }
+
+    public static bool TryGetAppName(AttributeSyntax cliAttrib, SemanticModel model, out string appName)
+        => cliAttrib.TryGetOpt(nameof(CLIGen.CLIAttribute.CmdName), model, out appName, optIdx: 0);
+
+    public static bool TryGetOpt<T>(this AttributeSyntax attrib, string optName, SemanticModel model, out T val, int optIdx = -1) {
+        // this might not work, because you can use const fields in attributes
+        var appNameExpr = attrib.ArgumentList?.Arguments.GetValueOfOption(optName, optIdx)?.Expression;
+
+        if (appNameExpr is null || !model.TryGetConstantValue<T>(appNameExpr, out val)) {
+            val = default!;
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool TryGetOptOrDefault<T>(this AttributeSyntax attrib, string optName, T defaultVal, SemanticModel model, out T val, int optIdx = -1) {
+        var descExpr = attrib.ArgumentList?.Arguments.GetValueOfOption(optName, optIdx)?.Expression;
+
+        val = defaultVal;
+
+        if (descExpr is not null && !model.TryGetConstantValue<T>(descExpr, out val)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static AttributeArgumentSyntax? GetValueOfProp(this SeparatedSyntaxList<AttributeArgumentSyntax> argList, string propName)
+        => argList.FirstOrDefault((arg)
+                => arg.NameEquals is not null
+                && string.Equals(arg.NameEquals.Name.ToString(), propName, StringComparison.InvariantCultureIgnoreCase)
+        );
+
+    public static AttributeArgumentSyntax? GetValueOfOption(this SeparatedSyntaxList<AttributeArgumentSyntax> argList, string optName, int paramIdx) {
+        static bool ignoreCaseEq(string a, string b) => string.Equals(a, b, StringComparison.InvariantCultureIgnoreCase);
+
+        for (int i = 0; i < argList.Count; i++) {
+            var arg = argList[i];
+
+            if (arg.NameColon is not null) {
+                if (ignoreCaseEq(arg.NameColon.Name.ToString(), optName)) {
+                    return arg;
+                }
+            } else if (arg.NameEquals is not null) {
+                if (ignoreCaseEq(arg.NameEquals.Name.ToString(), optName)) {
+                    return arg;
+                }
+            } else {
+                if (i == paramIdx)
+                    return arg;
+            }
+        }
+
+        return null;
+    }
+
+    public static StringBuilder Append(this StringBuilder sb, ICLINode node)
+        => node.AppendTo(sb);
+    public static StringBuilder AppendLine(this StringBuilder sb, ICLINode node)
+        => node.AppendTo(sb);
+    public static bool Equals(this ISymbol? s1, ISymbol? s2) => SymbolEqualityComparer.Default.Equals(s1, s2);
+}
+
+public sealed class NotNullWhenAttribute : Attribute {
+    /// <summary>Initializes the attribute with the specified return value condition.</summary>
+    /// <param name="returnValue">
+    /// The return value condition. If the method returns this value, the associated parameter will not be null.
+    /// </param>
+    public NotNullWhenAttribute(bool returnValue) => ReturnValue = returnValue;
+
+    /// <summary>Gets the return value condition.</summary>
+    public bool ReturnValue { get; }
+}

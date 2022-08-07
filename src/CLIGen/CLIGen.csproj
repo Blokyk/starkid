@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- 👇 We don't want to reference the source generator dll directly in consuming projects -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>true</ImplicitUsings>
+    <LangVersion>Latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- The following libraries include the source generator interfaces and types we need -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Reference the attributes from the generator to compile against them -->
+  <!-- Ensure we specify PrivateAssets so the NuGet doesn't have any dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="../CLIGen.Attributes/CLIGen.Attributes.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- This ensures the library will be packaged as a source generator when we use `dotnet pack` -->
+  <ItemGroup>
+    <!-- Pack the generator dll in the analyzers/dotnet/cs path -->
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
+    <!-- Pack the attributes dll in the analyzers/dotnet/cs path -->
+    <None Include="$(OutputPath)\CLIGen.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
+    <!-- Pack the attributes dll in the lib\netstandard2.0 path -->
+    <None Include="$(OutputPath)\CLIGen.Attributes.dll" Pack="true" PackagePath="lib\netstandard2.0" Visible="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System.Text"/>
+    <Using Remove="System.IO"/>
+    <Using Include="Microsoft.CodeAnalysis"/>
+    <Using Include="Microsoft.CodeAnalysis.Text"/>
+    <Using Include="Microsoft.CodeAnalysis.CSharp"/>
+    <Using Include="Microsoft.CodeAnalysis.CSharp.Syntax"/>
+  </ItemGroup>
+</Project>
