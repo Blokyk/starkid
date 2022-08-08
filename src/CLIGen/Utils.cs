@@ -7,6 +7,8 @@ internal static partial class Utils
     internal static INamedTypeSymbol CHAR = null!;
     internal static INamedTypeSymbol STR = null!;
     internal static INamedTypeSymbol VOID = null!;
+    internal static INamedTypeSymbol EXCEPT = null!;
+    internal static INamedTypeSymbol NULLABLE = null!;
 
     internal static void UpdatePredefTypes(Compilation compilation) {
         Utils.BOOL = compilation.GetSpecialType(SpecialType.System_Boolean);
@@ -14,6 +16,8 @@ internal static partial class Utils
         Utils.CHAR = compilation.GetSpecialType(SpecialType.System_Char);
         Utils.STR = compilation.GetSpecialType(SpecialType.System_String);
         Utils.VOID = compilation.GetSpecialType(SpecialType.System_Void);
+        Utils.NULLABLE = compilation.GetSpecialType(SpecialType.System_Nullable_T);
+        Utils.EXCEPT = compilation.GetTypeByMetadataName("System.Exception")!;
     }
 
     public static bool HasName(this AttributeSyntax attrib, string name, SemanticModel model)
@@ -155,7 +159,7 @@ internal static partial class Utils
         if (arg.Equals(default))
             return true;
 
-        if (Utils.Equals(arg.Type, type) || arg.Value is not T)
+        if (!Utils.Equals(arg.Type, type) || arg.Value is not T)
             return false;
 
         val = (T)arg.Value!;
@@ -163,60 +167,15 @@ internal static partial class Utils
         return true;
     }
 
-    public static bool TryGetAppName(AttributeSyntax cliAttrib, SemanticModel model, out string appName)
-        => cliAttrib.TryGetOpt(nameof(CLIGen.CLIAttribute.CmdName), model, out appName, optIdx: 0);
+    public static string GetLastNamePart(ReadOnlySpan<char> fullStr) {
+        int lastDotIdx = 0;
 
-    public static bool TryGetOpt<T>(this AttributeSyntax attrib, string optName, SemanticModel model, out T val, int optIdx = -1) {
-        // this might not work, because you can use const fields in attributes
-        var appNameExpr = attrib.ArgumentList?.Arguments.GetValueOfOption(optName, optIdx)?.Expression;
-
-        if (appNameExpr is null || !model.TryGetConstantValue<T>(appNameExpr, out val)) {
-            val = default!;
-            return false;
+        for (int i = 0; i < fullStr.Length; i++) {
+            if (fullStr[i] == '.' && i + 1 < fullStr.Length)
+                lastDotIdx = i + 1;
         }
 
-        return true;
-    }
-
-    public static bool TryGetOptOrDefault<T>(this AttributeSyntax attrib, string optName, T defaultVal, SemanticModel model, out T val, int optIdx = -1) {
-        var descExpr = attrib.ArgumentList?.Arguments.GetValueOfOption(optName, optIdx)?.Expression;
-
-        val = defaultVal;
-
-        if (descExpr is not null && !model.TryGetConstantValue<T>(descExpr, out val)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public static AttributeArgumentSyntax? GetValueOfProp(this SeparatedSyntaxList<AttributeArgumentSyntax> argList, string propName)
-        => argList.FirstOrDefault((arg)
-                => arg.NameEquals is not null
-                && string.Equals(arg.NameEquals.Name.ToString(), propName, StringComparison.InvariantCultureIgnoreCase)
-        );
-
-    public static AttributeArgumentSyntax? GetValueOfOption(this SeparatedSyntaxList<AttributeArgumentSyntax> argList, string optName, int paramIdx) {
-        static bool ignoreCaseEq(string a, string b) => string.Equals(a, b, StringComparison.InvariantCultureIgnoreCase);
-
-        for (int i = 0; i < argList.Count; i++) {
-            var arg = argList[i];
-
-            if (arg.NameColon is not null) {
-                if (ignoreCaseEq(arg.NameColon.Name.ToString(), optName)) {
-                    return arg;
-                }
-            } else if (arg.NameEquals is not null) {
-                if (ignoreCaseEq(arg.NameEquals.Name.ToString(), optName)) {
-                    return arg;
-                }
-            } else {
-                if (i == paramIdx)
-                    return arg;
-            }
-        }
-
-        return null;
+        return fullStr.Slice(lastDotIdx).ToString();
     }
 
     public static StringBuilder Append(this StringBuilder sb, ICLINode node)

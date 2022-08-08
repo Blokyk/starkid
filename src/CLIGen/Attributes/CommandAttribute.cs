@@ -5,11 +5,11 @@ using System;
 namespace CLIGen;
 
 [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-public class ACommandAttribute : System.Attribute
+public class CommandAttribute : System.Attribute
 {
     public string CmdName { get; }
 
-    public ACommandAttribute(string cmdName) => CmdName = cmdName;
+    public CommandAttribute(string cmdName) => CmdName = cmdName;
 
     public void Deconstruct(
         out string cmdName

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using System.Collections.Immutable;
 
 using CLIGen;
 
@@ -12,38 +13,33 @@ public partial class MainGenerator : IIncrementalGenerator
         context.RegisterPostInitializationOutput(
             static postInitCtx => {
                 postInitCtx.AddSource(
-                    Ressources.GenNamespace + "_Utils.g.cs",
-                    SourceText.From(Ressources.UtilsClassStr, Encoding.UTF8)
-                );
-
-                postInitCtx.AddSource(
                     Ressources.GenNamespace + "_Program.g.cs",
                     SourceText.From(Ressources.ProgClassStr, Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_CLIAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen.Attributes/CLIAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/CLIAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_CommandAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen.Attributes/CommandAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/CommandAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_DescriptionAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen.Attributes/DescriptionAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/DescriptionAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_OptionAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen.Attributes/OptionAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/OptionAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_SubCommandAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen.Attributes/SubCommandAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/SubCommandAttribute.cs"), Encoding.UTF8)
                 );
             }
         );
@@ -53,11 +49,10 @@ public partial class MainGenerator : IIncrementalGenerator
                 static (node, _) => HasAnyAttributes(node),
                 static (ctx, _) => GetCLIClass(ctx)
             )
-            .Where((syntax) => syntax is not null);
+            .Collect();
 
         // Combine the selected classes with the `Compilation`
-        var compilationAndClasses
-            = context.CompilationProvider.Combine(cliClassDec.Collect());
+        var compilationAndClasses = context.CompilationProvider.Combine(cliClassDec);
 
         // Generate the source using the compilation and enums
         context.RegisterSourceOutput(compilationAndClasses,
@@ -67,19 +62,51 @@ public partial class MainGenerator : IIncrementalGenerator
     static bool HasAnyAttributes(SyntaxNode node)
         => node is ClassDeclarationSyntax { AttributeLists.Count: > 0};
 
-    static INamedTypeSymbol? GetCLIClass(GeneratorSyntaxContext ctx) {
+    static ClassDeclarationSyntax? GetCLIClass(GeneratorSyntaxContext ctx) {
         var node = (ClassDeclarationSyntax)ctx.Node;
 
         var classDec = ctx.SemanticModel.GetDeclaredSymbol(node);
 
         if (classDec is null)
-            throw new Exception();
+            return null;
 
         foreach (var attr in classDec.GetAttributes()) {
             if (attr.AttributeClass?.Name == Ressources.CLIAttribName)
-                return classDec;
+                return node;
         }
 
         return null;
+    }
+
+    public class INamedTypeSymbolComparer
+        : IEqualityComparer<INamedTypeSymbol?>
+    {
+        public static readonly INamedTypeSymbolComparer Default = new();
+
+        public bool Equals(
+           INamedTypeSymbol? x,
+           INamedTypeSymbol? y) {
+            return SymbolEqualityComparer.Default.Equals(x, y);
+        }
+
+        public int GetHashCode(INamedTypeSymbol? obj) {
+            return SymbolEqualityComparer.Default.GetHashCode(obj);
+        }
+    }
+
+    public class CompSymbolComparer
+   : IEqualityComparer<(Compilation Left, INamedTypeSymbol? Right)>
+    {
+        public static readonly CompSymbolComparer Default = new();
+
+        public bool Equals(
+           (Compilation Left, INamedTypeSymbol? Right) x,
+           (Compilation Left, INamedTypeSymbol? Right) y) {
+            return SymbolEqualityComparer.Default.Equals(x.Right, y.Right);
+        }
+
+        public int GetHashCode((Compilation Left, INamedTypeSymbol? Right) obj) {
+            return SymbolEqualityComparer.Default.GetHashCode(obj.Right);
+        }
     }
 }

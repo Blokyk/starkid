@@ -27,6 +27,7 @@ return 1;
 ";
 
     public const string GenNamespace = "CLIGen.Generated";
+    public const string ClassPrefix = "CLIGen";
 
     public const string GenFileHeader = $@"
 {UsingsList}
@@ -34,14 +35,11 @@ return 1;
 namespace {GenNamespace};
 ";
 
-    public const string ProgClassName = "Program";
+    public const string ProgClassName = ClassPrefix + "Program";
     public const string ProgClassStr = $@"{GenFileHeader}
-static partial class Program {{
+static partial class {ProgClassName} {{
     static int Main(string[] args) {{
-        Console.WriteLine(""!test!"");
-        return 0;
-        /*
-        var currCmdDesc = new __CmdDesc();
+        var currCmdDesc = CmdDesc.root;
 
         var onlyArgs = false;
 
@@ -95,10 +93,10 @@ static partial class Program {{
             }}
         }}
 
-        return currCmdDesc.Invoke();*/
+        return currCmdDesc.Invoke();
     }}
 
-    static bool TryDoAction(Action<string, string> act, string arg1, string arg2, string rawArg, __CmdDesc desc) {{
+    static bool TryDoAction(Action<string, string> act, string arg1, string arg2, string rawArg, CmdDesc desc) {{
         try {{
             act(arg1, arg2);
             return true;
@@ -119,14 +117,9 @@ static partial class Program {{
         return true;
     }}
 
-    static string GetHelpString(string reason, __CmdDesc desc) => reason + desc.helpString;
-}}
-";
+    static string GetHelpString(string reason, CmdDesc desc)
+        => reason + desc.HelpString;
 
-    public const string UtilsClassName = "CLIGenUtils";
-    public const string UtilsClassStr = $@"{GenFileHeader}
-
-internal static class {UtilsClassName} {{
     internal static void UpdateWith<TKey, TValue>(
         this Dictionary<TKey, TValue> dic1,
         Dictionary<TKey, TValue> dic2
@@ -155,7 +148,80 @@ internal static class {UtilsClassName} {{
 
     internal static T Parse<T>(string str) => default(T)!;
 
-    internal static bool AsBool(string? val, bool defaultVal) => val is null ? defaultVal : Boolean.Parse(val);
+    internal static bool AsBool(string? val, bool defaultVal) {{
+        if (val is null)
+            return defaultVal;
+
+        if (val is ""true"")
+            return true;
+
+        if (val is ""false"")
+            return false;
+
+        throw new FormatException(""Couldn't understand "" + val + "" as a boolean value"");
+    }}
+
+    internal static void ThrowIfNotValid(bool val, [CallerArgumentExpression(""val"")] string expr = """") {{
+        if (!val)
+            throw new Exception(""Expression "" + expr + "" returned false"");
+    }}
+
+    internal static void ThrowIfNotValid(int val, [CallerArgumentExpression(""val"")] string expr = """") {{
+        if (val != 0)
+            throw new Exception(""Expression "" + expr + "" returned a non-zero value"");
+    }}
+
+    internal static void ThrowIfNotValid(string? val) {{
+        if (String.IsNullOrEmpty(val))
+            throw new Exception(val);
+    }}
+
+    internal static void ThrowIfNotValid(Exception? e) {{
+        if (e is not null)
+            throw e;
+    }}
+
+    private abstract partial class CmdDesc {{
+        private static readonly Dictionary<string, Action<string, string?>> _switches = new() {{}};
+        private static readonly Dictionary<string, Action<string, string>> _options = new() {{}};
+        private static Dictionary<string, Func<CmdDesc>> _subs = new() {{}};
+
+        private static readonly Func<int> _func = static () => {{
+            Console.Error.WriteLine(GetHelpString(""No command provided"", CmdDesc.root));
+            return 1;
+        }};
+
+        protected virtual Action<string>[] _posArgs {{ get; }} = Array.Empty<Action<string>>();
+
+        internal Dictionary<string, Action<string, string?>> Switches => _switches;
+        internal Dictionary<string, Action<String, string>> Options => _options;
+        internal virtual Dictionary<string, Func<CmdDesc>> SubCmds => _subs;
+        internal virtual Func<int> Invoke => _func;
+        internal virtual string HelpString {{ get; }}
+
+#nullable disable
+        internal CmdDesc() {{}}
+
+        protected CmdDesc(
+            Dictionary<string, Action<string, string?>> switches,
+            Dictionary<string, Action<string, string>> options
+        ) {{
+            _switches.UpdateWith(switches);
+            _options.UpdateWith(options);
+        }}
+#nullable restore
+
+        private int posArgIdx = 0;
+
+        internal bool TryAddPosArg(string arg) {{
+            if (posArgIdx < _posArgs.Length) {{
+                _posArgs[posArgIdx++](arg);
+                return true;
+            }} else {{
+                return false;
+            }}
+        }}
+    }}
 }}
 ";
 }

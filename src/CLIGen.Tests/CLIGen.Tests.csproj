@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CLIGen\CLIGen.csproj" />
-    <ProjectReference Include="..\CLIGen.Attributes\CLIGen.Attributes.csproj" />
+    <!-- <ProjectReference Include="..\CLIGen.Attributes\CLIGen.Attributes.csproj" /> -->
   </ItemGroup>
 
   <ItemGroup>

@@ -5,14 +5,14 @@ using System;
 namespace CLIGen;
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
-public sealed class AOptionAttribute : System.Attribute
+public sealed class OptionAttribute : System.Attribute
 {
     public string LongName { get; }
     public char Alias { get; }
 
     public string? ArgName { get; set; }
 
-    public AOptionAttribute(string longName, char shortName = '\0') {
+    public OptionAttribute(string longName, char shortName = '\0') {
         LongName = longName;
         Alias = shortName;
     }

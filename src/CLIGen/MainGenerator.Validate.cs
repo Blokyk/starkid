@@ -7,7 +7,10 @@ namespace CLIGen.Generator;
 
 public partial class MainGenerator : IIncrementalGenerator
 {
-    static bool Validate(Compilation compilation, ImmutableArray<INamedTypeSymbol> classes, SourceProductionContext context) {
+    static bool Validate(Compilation compilation, ClassDeclarationSyntax[] classes, SourceProductionContext context, out SemanticModel model, out INamedTypeSymbol classSymbol) {
+        model = null!;
+        classSymbol = null!;
+
         if (classes.Length > 1) {
             context.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
@@ -18,14 +21,34 @@ public partial class MainGenerator : IIncrementalGenerator
                     DiagnosticSeverity.Error,
                     true
                 ),
-                classes.First().Locations.First(),
-                classes[0].ToDisplayString(), classes[1].ToDisplayString()
+                classes.First().GetLocation(),
+                classes[0].Identifier, classes[1].Identifier
             ));
 
             return false;
         }
 
-        if (!classes[0].IsStatic || classes[0].IsGenericType) {
+        model = compilation.GetSemanticModel(classes[0].SyntaxTree);
+        classSymbol = model.GetDeclaredSymbol(classes[0])!;
+
+        if (classSymbol is null) {
+            context.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "CG002",
+                    "Couldn't get type symbol for class {0}",
+                    "Couldn't get INamedTypeSymbol for class declaration with name {0}",
+                    "Blokyk.CLIGen",
+                    DiagnosticSeverity.Error,
+                    true
+                ),
+                classes[0].GetLocation(),
+                classes[0].Identifier
+            ));
+
+            return false;
+        }
+
+        if (!classSymbol.IsStatic || classSymbol.IsGenericType) {
             context.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
                     "CG002",
@@ -35,13 +58,15 @@ public partial class MainGenerator : IIncrementalGenerator
                     DiagnosticSeverity.Error,
                     true
                 ),
-                classes.First().Locations.First(),
-                classes[0].ToDisplayString()
+                classSymbol.Locations.First(),
+                classSymbol.ToDisplayString()
             ));
 
             return false;
         }
 
+        /*
+        * GetEntryPoint takes too much time
         var potentialEntry = compilation.GetEntryPoint(CancellationToken.None);
 
         if (potentialEntry is not null && potentialEntry.ContainingNamespace.ToDisplayString() != Ressources.GenNamespace) {
@@ -59,7 +84,7 @@ public partial class MainGenerator : IIncrementalGenerator
             ));
 
             return false;
-        }
+        }*/
 
         return true;
     }

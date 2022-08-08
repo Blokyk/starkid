@@ -5,13 +5,13 @@ using System;
 namespace CLIGen;
 
 [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-public sealed class ASubCommandAttribute : ACommandAttribute
+public sealed class SubCommandAttribute : CommandAttribute
 {
     public string ParentCmd { get; }
 
     public bool InheritOptions { get; set; } = false;
 
-    public ASubCommandAttribute(string cmdName, string parentCmd) : base(cmdName) {
+    public SubCommandAttribute(string cmdName, string parentCmd) : base(cmdName) {
         ParentCmd = parentCmd;
     }
 

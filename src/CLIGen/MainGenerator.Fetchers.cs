@@ -12,10 +12,95 @@ namespace CLIGen.Generator;
 
 public partial class MainGenerator : IIncrementalGenerator
 {
-    static bool TryGetCommand(IMethodSymbol method, SemanticModel model, out Command? cmd) {
+    static bool TryGetEntryPointCommand(IMethodSymbol method, SemanticModel model, out Command cmd) {
+        cmd = null!;
         var attributes = method.GetAttributes();
 
+        if (!method.IsStatic | method.IsGenericMethod)
+            return false;
+
+        bool hasExitCode = !method.ReturnsVoid;
+
+        if (hasExitCode && !Utils.Equals(method.ReturnType, Utils.INT32))
+            return false;
+
+        string cmdName = "";
+        string? parentCmdName = null;
+        string? desc = null;
+        bool inheritOptions = false;
+
+        foreach (var attr in attributes) {
+            switch (attr.AttributeClass?.Name) {
+                case Ressources.OptAttribName: // an entry point can't be marked option
+                    return false;
+                case Ressources.DescAttribName: {
+                    if (!Utils.TryParseDescAttrib(attr, out var descAttr))
+                        return false;
+
+                    desc = descAttr.Desc;
+                    break;
+                }
+                case Ressources.CmdAttribName: {
+                    if (!Utils.TryParseCmdAttrib(attr, out var cmdAttr))
+                        return false;
+
+                    cmdName = cmdAttr.CmdName;
+
+                    break;
+                }
+                case Ressources.SubCmdAttribName: {
+                    if (!Utils.TryParseSubCmdAttrib(attr, out var subCmdAttr))
+                        return false;
+
+                    (cmdName, parentCmdName, inheritOptions) = subCmdAttr;
+
+                    parentCmdName = Utils.GetLastNamePart(parentCmdName.AsSpan());
+
+                    break;
+                }
+                default:
+                    continue;
+            }
+        }
+
+        var opts = new List<Option>(method.Parameters.Length);
+
+        foreach (var optParam in method.Parameters) {
+            if (!TryGetOptions(optParam, model, out var opt))
+                return false;
+
+            if (opt is not null)
+                opts.Add(opt);
+        }
+
+        var args = new List<Argument>(method.Parameters.Length);
+
+        foreach (var argParam in method.Parameters) {
+            if (!TryGetArg(argParam, model, out var arg))
+                return false;
+
+            if (arg is not null)
+                args.Add(arg);
+        }
+
+        cmd = new Command(
+            hasExitCode,
+            cmdName,
+            desc,
+            opts,
+            args
+        ) {
+            InheritOptions = inheritOptions,
+            BackingSymbol = method,
+            ParentCmdName = parentCmdName,
+        };
+
+        return opts.Count + args.Count == method.Parameters.Length;
+    }
+
+    static bool TryGetCommand(IMethodSymbol method, SemanticModel model, out Command? cmd) {
         cmd = null;
+        var attributes = method.GetAttributes();
 
         bool hasExitCode = !method.ReturnsVoid;
 
@@ -24,7 +109,7 @@ public partial class MainGenerator : IIncrementalGenerator
         }
 
         string cmdName = "";
-        string? parentCmd = null;
+        string? parentCmdName = null;
         string? desc = null;
         bool inheritOptions = false;
 
@@ -35,7 +120,10 @@ public partial class MainGenerator : IIncrementalGenerator
                 case Ressources.OptAttribName: // in case this is an option method, abort
                     return true;
                 case Ressources.DescAttribName: {
-                    desc = (string?)attr.ConstructorArguments[0].Value;
+                    if (!Utils.TryParseDescAttrib(attr, out var descAttr))
+                        return false;
+
+                    desc = descAttr.Desc;
                     break;
                 } case Ressources.CmdAttribName: {
                     if (hadCmdAttr)
@@ -58,7 +146,7 @@ public partial class MainGenerator : IIncrementalGenerator
                     if (!Utils.TryParseSubCmdAttrib(attr, out var subCmdAttr))
                         return false;
 
-                    (cmdName, parentCmd, inheritOptions) = subCmdAttr;
+                    (cmdName, parentCmdName, inheritOptions) = subCmdAttr;
 
                     break;
                 } default:
@@ -101,12 +189,12 @@ public partial class MainGenerator : IIncrementalGenerator
             hasExitCode,
             cmdName,
             desc,
-            parentCmd,
             opts,
             args
         ) {
             InheritOptions = inheritOptions,
-            BackingSymbol = method
+            BackingSymbol = method,
+            ParentCmdName = parentCmdName,
         };
 
         return opts.Count + args.Count == method.Parameters.Length;
@@ -118,9 +206,12 @@ public partial class MainGenerator : IIncrementalGenerator
         ExpressionSyntax? defaultVal = null;
         string? argDesc = null;
 
-        var argAttributes = param.GetAttributes();
+        var attributes = param.GetAttributes();
 
-        foreach (var attr in argAttributes) {
+        foreach (var attr in attributes) {
+            if (attr.AttributeClass?.Name == Ressources.OptAttribName)
+                return true;
+
             if (attr.AttributeClass?.Name != Ressources.DescAttribName)
                 continue;
 
@@ -151,9 +242,8 @@ public partial class MainGenerator : IIncrementalGenerator
     }
 
     static bool TryGetOptions(ISymbol member, SemanticModel model, out Option? opt) {
-        var attributes = member.GetAttributes();
-
         opt = null;
+        var attributes = member.GetAttributes();
 
         if (attributes.IsDefaultOrEmpty) {
             return true;
@@ -248,8 +338,14 @@ public partial class MainGenerator : IIncrementalGenerator
 
                 bool needsAutoHandling = !methodSymbol.ReturnsVoid;
 
-                if (needsAutoHandling && !Utils.Equals(type, Utils.BOOL))
+                if (needsAutoHandling
+                    && !Utils.Equals(type, Utils.BOOL)
+                    && !Utils.Equals(type, Utils.INT32)
+                    && !Utils.Equals(type, Utils.STR)
+                    && !Utils.Equals(type, Utils.EXCEPT))
+                {
                     return false;
+                }
 
                 if (!methodSymbol.IsStatic | methodSymbol.IsGenericMethod)
                     return false;
@@ -294,5 +390,20 @@ public partial class MainGenerator : IIncrementalGenerator
         };
 
         return true;
+    }
+
+    static bool TryBindParentCmd(Command sub, Command[] cmds, out Command newCmd) {
+        newCmd = null!;
+
+        for (int i = 0; i < cmds.Length; i++) {
+            var cmd = cmds[i];
+
+            if (sub.ParentCmdName == cmd.BackingSymbol?.Name) {
+                newCmd = sub with { ParentCmd = cmd };
+                break;
+            }
+        }
+
+        return newCmd is not null;
     }
 }

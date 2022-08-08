@@ -1,6 +1,10 @@
-﻿using CLIGen;
+﻿#nullable enable
 
-[CLI("parsex")]
+using System;
+using System.IO;
+using CLIGen;
+
+[CLI("parsex", EntryPoint = "Default")]
 [Description("A parser/typechecker for lotus")]
 public static partial class Parsex
 {
@@ -26,17 +30,22 @@ public static partial class Parsex
     public static (int start, int end) rangeInfo;
 
     [Option("range", shortName: 'r', ArgName = "range")]
-    public static void ParseRange(string rawStr) {
+    public static Exception? ParseRange(string rawStr) {
 
-        // 'void' here could also be replaced with bool, for auto/generated
-        // error handling
+        // This method can return 'void' for manual error handling,
+        // or it could use one of :
+        //      - bool
+        //      - int
+        //      - string
+        //      - Exception
 
         var parts = rawStr.Split('-');
 
         if (parts.Length != 2)
-            throw new FormatException("--range needs two numbers separated by a dash, and no space");
+            return new FormatException("--range needs two numbers separated by a dash, and no space");
 
         rangeInfo = (Int32.Parse(parts[0]), Int32.Parse(parts[1]));
+        return null;
     }
 
     [Command("silent")]
@@ -71,9 +80,16 @@ public static partial class Parsex
         return -1;
     }
 
+    public static int Default() {
+        Console.WriteLine("Bravely Default, available now in your terminal!");
+        return 2;
+    }
+}
+
+public static partial class Parsex {
     [Command(nameof(Graph))]
     public static int Graph(
-        [Option("const", shortName: 'c')] bool constOption
+        [Option("const", 'c')] bool constOption
     ) => constOption ? 0xf : 'g' % 0xf;
 
     [SubCommand("const", nameof(Graph), InheritOptions = false)]
@@ -81,8 +97,4 @@ public static partial class Parsex
         Console.WriteLine("Oh getting fancy tonight");
         return 0xf;
     }
-}
-
-public static partial class Parsex {
-    public const string DO_YOU_SEE_IT_YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEET = ".";
 }
