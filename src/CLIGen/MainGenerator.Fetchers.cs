@@ -118,7 +118,7 @@ public partial class MainGenerator : IIncrementalGenerator
         foreach (var attr in attributes) {
             switch (attr.AttributeClass?.Name) {
                 case Ressources.OptAttribName: // in case this is an option method, abort
-                    return true;
+                    return !hadCmdAttr;
                 case Ressources.DescAttribName: {
                     if (!Utils.TryParseDescAttrib(attr, out var descAttr))
                         return false;
@@ -255,7 +255,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
         string longName = "";
         char shortName = '\0';
-        string argName = member.Name;
+        string? argName = null;
         string? desc = null;
 
         bool hadOptAttrib = false;
@@ -310,7 +310,6 @@ public partial class MainGenerator : IIncrementalGenerator
                         }
                     } else if (syntax is VariableDeclaratorSyntax fieldDec) {
                         // IFieldSymbol are not declared by FieldDeclarationSyntax...
-
                         if (fieldDec.Initializer is not null) {
                             defaultVal = fieldDec.Initializer!.Value;
                             break;
@@ -322,6 +321,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
                 // TODO: check that defaultVal is valid outside of the containing class
                 // and maybe transform it (when possible) if not (e.g. qualifying names) ?
+                // we could use ISymbol.GetMinimalQualifiedName(model, position, etc)
 
                 break;
             }
@@ -349,8 +349,8 @@ public partial class MainGenerator : IIncrementalGenerator
                     && !Utils.Equals(type, Utils.BOOL)
                     && !Utils.Equals(type, Utils.INT32)
                     && !Utils.Equals(type, Utils.STR)
-                    && !Utils.Equals(type, Utils.EXCEPT))
-                {
+                    && !Utils.Equals(type, Utils.EXCEPT)
+                ) {
                     return false;
                 }
 
@@ -365,7 +365,7 @@ public partial class MainGenerator : IIncrementalGenerator
                 if (!Utils.Equals(rawArgParam.Type, Utils.STR))
                     return false;
 
-                if (argName == "")
+                if (argName is null)
                     argName = rawArgParam.Name;
 
                 opt = new MethodOption(
@@ -389,7 +389,7 @@ public partial class MainGenerator : IIncrementalGenerator
         opt = new Option(
             type,
             new OptDesc(
-                longName, shortName, argName, desc
+                longName, shortName, argName ?? member.Name, desc
             ),
             defaultVal
         ) {
