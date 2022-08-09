@@ -26,6 +26,6 @@ foreach (var result in driverResults) {
     Console.WriteLine("Copying " + result.GeneratedSources.Length + " results to out/");
 
     foreach (var src in result.GeneratedSources) {
-        File.WriteAllText("obj/out/" + src.HintName, src.SourceText.ToString());
+        File.WriteAllText("../../test/" + src.HintName, src.SourceText.ToString());
     }
 }

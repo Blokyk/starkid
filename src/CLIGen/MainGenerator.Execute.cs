@@ -24,7 +24,7 @@ public partial class MainGenerator : IIncrementalGenerator
         var result = TryExecute(compilation, classes, context);
 
         if (result is not null)
-            return; //("failed to generate: " + result);
+            context.AddSource("CLIGen_err.g.txt", ("failed to generate: " + result));
     }
 
     static string? TryExecute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, SourceProductionContext context) {
@@ -108,7 +108,7 @@ public partial class MainGenerator : IIncrementalGenerator
         var subCmdsDescs = cmds.Select(c => c.WithArgsDesc).ToArray();
 
         Command? rootCmd = null;
-        var posArgs = new Desc[] { };
+        var posArgs = Array.Empty<Argument>();
 
         if (entryPointName is not null) {
             entryPointName = Utils.GetLastNamePart(entryPointName.AsSpan());
@@ -117,7 +117,7 @@ public partial class MainGenerator : IIncrementalGenerator
             // and the main method is marked partial without implementation
 
             rootCmd = cmds.FirstOrDefault(
-                cmd => cmd.BackingSymbol?.Name == entryPointName
+                cmd => cmd.BackingSymbol.Name == entryPointName
             );
 
             if (rootCmd is null) {
@@ -139,12 +139,14 @@ public partial class MainGenerator : IIncrementalGenerator
             if (rootCmd is null)
                 throw new Exception("wtf??");
 
-            if (rootCmd.Options.Count != 0)
+            if (rootCmd.Options.Length != 0)
                 return "Entry point cannot have parameters marked as options. Please use fields or properties to declare them.";
 
             rootCmd = rootCmd with {
                 Name = appName,
                 Description = appDesc ?? rootCmd.Description,
+                ParentCmdName = null,
+                ParentCmd = null
             };
 
             for (int i = 0; i < cmds.Length; i++) {
@@ -153,31 +155,32 @@ public partial class MainGenerator : IIncrementalGenerator
                 }
             }
 
-            posArgs = rootCmd.Args.Select(
-                arg => new Desc(
-                    arg.Name,
-                    arg.Description
-                )
-            ).ToArray();
+            posArgs = rootCmd.Args;
         }
 
         sw.Stop();
         var analysisTime = sw.Elapsed;
         sw.Restart();
 
-        var descBuild = new CmdDescBuilder(fullClassName);
+        if (!TryGetAllUniqueUsings(classSymbol, out var usings))
+            return "Couldn't collect all usings for class " + classSymbol.Name;
+
+        var descBuilder = new CmdDescBuilder(
+            appName,
+            fullClassName,
+            usings,
+            rootCmd is null ? null : (rootCmd, posArgs),
+            opts,
+            appDesc
+        );
+
+        foreach (var cmd in cmds)
+            descBuilder.AddCmd(cmd, cmd.Options, cmd.Args);
 
         context.AddSource(
             Ressources.GenNamespace + "_CmdDescDynamic.g.cs",
-            SourceText.From(CmdDescBuilder.GetBaseDescFile(appName), Encoding.UTF8)
+            SourceText.From(descBuilder.ToString(), Encoding.UTF8)
         );
-
-        if (rootCmd is not null) {
-            context.AddSource(
-                Ressources.GenNamespace + "_" + appName + ".g.cs",
-                SourceText.From(descBuild.AddCmd(rootCmd, opts, posArgs), Encoding.UTF8)
-            );
-        }
 
         sw.Stop();
         var parserGenerationTime = sw.Elapsed;
@@ -188,7 +191,7 @@ public partial class MainGenerator : IIncrementalGenerator
             appName,
             appDesc,
             optsDescs,
-            posArgs,
+            posArgs.Select(arg => arg.Desc).ToArray(),
             subCmdsDescs,
             entryPointName is not null
         );

@@ -21,11 +21,6 @@ using System.Runtime.CompilerServices;
 using {GenNamespace};
 ";
 
-    public static string GetMainErrorStmts(string msg) => $@"
-Console.Error.WriteLine(GetHelpString({msg}, currCmdDesc));
-return 1;
-";
-
     public const string GenNamespace = "CLIGen.Generated";
     public const string ClassPrefix = "CLIGen";
 
@@ -51,44 +46,45 @@ static partial class {ProgClassName} {{
             var value = parts.ElementAtOrDefault(1);
 
             if (!onlyArgs) {{
-
-            if (currCmdDesc.Switches.TryGetValue(arg, out var actSwitch)) {{
-                if (!TryDoAction(actSwitch, arg, value!, rawArg, currCmdDesc))
-                    return 1;
-                continue;
-            }}
-
-            if (currCmdDesc.Options.TryGetValue(arg, out var actOpt)) {{
-                if (value is null) {{
-                    if (!TryGetNext(ref i, args, out value)) {{
-                        Console.Error.WriteLine(GetHelpString(""Option "" + arg + "" needs an argument"", currCmdDesc));
+                if (currCmdDesc.Switches.TryGetValue(arg, out var actSwitch)) {{
+                    if (!TryDoAction(actSwitch, arg, value!, rawArg, currCmdDesc))
                         return 1;
-                    }}
-                }}
-
-                if (!TryDoAction(actOpt, arg, value, rawArg, currCmdDesc))
-                    return 1;
-                continue;
-            }}
-
-            if (currCmdDesc.SubCmds.TryGetValue(arg, out var getSubCmdDesc)) {{
-                currCmdDesc = getSubCmdDesc();
-                continue;
-            }}
-
-            if (arg[0] == '-') {{
-                if (arg[1] == '-') {{
-                    onlyArgs = true;
                     continue;
                 }}
 
-                Console.Error.WriteLine(GetHelpString(""Couldn't understand '"" + rawArg + ""' in this context"", currCmdDesc));
-                return 1;
-            }}
+                if (currCmdDesc.Options.TryGetValue(arg, out var actOpt)) {{
+                    if (value is null) {{
+                        if (!TryGetNext(ref i, args, out value)) {{
+                            Console.Error.WriteLine(GetHelpString(""Option {{0}} needs an argument"", arg, currCmdDesc));
+                            return 1;
+                        }}
+
+                        rawArg += "" "" + value;
+                    }}
+
+                    if (!TryDoAction(actOpt, arg, value, rawArg, currCmdDesc))
+                        return 1;
+                    continue;
+                }}
+
+                if (currCmdDesc.SubCmds.TryGetValue(arg, out var getSubCmdDesc)) {{
+                    currCmdDesc = getSubCmdDesc();
+                    continue;
+                }}
+
+                if (arg[0] == '-') {{
+                    if (arg[1] == '-') {{
+                        onlyArgs = true;
+                        continue;
+                    }}
+
+                    Console.Error.WriteLine(GetHelpString(""Couldn't understand '{{0}}' in this context"", rawArg, currCmdDesc));
+                    return 1;
+                }}
             }}
 
             if (!currCmdDesc.TryAddPosArg(arg)) {{
-                Console.Error.WriteLine(GetHelpString(""Couldn't understand '"" + rawArg + ""' in this context"", currCmdDesc));
+                Console.Error.WriteLine(GetHelpString(""Couldn't understand '{{0}}' in this context"", rawArg, currCmdDesc));
                 return 1;
             }}
         }}
@@ -101,8 +97,15 @@ static partial class {ProgClassName} {{
             act(arg1, arg2);
             return true;
         }}
-        catch (FormatException) {{
-            Console.Error.WriteLine(GetHelpString(""Couldn't understand '"" + rawArg + ""' in this context"", desc));
+        catch (FormatException e) {{
+            Console.Error.WriteLine(
+                GetHelpString(
+                    ""Expression '{{0}}' is not valid in this context""
+                    + (String.IsNullOrEmpty(e.Message) ? """" : ("": \x1b[1m'"" + e.Message + ""'"")),
+                    rawArg,
+                    desc
+                )
+            );
             return false;
         }}
     }}
@@ -118,7 +121,10 @@ static partial class {ProgClassName} {{
     }}
 
     static string GetHelpString(string reason, CmdDesc desc)
-        => reason + desc.HelpString;
+        => ""\x1b[31m"" + reason + ""\x1b[0m\n"" + desc.HelpString;
+
+    static string GetHelpString(string reason, string argName, CmdDesc desc)
+        => GetHelpString(string.Format(reason, ""\x1b[1m"" + argName + ""\x1b[22m""), desc);
 
     internal static void UpdateWith<TKey, TValue>(
         this Dictionary<TKey, TValue> dic1,
@@ -146,11 +152,11 @@ static partial class {ProgClassName} {{
         return newDic;
     }}
 
-    internal static T Parse<T>(string str) => default(T)!;
+    internal static T Parse<T>(string? str) => default(T)!;
 
-    internal static bool AsBool(string? val, bool defaultVal) {{
+    internal static bool AsBool(string? val, bool defaultSwitch) {{
         if (val is null)
-            return defaultVal;
+            return defaultSwitch;
 
         if (val is ""true"")
             return true;
@@ -182,8 +188,6 @@ static partial class {ProgClassName} {{
     }}
 
     private abstract partial class CmdDesc {{
-        private static readonly Dictionary<string, Action<string, string?>> _switches = new() {{}};
-        private static readonly Dictionary<string, Action<string, string>> _options = new() {{}};
         private static Dictionary<string, Func<CmdDesc>> _subs = new() {{}};
 
         private static readonly Func<int> _func = static () => {{
@@ -203,13 +207,13 @@ static partial class {ProgClassName} {{
         internal CmdDesc() {{}}
 
         protected CmdDesc(
+#nullable restore
             Dictionary<string, Action<string, string?>> switches,
             Dictionary<string, Action<string, string>> options
         ) {{
             _switches.UpdateWith(switches);
             _options.UpdateWith(options);
         }}
-#nullable restore
 
         private int posArgIdx = 0;
 
@@ -220,6 +224,11 @@ static partial class {ProgClassName} {{
             }} else {{
                 return false;
             }}
+        }}
+
+        private static void DisplayHelp(string origFlag, string? val) {{
+            Console.Error.WriteLine(root.HelpString);
+            System.Environment.Exit(0);
         }}
     }}
 }}

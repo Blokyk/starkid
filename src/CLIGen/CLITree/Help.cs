@@ -1,7 +1,7 @@
 namespace CLIGen.Generator.Model;
 
 public record CmdHelp(
-    string? RootCmd,
+    string? ParentCmd,
     string CmdName,
     string? Description,
     OptDesc[] CmdOpts,
@@ -30,8 +30,8 @@ public record CmdHelp(
             .Append("  ");
 
         void appendNameAndOpts() {
-            if (RootCmd is not null) {
-                sb.Append(RootCmd).Append(' ');
+            if (ParentCmd is not null) {
+                sb.Append(ParentCmd).Append(' ');
             }
 
             sb
@@ -86,7 +86,7 @@ public record CmdHelp(
             .AppendLine()
             .AppendLine();
 
-        AppendDescs(sb, "Options", CmdOpts.Cast<Desc>().ToArray())
+        AppendDescs(sb, "Options", CmdOpts.Concat(new[] { new SwitchDesc("help", 'h', "Print this help message") } ).Cast<Desc>().ToArray())
             .AppendLine();
         AppendDescs(sb, "Arguments", PosArgs)
             .AppendLine();
@@ -115,8 +115,10 @@ public record CmdHelp(
 
             sb.Append(pre);
 
-            if (opt.Description is null || opt.Description.Length == 0)
-                return sb.AppendLine();
+            if (opt.Description is null || opt.Description.Length == 0) {
+                sb.AppendLine();
+                continue;
+            }
 
             var maxIndentLength = maxPrefixLength + 2;
             var maxIndentStr = new string(' ', maxIndentLength);
@@ -127,8 +129,8 @@ public record CmdHelp(
             // and indent before inserting it
             if (pre.Length + opt.Description.Length > Ressources.MAX_LINE_LENGTH) {
                 sb
-                    .AppendLine()
-                    .Append(maxIndentStr);
+                    //.AppendLine()
+                    .Append(indentStr);
             } else {
                 sb.Append(indentStr);
             }
@@ -140,22 +142,23 @@ public record CmdHelp(
                 continue;
             }
 
-            var descWords = opt.Description.Split(splitWithSpaceArray, 2);
+            var descWords = opt.Description.Split(splitWithSpaceArray);
 
             int currDescLineLength = 0;
 
             for (int j = 0; j < descWords.Length; j++) {
                 ref var word = ref descWords[j];
-                sb.Append(word).Append(' ');
-                currDescLineLength += word.Length + 1;
 
-                if (currDescLineLength + maxIndentLength > Ressources.MAX_LINE_LENGTH) {
+                if (currDescLineLength + word.Length + 1 + maxIndentLength > Ressources.MAX_LINE_LENGTH) {
                     sb
                         .AppendLine()
                         .Append(maxIndentStr);
 
                     currDescLineLength = 0;
                 }
+
+                sb.Append(word).Append(' ');
+                currDescLineLength += word.Length + 1;
             }
 
             sb.AppendLine();

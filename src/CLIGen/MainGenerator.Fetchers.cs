@@ -87,8 +87,8 @@ public partial class MainGenerator : IIncrementalGenerator
             hasExitCode,
             cmdName,
             desc,
-            opts,
-            args
+            opts.ToArray(),
+            args.ToArray()
         ) {
             InheritOptions = inheritOptions,
             BackingSymbol = method,
@@ -189,8 +189,8 @@ public partial class MainGenerator : IIncrementalGenerator
             hasExitCode,
             cmdName,
             desc,
-            opts,
-            args
+            opts.ToArray(),
+            args.ToArray()
         ) {
             InheritOptions = inheritOptions,
             BackingSymbol = method,
@@ -233,10 +233,14 @@ public partial class MainGenerator : IIncrementalGenerator
 
         arg = new Argument(
             param.Type,
-            param.Name,
-            argDesc,
+            new Desc(
+                param.Name,
+                argDesc
+            ),
             defaultVal
-        );
+        ) {
+            BackingSymbol = param
+        };
 
         return true;
     }
@@ -316,6 +320,9 @@ public partial class MainGenerator : IIncrementalGenerator
                     }
                 }
 
+                // TODO: check that defaultVal is valid outside of the containing class
+                // and maybe transform it (when possible) if not (e.g. qualifying names) ?
+
                 break;
             }
             case IParameterSymbol parameterSymbol: {
@@ -389,6 +396,12 @@ public partial class MainGenerator : IIncrementalGenerator
             BackingSymbol = member
         };
 
+        if (opt.IsSwitch) {
+            opt = opt with {
+                Desc = new SwitchDesc(longName, shortName, desc)
+            };
+        }
+
         return true;
     }
 
@@ -398,12 +411,53 @@ public partial class MainGenerator : IIncrementalGenerator
         for (int i = 0; i < cmds.Length; i++) {
             var cmd = cmds[i];
 
-            if (sub.ParentCmdName == cmd.BackingSymbol?.Name) {
-                newCmd = sub with { ParentCmd = cmd };
+            if (sub.ParentCmdName == cmd.BackingSymbol.Name) {
+                newCmd = sub with { ParentCmd = cmd, ParentCmdName = cmd.Name };
                 break;
             }
         }
 
         return newCmd is not null;
+    }
+
+    static bool TryGetAllUniqueUsings(INamedTypeSymbol classSymbol, out string[] usings) {
+        usings = Array.Empty<string>();
+        var nodes = classSymbol.DeclaringSyntaxReferences.Select(r => r.GetSyntax()).Cast<ClassDeclarationSyntax>();
+
+        var usingList = new List<string>();
+
+        foreach (var node in nodes) {
+            if (!TryGetUsings(node, out var newUsings))
+                return false;
+
+            usingList.AddRange(newUsings);
+        }
+
+        usings = usingList.Distinct().ToArray();
+        return true;
+    }
+
+    static bool TryGetUsings(ClassDeclarationSyntax classDec, out string[] usings) {
+        usings = Array.Empty<string>();
+
+        var parent = classDec.Parent;
+
+        // keep moving out of nested classes
+        while (parent != null &&
+                parent is not NamespaceDeclarationSyntax
+                && parent is not FileScopedNamespaceDeclarationSyntax
+                && parent is not CompilationUnitSyntax) {}
+
+        var usingsSyntaxList = new SyntaxList<UsingDirectiveSyntax>();
+
+        if (parent is CompilationUnitSyntax unit) {
+            usingsSyntaxList = unit.Usings;
+        } else if (parent is BaseNamespaceDeclarationSyntax ns) {
+            usingsSyntaxList = ns.Usings;
+        }
+
+        usings = usingsSyntaxList.Select(u => u.Name.ToString()).ToArray();
+
+        return true;
     }
 }

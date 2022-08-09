@@ -20,13 +20,6 @@ internal static partial class Utils
         Utils.EXCEPT = compilation.GetTypeByMetadataName("System.Exception")!;
     }
 
-    public static bool HasName(this AttributeSyntax attrib, string name, SemanticModel model)
-        => model.GetSymbolInfo(attrib).Symbol is IMethodSymbol symbol
-        && symbol.ContainingType.ToDisplayString() == name;
-
-    public static bool HasAttribute(this INamedTypeSymbol type, string name)
-        => type.GetAttributes().Any(a => a.AttributeClass?.Name == name);
-
     public static bool TryGetAttribute(this INamedTypeSymbol type, string name, out AttributeData attr) {
         attr = type.GetAttributes().FirstOrDefault(a => a.AttributeClass?.Name == name)!;
 
@@ -43,6 +36,10 @@ internal static partial class Utils
 
         value = tVal;
         return true;
+    }
+
+    public static string GetFullName(this IMethodSymbol method) {
+        return method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + "." + method.Name;
     }
 
     // determine the namespace the class/enum/struct is declared in, if any
@@ -124,9 +121,6 @@ internal static partial class Utils
     public static bool TryGetDescription(AttributeData descAttrib, out string? desc)
         => TryGetCtorArg<string?>(descAttrib, 0, STR, out desc);
 
-    public static bool TryGetAppName(AttributeData cliAttrib, out string appName)
-        => TryGetCtorArg<string>(cliAttrib, 0, STR, out appName);
-
     public static bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, out T val) {
         val = default!;
 
@@ -178,6 +172,8 @@ internal static partial class Utils
         return fullStr.Slice(lastDotIdx).ToString();
     }
 
+    public static string GetNameWithNull(this ITypeSymbol symbol)
+        => symbol.Name + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
     public static StringBuilder Append(this StringBuilder sb, ICLINode node)
         => node.AppendTo(sb);
     public static StringBuilder AppendLine(this StringBuilder sb, ICLINode node)
