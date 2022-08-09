@@ -73,10 +73,16 @@ You can now use `--boolOption` and the likes to change the value of each option.
 > 
 > Will invoke print `dotnet run`'s help message
 
- 
-
 ### What now ?
 
 This is about as far as you can go with DragonFruit, but CLIGen can do a lot more !
 
-You can start by reading the [docs](docs/), or you could have a look around in the [samples](samples/) folder for more examples
+For example, you can change the name of the *option* without changing the name of the field/property, and you can add an alias. Here's how it could look :
+
+```csharp
+    [Option("int", 'i')] public static int intOption = 42;
+```
+
+Now, you can use `--int` and `-i` instead of `--intOption`. You could even change the name of the argument in the help text by using `ArgName =`.
+
+For more info, you can start by reading the [docs](docs/), or you could have a look around in the [samples](samples/) folder for more examples

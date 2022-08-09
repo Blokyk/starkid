@@ -36,15 +36,12 @@ public partial class MainGenerator : IIncrementalGenerator
         Utils.UpdatePredefTypes(currCompilation = compilation);
 
         if (!Validate(compilation, nonNullClassSyntaxes, context, out var model, out var classSymbol))
-            return "Failed to validate";
+            return "Failed to validate classes";
 
         var sw = new Stopwatch();
         sw.Start();
 
         var fullClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        if (!Utils.TryGetCLIClassDecNode(classSymbol, out var node))
-            return "Couldn't get class with CLI attribute";
 
         // var cliAttrib
 
@@ -55,8 +52,6 @@ public partial class MainGenerator : IIncrementalGenerator
             return "Couldn't parse CLI attribute on class " + classSymbol.Name;
 
         var (appName, entryPointName) = cliAttr;
-
-        // var descAttrib
 
         string? appDesc = null;
 
@@ -177,33 +172,18 @@ public partial class MainGenerator : IIncrementalGenerator
         foreach (var cmd in cmds)
             descBuilder.AddCmd(cmd, cmd.Options, cmd.Args);
 
-        context.AddSource(
-            Ressources.GenNamespace + "_CmdDescDynamic.g.cs",
-            SourceText.From(descBuilder.ToString(), Encoding.UTF8)
-        );
+        var descDynamicText = descBuilder.ToString();
 
         sw.Stop();
         var parserGenerationTime = sw.Elapsed;
-        sw.Restart();
 
-        var rootHelp = new CmdHelp(
-            null,
-            appName,
-            appDesc,
-            optsDescs,
-            posArgs.Select(arg => arg.Desc).ToArray(),
-            subCmdsDescs,
-            entryPointName is not null
+        context.AddSource(
+            Ressources.GenNamespace + "_CmdDescDynamic.g.cs",
+            SourceText.From(
+                descDynamicText + "// Analysis took " + analysisTime.Milliseconds + "ms\n// Generation took " + parserGenerationTime.Milliseconds + "ms",
+                Encoding.UTF8
+            )
         );
-
-        var origFile = node.SyntaxTree.FilePath;
-
-        if (origFile.Length == 0)
-            origFile = "__" + node.Identifier.ToString();
-
-        var helpText = rootHelp.AppendTo(new StringBuilder()).ToString();
-        sw.Stop();
-        var helpGenerationTime = sw.Elapsed;
 
         /*System.IO.File.WriteAllText(
             "/home/blokyk/csharp/cli-gen/src/CLIGen.Tests/obj/out/CLIGen.Generated_Help.g.txt",

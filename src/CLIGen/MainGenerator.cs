@@ -65,13 +65,8 @@ public partial class MainGenerator : IIncrementalGenerator
     static ClassDeclarationSyntax? GetCLIClass(GeneratorSyntaxContext ctx) {
         var node = (ClassDeclarationSyntax)ctx.Node;
 
-        var classDec = ctx.SemanticModel.GetDeclaredSymbol(node);
-
-        if (classDec is null)
-            return null;
-
-        foreach (var attr in classDec.GetAttributes()) {
-            if (attr.AttributeClass?.Name == Ressources.CLIAttribName)
+        foreach (var attr in node.AttributeLists.SelectMany(l => l.Attributes)) {
+            if (Utils.GetLastNamePart(attr.Name.ToString().AsSpan()) is "CLIAttribute" or "CLI")
                 return node;
         }
 
