@@ -72,8 +72,6 @@ public class CmdDescBuilder
     }
 
     void AddRootHelpText() {
-        //TODO: this
-
         AddHelpText(
             RootCmd,
             domToSubTable[RootCmd].ToArray(),
@@ -126,6 +124,7 @@ public class CmdDescBuilder
 
     }
 
+    //TODO: change "switch" vocab to "flag"
     void AddOptsAndSwitches(Option[] optsAndSws, bool isRoot = false) {
         var opts = new List<Option>(optsAndSws.Length);
         var sws = new List<Option>(optsAndSws.Length);
