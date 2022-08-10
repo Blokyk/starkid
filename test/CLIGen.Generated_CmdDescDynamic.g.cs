@@ -63,7 +63,7 @@ private static Dictionary<string, Action<string>> _options = new() {
 };
 private static void outputAction(string? arg) => global::SomeStuff.Parsex.OutputFile = Parse<FileInfo>(arg ?? "");
 private static void rangeAction(string? arg) => ThrowIfNotValid(global::SomeStuff.Parsex.ParseRange(arg));
-protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();//};
+protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
 private static Action _func = global::SomeStuff.Parsex.Silent;
 internal override Func<int> Invoke => static () => { _func(); return 0; };
 
@@ -91,7 +91,7 @@ private static Dictionary<string, Action<string?>> _switches = new() {
 };
 private static Dictionary<string, Action<string>> _options = new() {
 };
-protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();//};
+protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
 private static Action _func = global::SomeStuff.Parsex.Silent;
 internal override Func<int> Invoke => static () => { _func(); return 0; };
 
@@ -184,7 +184,7 @@ private static void set_const(string? arg) => constOption = AsBool(arg, true);
 private static Boolean constOption;
 private static Dictionary<string, Action<string>> _options = new() {
 };
-protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();//};
+protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
 private static Func<Boolean, int> _func = global::SomeStuff.Parsex.Graph;
 internal override Func<int> Invoke => static () => _func(constOption);
 
@@ -212,7 +212,7 @@ private static Dictionary<string, Action<string?>> _switches = new() {
 };
 private static Dictionary<string, Action<string>> _options = new() {
 };
-protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();//};
+protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
 private static Func<int> _func = global::SomeStuff.Parsex.GraphConst;
 internal override Func<int> Invoke => _func;
 
@@ -335,5 +335,5 @@ internal override Func<int> Invoke => _func;
             System.Environment.Exit(0);
         }
     }
-}// Analysis took 116ms
-// Generation took 23ms
+}// Analysis took 146ms
+// Generation took 26ms

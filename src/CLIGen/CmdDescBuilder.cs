@@ -271,10 +271,12 @@ public class CmdDescBuilder
     void AddArgs(Argument[] posArgs, bool isRoot = true) {
         sb.Append($@"protected override Action<string>[] _posArgs => ");
 
-        if (posArgs.Length == 0)
-            sb.Append("Array.Empty<Action<string>>();//");
-        else
-            sb.AppendLine("new Action<string>[] {");
+        if (posArgs.Length == 0) {
+            sb.AppendLine("Array.Empty<Action<string>>();");
+            return;
+        }
+
+        sb.AppendLine("new Action<string>[] {");
 
         foreach (var arg in posArgs) {
             sb
@@ -286,6 +288,7 @@ public class CmdDescBuilder
         }
 
         sb.AppendLine("};");
+
 
         foreach (var arg in posArgs) {
             sb
