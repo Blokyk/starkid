@@ -14,13 +14,6 @@ namespace CLIGen.Generator;
 
 public class CmdDescBuilder
 {
-    void AddBaseRoot()
-        => sb.AppendLine($@"
-    private abstract partial class CmdDesc {{
-        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new {AppName}CmdDesc(), false);
-        internal static CmdDesc root => _lazyRoot.Value;
-    }}");
-
     public string CliClassName { get; }
     public string[] RequiredUsings { get; }
     public string AppName { get; }
@@ -112,6 +105,9 @@ public class CmdDescBuilder
     void AddRoot() {
         sb.AppendLine($@"
     private abstract partial class CmdDesc {{
+        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new {AppName}CmdDesc(), false);
+        internal static CmdDesc root => _lazyRoot.Value;
+
 ");
 
         AddOptsAndSwitches(RootOptsAndSws, isRoot: true);
@@ -428,14 +424,12 @@ public class CmdDescBuilder
     }
 
     public override string ToString() {
-        AddBaseRoot();
-
         foreach (var kv in domToSubTable) {
             var dom = kv.Key;
             var subs = kv.Value;
 
                 sb
-                .AppendLine(GetClassDeclarationLine(dom, isRoot: false))
+                .AppendLine(GetClassDeclarationLine(dom, isRoot: dom == RootCmd))
                 .AppendLine($@"
         internal override Dictionary<string, Func<CmdDesc>> SubCmds => _subs;
         private static Dictionary<string, Func<CmdDesc>> _subs = new() {{
