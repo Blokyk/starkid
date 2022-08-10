@@ -85,7 +85,7 @@ public class CmdDescBuilder
 
     public void AddHelpText(Command cmd, Command[] subs, Option[] opts, Argument[] posArgs, bool isRoot = false) {
         var help = new CmdHelp(
-            cmd.ParentCmdName,
+            cmd.ParentSymbolName,
             cmd.Name,
             cmd.Description,
             opts.Select(o => o.Desc).ToArray(),
@@ -394,7 +394,7 @@ public class CmdDescBuilder
         if (!isRoot)
             _allCmdInfo.Add((cmd, optsAndSws, posArgs));
 
-        if (cmd.ParentCmdName is not null) {
+        if (cmd.ParentSymbolName is not null) {
             if (!domToSubTable.TryGetValue(cmd.ParentCmd!, out var list))
                 domToSubTable[cmd.ParentCmd!] = new() { cmd };
             else
@@ -492,6 +492,6 @@ static partial class {ProgClassName} {{
         => $@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625
-    private partial class {cmd.Name}CmdDesc : {cmd.ParentCmdName ?? ""}CmdDesc {{
+    private partial class {cmd.Name}CmdDesc : {cmd.ParentSymbolName ?? ""}CmdDesc {{
 ";
 }

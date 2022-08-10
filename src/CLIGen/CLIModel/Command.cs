@@ -15,7 +15,7 @@ public record Command(bool HasExitCode, string Name, string? Description, Option
     public bool InheritOptions { get; init; }
 
     public Command? ParentCmd { get; set; }
-    public string? ParentCmdName { get; set; }
+    public string? ParentSymbolName { get; set; }
 
     public IMethodSymbol BackingSymbol { get; set; } = null!;
 

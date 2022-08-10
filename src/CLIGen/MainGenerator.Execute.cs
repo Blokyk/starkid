@@ -136,17 +136,17 @@ public partial class MainGenerator : IIncrementalGenerator
             rootCmd = rootCmd with {
                 Name = appName,
                 Description = appDesc ?? rootCmd.Description,
-                ParentCmdName = null
+                ParentSymbolName = null
             };
 
             posArgs = rootCmd.Args;
         }
 
         for (int i = 0; i < cmds.Length; i++) {
-            if (cmds[i].ParentCmdName is not null) {
+            if (cmds[i].ParentSymbolName is not null) {
                 if (!TryBindParentCmd(cmds[i], cmds, out var newCmd))
                     // Are you sure you marked '${cmds[i].ParentCmdName}' with [Command] ?
-                    return "Couldn't bind parent cmd '" + cmds[i].ParentCmdName + "' of sub-cmd '" + cmds[i].Name + "'";
+                    return "Couldn't bind parent cmd '" + cmds[i].ParentSymbolName + "' of sub-cmd '" + cmds[i].Name + "'";
 
                 cmds[i] = newCmd;
             } else if (rootCmd is not null) {

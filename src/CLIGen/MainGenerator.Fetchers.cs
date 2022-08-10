@@ -92,7 +92,7 @@ public partial class MainGenerator : IIncrementalGenerator
         ) {
             InheritOptions = inheritOptions,
             BackingSymbol = method,
-            ParentCmdName = parentCmdName,
+            ParentSymbolName = parentCmdName,
         };
 
         return opts.Count + args.Count == method.Parameters.Length;
@@ -194,7 +194,7 @@ public partial class MainGenerator : IIncrementalGenerator
         ) {
             InheritOptions = inheritOptions,
             BackingSymbol = method,
-            ParentCmdName = parentCmdName,
+            ParentSymbolName = parentCmdName,
         };
 
         return opts.Count + args.Count == method.Parameters.Length;
@@ -411,8 +411,8 @@ public partial class MainGenerator : IIncrementalGenerator
         for (int i = 0; i < cmds.Length; i++) {
             var cmd = cmds[i];
 
-            if (sub.ParentCmdName == cmd.BackingSymbol.Name) {
-                newCmd = sub with { ParentCmd = cmd, ParentCmdName = cmd.Name };
+            if (sub.ParentSymbolName == cmd.BackingSymbol.Name) {
+                newCmd = sub with { ParentCmd = cmd, ParentSymbolName = cmd.Name };
                 break;
             }
         }
