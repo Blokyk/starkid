@@ -88,19 +88,7 @@ public partial class MainGenerator : IIncrementalGenerator
         var opts = optList.ToArray();
         var cmds = cmdList.ToArray();
 
-        for (int i = 0; i < cmds.Length; i++) {
-            if (cmds[i].ParentCmdName is not null) {
-                if (!TryBindParentCmd(cmds[i], cmds, out var newCmd))
-                    return "Couldn't bind parent cmd '" + cmds[i].ParentCmdName + "' of cmd '" + cmds[i].Name + "'";
-
-                cmds[i] = newCmd;
-            }
-        }
-
         //TODO: check that every option and cmd has a unique name and/or alias
-
-        var optsDescs = opts.Select(o => o.Desc).ToArray();
-        var subCmdsDescs = cmds.Select(c => c.WithArgsDesc).ToArray();
 
         Command? rootCmd = null;
         var posArgs = Array.Empty<Argument>();
@@ -108,14 +96,22 @@ public partial class MainGenerator : IIncrementalGenerator
         if (entryPointName is not null) {
             entryPointName = Utils.GetLastNamePart(entryPointName.AsSpan());
 
-            //TODO: check that, if the entry point name is Main, then the class is partial
-            // and the main method is marked partial without implementation
+            // TODO: check that, if the entry point name is Main, then the main method
+            // is marked partial without implementation. We also need to create a stub/trampoline
+            // from $cliClassName to our Program's Main method
 
             rootCmd = cmds.FirstOrDefault(
                 cmd => cmd.BackingSymbol.Name == entryPointName
             );
 
             if (rootCmd is null) {
+                // technically, we could use classSymbol.GetMembers(entryPointName),
+                // but that'd probably be slower
+
+                // we don't actually have to use .ToArray here, we could just try to iterate
+                // and error if we can't call MoveNext() exactly once. But that would be
+                // an incredibly small optimisation
+
                 var candidates = classMethods.Where(
                     m => m.Name == entryPointName
                 ).ToArray();
@@ -140,17 +136,22 @@ public partial class MainGenerator : IIncrementalGenerator
             rootCmd = rootCmd with {
                 Name = appName,
                 Description = appDesc ?? rootCmd.Description,
-                ParentCmdName = null,
-                ParentCmd = null
+                ParentCmdName = null
             };
 
-            for (int i = 0; i < cmds.Length; i++) {
-                if (cmds[i].ParentCmdName is null) {
-                    cmds[i].ParentCmd = rootCmd;
-                }
-            }
-
             posArgs = rootCmd.Args;
+        }
+
+        for (int i = 0; i < cmds.Length; i++) {
+            if (cmds[i].ParentCmdName is not null) {
+                if (!TryBindParentCmd(cmds[i], cmds, out var newCmd))
+                    // Are you sure you marked '${cmds[i].ParentCmdName}' with [Command] ?
+                    return "Couldn't bind parent cmd '" + cmds[i].ParentCmdName + "' of sub-cmd '" + cmds[i].Name + "'";
+
+                cmds[i] = newCmd;
+            } else if (rootCmd is not null) {
+                cmds[i].ParentCmd = rootCmd;
+            }
         }
 
         sw.Stop();
@@ -184,14 +185,6 @@ public partial class MainGenerator : IIncrementalGenerator
                 Encoding.UTF8
             )
         );
-
-        /*System.IO.File.WriteAllText(
-            "/home/blokyk/csharp/cli-gen/src/CLIGen.Tests/obj/out/CLIGen.Generated_Help.g.txt",
-            helpText
-                + "\n# Analysis generated in: " + analysisTime
-                + "\n# CmdDesc generated in:" + parserGenerationTime
-                + "\n# Help generated in: " + helpGenerationTime
-        );*/
 
         return null;
     }
