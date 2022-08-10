@@ -73,9 +73,9 @@ static partial class CLIGenProgram {
         return currCmdDesc.Invoke();
     }
 
-    static bool TryDoAction(Action<string, string> act, string arg1, string arg2, string rawArg, CmdDesc desc) {
+    static bool TryDoAction(Action<string> act, string arg1, string arg2, string rawArg, CmdDesc desc) {
         try {
-            act(arg1, arg2);
+            act(arg2);
             return true;
         }
         catch (FormatException e) {
@@ -178,8 +178,8 @@ static partial class CLIGenProgram {
 
         protected virtual Action<string>[] _posArgs { get; } = Array.Empty<Action<string>>();
 
-        internal Dictionary<string, Action<string, string?>> Switches => _switches;
-        internal Dictionary<string, Action<String, string>> Options => _options;
+        internal Dictionary<string, Action<string?>> Switches => _switches;
+        internal Dictionary<string, Action<string>> Options => _options;
         internal virtual Dictionary<string, Func<CmdDesc>> SubCmds => _subs;
         internal virtual Func<int> Invoke => _func;
         internal virtual string HelpString { get; }
@@ -189,8 +189,8 @@ static partial class CLIGenProgram {
 
         protected CmdDesc(
 #nullable restore
-            Dictionary<string, Action<string, string?>> switches,
-            Dictionary<string, Action<string, string>> options
+            Dictionary<string, Action<string?>> switches,
+            Dictionary<string, Action<string>> options
         ) {
             _switches.UpdateWith(switches);
             _options.UpdateWith(options);
@@ -207,7 +207,7 @@ static partial class CLIGenProgram {
             }
         }
 
-        private static void DisplayHelp(string origFlag, string? val) {
+        private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(root.HelpString);
             System.Environment.Exit(0);
         }

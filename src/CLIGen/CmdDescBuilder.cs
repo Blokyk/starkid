@@ -101,7 +101,7 @@ public class CmdDescBuilder
         internal override string HelpString => _helpString;
         private static readonly string _helpString = {SyntaxFactory.Literal(helpSb.ToString()).ToString()};
 
-        private static void DisplayHelp(string origFlag, string? val) {{
+        private static void DisplayHelp(string? val) {{
             Console.Error.WriteLine(_helpString);
             System.Environment.Exit(0);
         }}
@@ -138,7 +138,7 @@ public class CmdDescBuilder
 
         #region Switches
 
-        sb.AppendLine($@"private static Dictionary<string, Action<string, string?>> _switches = new() {{");
+        sb.AppendLine($@"private static Dictionary<string, Action<string?>> _switches = new() {{");
 
         sb.AppendLine($@"
             {{ ""--help"", DisplayHelp }},
@@ -207,7 +207,7 @@ public class CmdDescBuilder
         #endregion
         #region Options
 
-        sb.AppendLine($@"private static Dictionary<string, Action<string, string>> _options = new() {{");
+        sb.AppendLine($@"private static Dictionary<string, Action<string>> _options = new() {{");
 
         foreach (var opt in opts) {
             sb.AppendLine(GetOptDictLine(opt.Desc.LongName, opt.Desc.Alias, opt.Desc.Name + "Action"));
@@ -407,8 +407,8 @@ public class CmdDescBuilder
         internal {cmd.Name}CmdDesc() : base(_switches, _options) {{}}
 
         protected {cmd.Name}CmdDesc(
-            Dictionary<string, Action<string, string?>> switches,
-            Dictionary<string, Action<string, string>> options
+            Dictionary<string, Action<string?>> switches,
+            Dictionary<string, Action<string>> options
         )
             : base(_switches.UpdatedWith(switches), _options.UpdatedWith(options))
         {{}}
@@ -472,7 +472,7 @@ static partial class {ProgClassName} {{
     }
 
     static string GetOptFuncLine(string methodName, string expr) {
-        return $@"private static void {methodName}(string origFlag, string? arg) => {expr};";
+        return $@"private static void {methodName}(string? arg) => {expr};";
     }
 
     static string GetDictLine(string key, string value)
