@@ -99,7 +99,10 @@ public static partial class Parsex {
     ) => constOption ? 0xf : 'g' % 0xf;
 
     [SubCommand("const", nameof(Graph), InheritOptions = false)]
-    public static int GraphConst() {
+    public static int GraphConst(
+        [Option("range", 'r')] bool range
+    ) {
+        Console.WriteLine("range = " + range);
         Console.WriteLine("Oh getting fancy tonight");
         return 0xf;
     }

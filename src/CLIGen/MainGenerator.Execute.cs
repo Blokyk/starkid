@@ -181,7 +181,11 @@ public partial class MainGenerator : IIncrementalGenerator
         context.AddSource(
             Ressources.GenNamespace + "_CmdDescDynamic.g.cs",
             SourceText.From(
-                descDynamicText + "// Analysis took " + analysisTime.Milliseconds + "ms\n// Generation took " + parserGenerationTime.Milliseconds + "ms",
+                descDynamicText
+#if DEBUG
+                + "\n// Analysis took " + analysisTime.Milliseconds + "ms\n// Generation took " + parserGenerationTime.Milliseconds + "ms"
+#endif
+                ,
                 Encoding.UTF8
             )
         );

@@ -18,6 +18,9 @@ using System.IO;
 static partial class CLIGenProgram {
 
     private abstract partial class CmdDesc {
+        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new parsexCmdDesc(), false);
+        internal static CmdDesc root => _lazyRoot.Value;
+
 
 private static Dictionary<string, Action<string?>> _switches = new() {
 
@@ -209,20 +212,18 @@ private static Dictionary<string, Action<string?>> _switches = new() {
             { "--help", DisplayHelp },
             { "-h", DisplayHelp },
 
+{ "--range", set_range },{ "-r", set_range },
 };
+private static void set_range(string? arg) => range = AsBool(arg, true);
+private static Boolean range;
 private static Dictionary<string, Action<string>> _options = new() {
 };
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Func<int> _func = global::SomeStuff.Parsex.GraphConst;
-internal override Func<int> Invoke => _func;
+private static Func<Boolean, int> _func = global::SomeStuff.Parsex.GraphConst;
+internal override Func<int> Invoke => static () => _func(range);
 
     }
 
-
-    private abstract partial class CmdDesc {
-        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new parsexCmdDesc(), false);
-        internal static CmdDesc root => _lazyRoot.Value;
-    }
 
 #pragma warning disable CS8618
 #pragma warning disable CS8625
@@ -314,7 +315,7 @@ internal override Func<int> Invoke => _func;
     private partial class constCmdDesc : graphCmdDesc {
 
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = "Usage:\n  graph const \n\nOptions:\n  -h, --help  Print this help message\n\n\n\n";
+        private static readonly string _helpString = "Usage:\n  graph const [options]\n\nOptions:\n  -r, --range\n  -h, --help   Print this help message\n\n\n\n";
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
@@ -335,5 +336,6 @@ internal override Func<int> Invoke => _func;
             System.Environment.Exit(0);
         }
     }
-}// Analysis took 146ms
-// Generation took 26ms
+}
+// Analysis took 116ms
+// Generation took 22ms
