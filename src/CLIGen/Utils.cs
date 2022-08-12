@@ -174,10 +174,6 @@ internal static partial class Utils
 
     public static string GetNameWithNull(this ITypeSymbol symbol)
         => symbol.Name + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
-    public static StringBuilder Append(this StringBuilder sb, ICLINode node)
-        => node.AppendTo(sb);
-    public static StringBuilder AppendLine(this StringBuilder sb, ICLINode node)
-        => node.AppendTo(sb);
     public static bool Equals(this ISymbol? s1, ISymbol? s2) => SymbolEqualityComparer.Default.Equals(s1, s2);
 }
 
