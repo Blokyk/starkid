@@ -4,7 +4,7 @@ A C# source generator to create command-line apps given a simple, code-based des
 
 ---
 
-**Disclaimer**: Obviously, don't actually use this for anything serious, it has zero tests and could break if you look at it the wrong way. This is, at best, in pre-alpha; more realistically it's barely a prototype.
+**Disclaimer**: Obviously, don't actually use this for anything serious, it has zero tests and could probably break if you look at it the wrong way. This is, at best, in pre-alpha; more realistically it's barely a prototype.
 
 ### ...why tho?
 
@@ -37,6 +37,8 @@ I don't actually plan on maintaining this any further than I need to for lotus, 
 ## Known bugs & missing features
 
 - ***The generated `Program.Parse<T>(string)` function doesn't actually do anything***
+
+- Using method to validate options is only possible for top-level options (design flaw)
 
 - The limitations around certain elements could be lifted in some cases (e.g. static class for CLI)
 

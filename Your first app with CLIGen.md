@@ -22,7 +22,7 @@ So, how would you write this app with CLIGen ? First, let's start by declaring a
 
 ```csharp
 [CLI(cmdName: "myapp")] // be sure to write using CLIGen !
-static class MyCLI { /* */ }
+static class MyCLI {
 ```
 
 Next, we declare each option. Here, this is done by adding fields and marking them with `[Option]`. For `intOption` that look like that :
@@ -48,11 +48,11 @@ So, let's write a function to print the value of our fields :
     }
 ```
 
-The last thing we have to do, is change the `[CLI]` attribute at the point of our class to indicate the "entry point", i.e. the method that will be executed by default when no command is specified :
+The last thing we have to do, is change the `[CLI]` attribute at the top of our class to indicate the "entry point", i.e. the method that will be executed by default when no command is specified :
 
 ```csharp
 [CLI(cmdName: "myapp", EntryPoint = nameof(Dump)]
-static class MyCLI { /* */ }
+static class MyCLI {
 ```
 
 Build and run and... success ! 
