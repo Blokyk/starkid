@@ -279,7 +279,7 @@ public class CmdDescBuilder
                 .Append("static arg => ")
                 .Append(arg.BackingSymbol.Name)
                 .Append(" = Parse<")
-                .Append(arg.Type.Name)
+                .Append(arg.Type.GetNameWithNull())
                 .AppendLine(">(arg),");
         }
 

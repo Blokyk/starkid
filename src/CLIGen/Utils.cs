@@ -172,8 +172,18 @@ internal static partial class Utils
         return fullStr.Slice(lastDotIdx).ToString();
     }
 
-    public static string GetNameWithNull(this ITypeSymbol symbol)
-        => symbol.Name + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
+    public static string GetNameWithNull(this ITypeSymbol symbol) {
+        string GetRawName(ITypeSymbol symbol) {
+            if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
+                return GetNameWithNull(arrayTypeSymbol.ElementType) + "[]";
+            }
+
+            return symbol.Name;
+        }
+
+        return GetRawName(symbol) + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
+    }
+
     public static bool Equals(this ISymbol? s1, ISymbol? s2) => SymbolEqualityComparer.Default.Equals(s1, s2);
 }
 
