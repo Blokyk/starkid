@@ -29,6 +29,8 @@ public class CmdDescBuilder
 
     bool HasRealRootCmd { get; }
 
+    public int HelpExitCode { get; set; } = 0;
+
     private StringBuilder sb;
 
     public CmdDescBuilder(
@@ -97,7 +99,7 @@ public class CmdDescBuilder
 
         private static void DisplayHelp(string? val) {{
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit({HelpExitCode});
         }}
     }}
 ");

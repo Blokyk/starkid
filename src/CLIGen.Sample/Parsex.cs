@@ -7,7 +7,7 @@ namespace SomeStuff;
 
 using System.IO;
 
-[CLI("parsex", EntryPoint = nameof(Silent))]
+[CLI("parsex", EntryPoint = nameof(Silent), HelpExitCode = 1)]
 [Description("A parser/typechecker for lotus")]
 public static partial class Parsex
 {

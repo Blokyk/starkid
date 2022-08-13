@@ -110,7 +110,13 @@ internal static partial class Utils
         if (!TryGetProp<string?>(attr, nameof(CLIAttribute.EntryPoint), STR, null, out var entryPoint))
             return false;
 
-        cliAttr = new(appName) { EntryPoint = entryPoint };
+        if (!TryGetProp<int>(attr, nameof(CLIAttribute.HelpExitCode), INT32, 0, out var helpIsError))
+            return false;
+
+        cliAttr = new(appName) {
+            EntryPoint = entryPoint,
+            HelpExitCode = helpIsError
+        };
 
         return true;
     }

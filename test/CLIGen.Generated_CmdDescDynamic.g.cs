@@ -308,7 +308,7 @@ internal override Func<int> Invoke => () => _func(range);
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
     }
 
@@ -322,7 +322,7 @@ internal override Func<int> Invoke => () => _func(range);
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
     }
 
@@ -336,7 +336,7 @@ internal override Func<int> Invoke => () => _func(range);
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
     }
 
@@ -350,7 +350,7 @@ internal override Func<int> Invoke => () => _func(range);
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
     }
 
@@ -364,7 +364,7 @@ internal override Func<int> Invoke => () => _func(range);
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
     }
 
@@ -378,7 +378,7 @@ internal override Func<int> Invoke => () => _func(range);
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
     }
 
@@ -392,9 +392,9 @@ internal override Func<int> Invoke => () => _func(range);
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
     }
 }
-// Analysis took 223ms
-// Generation took 46ms
+// Analysis took 289ms
+// Generation took 51ms

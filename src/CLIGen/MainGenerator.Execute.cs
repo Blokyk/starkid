@@ -51,7 +51,7 @@ public partial class MainGenerator : IIncrementalGenerator
         if (!Utils.TryParseCLIAttrib(cliAttrib, out var cliAttr))
             return "Couldn't parse CLI attribute on class " + classSymbol.Name;
 
-        var (appName, entryPointName) = cliAttr;
+        var (appName, entryPointName, helpExitCode) = cliAttr;
 
         string? appDesc = null;
 
@@ -168,7 +168,9 @@ public partial class MainGenerator : IIncrementalGenerator
             rootCmd is null ? null : (rootCmd, posArgs),
             opts,
             appDesc
-        );
+        ) {
+            HelpExitCode = helpExitCode
+        };
 
         foreach (var cmd in cmds)
             descBuilder.AddCmd(cmd, cmd.Options, cmd.Args);
