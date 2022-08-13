@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using System.Collections.Immutable;
 
@@ -19,27 +19,27 @@ public partial class MainGenerator : IIncrementalGenerator
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_CLIAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/CLIAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Static/Attributes/CLIAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_CommandAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/CommandAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Static/Attributes/CommandAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_DescriptionAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/DescriptionAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Static/Attributes/DescriptionAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_OptionAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/OptionAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Static/Attributes/OptionAttribute.cs"), Encoding.UTF8)
                 );
 
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_SubCommandAttribute.g.cs",
-                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Attributes/SubCommandAttribute.cs"), Encoding.UTF8)
+                    SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Static/Attributes/SubCommandAttribute.cs"), Encoding.UTF8)
                 );
             }
         );
