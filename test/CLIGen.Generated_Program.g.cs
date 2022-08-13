@@ -73,6 +73,7 @@ static partial class CLIGenProgram {
 
         if (currCmdDesc.ArgSlotsLeft > 0) {
             Console.Error.WriteLine(GetHelpString("Expected at least {0} arguments, but only got " + argCount, (currCmdDesc.ArgSlotsLeft + argCount).ToString(), currCmdDesc));
+            return 1;
         }
 
         return currCmdDesc.Invoke();
