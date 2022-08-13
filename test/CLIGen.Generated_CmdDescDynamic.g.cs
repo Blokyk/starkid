@@ -396,5 +396,5 @@ internal override Func<int> Invoke => () => _func(range);
         }
     }
 }
-// Analysis took 289ms
-// Generation took 51ms
+// Analysis took 327ms
+// Generation took 56ms

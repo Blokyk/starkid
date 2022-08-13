@@ -31,7 +31,7 @@ public static partial class Parsex
     public static (int start, int end) rangeInfo;
 
     [Option("range", shortName: 'r', ArgName = "range")]
-    public static Exception? ParseRange(string? rawStr) {
+    public static bool ParseRange(string? rawStr) {
 
         // This method can return 'void' for manual error handling,
         // or it could use one of :
@@ -43,10 +43,10 @@ public static partial class Parsex
         var parts = rawStr?.Split('-') ?? Array.Empty<string>();
 
         if (parts.Length != 2)
-            return new FormatException("--range needs two numbers separated by a dash, and no space");
+            return false;
 
         rangeInfo = (Int32.Parse(parts[0]), Int32.Parse(parts[1]));
-        return null;
+        return true;
     }
 
     [Command("silent")]
