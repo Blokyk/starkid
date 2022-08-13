@@ -1,6 +1,6 @@
 namespace CLIGen.Generator;
 
-internal static partial class Utils
+internal static class AttributeParser
 {
     public static bool TryParseCmdAttrib(AttributeData attr, out CommandAttribute cmdAttr) {
         cmdAttr = null!;
@@ -8,7 +8,7 @@ internal static partial class Utils
         if (attr.ConstructorArguments.Length < 1)
             return false;
 
-        if (!Utils.Equals(attr.ConstructorArguments[0].Type, STR))
+        if (!Utils.Equals(attr.ConstructorArguments[0].Type, Utils.STR))
             return false;
 
         cmdAttr = new((string)attr.ConstructorArguments[0].Value!);
@@ -23,11 +23,11 @@ internal static partial class Utils
         if (attr.NamedArguments.Length > 1)
             return false;
 
-        if (!Utils.Equals(attr.ConstructorArguments[0].Type, STR))
+        if (!Utils.Equals(attr.ConstructorArguments[0].Type, Utils.STR))
             return false;
         var cmdName = (string)attr.ConstructorArguments[0].Value!;
 
-        if (!Utils.Equals(attr.ConstructorArguments[1].Type, STR))
+        if (!Utils.Equals(attr.ConstructorArguments[1].Type, Utils.STR))
             return false;
         var parentName = (string)attr.ConstructorArguments[1].Value!;
 
@@ -91,7 +91,7 @@ internal static partial class Utils
         if (attr.ConstructorArguments.Length < 1)
             return false;
 
-        if (!Utils.Equals(attr.ConstructorArguments[0].Type, STR))
+        if (!Utils.Equals(attr.ConstructorArguments[0].Type, Utils.STR))
             return false;
 
         descAttr = new((string)attr.ConstructorArguments[0].Value!);
@@ -103,14 +103,14 @@ internal static partial class Utils
         cliAttr = null!;
 
         // appName
-        if (!TryGetCtorArg<string>(attr, 0, STR, out var appName))
+        if (!TryGetCtorArg<string>(attr, 0, Utils.STR, out var appName))
             return false;
 
         // EntryPoint
-        if (!TryGetProp<string?>(attr, nameof(CLIAttribute.EntryPoint), STR, null, out var entryPoint))
+        if (!TryGetProp<string?>(attr, nameof(CLIAttribute.EntryPoint), Utils.STR, null, out var entryPoint))
             return false;
 
-        if (!TryGetProp<int>(attr, nameof(CLIAttribute.HelpExitCode), INT32, 0, out var helpIsError))
+        if (!TryGetProp<int>(attr, nameof(CLIAttribute.HelpExitCode), Utils.INT32, 0, out var helpIsError))
             return false;
 
         cliAttr = new(appName) {
@@ -120,4 +120,45 @@ internal static partial class Utils
 
         return true;
     }
+
+    public static bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, out T val) {
+        val = default!;
+
+        var ctorArgs = attrib.ConstructorArguments;
+
+        if (ctorArgs.Length < ctorIdx + 1) {
+            return false;
+        }
+
+        if (!Utils.Equals(ctorArgs[ctorIdx].Type, type) || ctorArgs[ctorIdx].Value is not T)
+            return false;
+
+        val = (T)ctorArgs[ctorIdx].Value!;
+
+        return true;
+    }
+
+    public static bool TryGetProp<T>(AttributeData attrib, string propName, INamedTypeSymbol type, T defaultVal, out T val) {
+        val = defaultVal;
+
+        var namedArgs = attrib.NamedArguments;
+
+        if (namedArgs.IsDefaultOrEmpty)
+            return true;
+
+        var arg = namedArgs.FirstOrDefault(
+            kv => kv.Key == propName
+        ).Value;
+
+        if (arg.Equals(default))
+            return true;
+
+        if (!Utils.Equals(arg.Type, type) || arg.Value is not T)
+            return false;
+
+        val = (T)arg.Value!;
+
+        return true;
+    }
+
 }

@@ -34,14 +34,14 @@ public partial class MainGenerator : IIncrementalGenerator
                 case Ressources.OptAttribName: // an entry point can't be marked option
                     return false;
                 case Ressources.DescAttribName: {
-                    if (!Utils.TryParseDescAttrib(attr, out var descAttr))
+                    if (!AttributeParser.TryParseDescAttrib(attr, out var descAttr))
                         return false;
 
                     desc = descAttr.Desc;
                     break;
                 }
                 case Ressources.CmdAttribName: {
-                    if (!Utils.TryParseCmdAttrib(attr, out var cmdAttr))
+                    if (!AttributeParser.TryParseCmdAttrib(attr, out var cmdAttr))
                         return false;
 
                     cmdName = cmdAttr.CmdName;
@@ -49,7 +49,7 @@ public partial class MainGenerator : IIncrementalGenerator
                     break;
                 }
                 case Ressources.SubCmdAttribName: {
-                    if (!Utils.TryParseSubCmdAttrib(attr, out var subCmdAttr))
+                    if (!AttributeParser.TryParseSubCmdAttrib(attr, out var subCmdAttr))
                         return false;
 
                     (cmdName, parentCmdName, inheritOptions) = subCmdAttr;
@@ -125,7 +125,7 @@ public partial class MainGenerator : IIncrementalGenerator
                 case Ressources.OptAttribName: // in case this is an option method, abort
                     return !hadCmdAttr;
                 case Ressources.DescAttribName: {
-                    if (!Utils.TryParseDescAttrib(attr, out var descAttr))
+                    if (!AttributeParser.TryParseDescAttrib(attr, out var descAttr))
                         return false;
 
                     desc = descAttr.Desc;
@@ -136,7 +136,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
                     hadCmdAttr = true;
 
-                    if (!Utils.TryParseCmdAttrib(attr, out var cmdAttr))
+                    if (!AttributeParser.TryParseCmdAttrib(attr, out var cmdAttr))
                         return false;
 
                     cmdName = cmdAttr.CmdName;
@@ -148,7 +148,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
                     hadCmdAttr = true;
 
-                    if (!Utils.TryParseSubCmdAttrib(attr, out var subCmdAttr))
+                    if (!AttributeParser.TryParseSubCmdAttrib(attr, out var subCmdAttr))
                         return false;
 
                     (cmdName, parentCmdName, inheritOptions) = subCmdAttr;
@@ -284,7 +284,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
                     hadOptAttrib = true;
 
-                    if (!Utils.TryParseOptAttrib(attr, out var optAttr))
+                    if (!AttributeParser.TryParseOptAttrib(attr, out var optAttr))
                         return false;
 
                     (longName, shortName, _) = optAttr;
@@ -294,7 +294,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
                     break;
                 case Ressources.DescAttribName:
-                    if (!Utils.TryParseDescAttrib(attr, out var descAttr))
+                    if (!AttributeParser.TryParseDescAttrib(attr, out var descAttr))
                         return false;
 
                     desc = descAttr.Desc;

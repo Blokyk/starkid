@@ -48,7 +48,7 @@ public partial class MainGenerator : IIncrementalGenerator
         if (!classSymbol.TryGetAttribute(Ressources.CLIAttribName, out var cliAttrib))
             return "Couldn't get CLI attribute for class " + classSymbol.Name;
 
-        if (!Utils.TryParseCLIAttrib(cliAttrib, out var cliAttr))
+        if (!AttributeParser.TryParseCLIAttrib(cliAttrib, out var cliAttr))
             return "Couldn't parse CLI attribute on class " + classSymbol.Name;
 
         var (appName, entryPointName, helpExitCode) = cliAttr;
