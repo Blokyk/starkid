@@ -10,6 +10,14 @@ internal static partial class Utils
     internal static INamedTypeSymbol EXCEPT = null!;
     internal static INamedTypeSymbol NULLABLE = null!;
 
+    internal static SymbolDisplayFormat memberMinimalDisplayFormat = new(
+        parameterOptions: SymbolDisplayParameterOptions.IncludeName,
+        //typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+        //genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        //memberOptions: SymbolDisplayMemberOptions.IncludeContainingType,
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers
+    );
+
     internal static void UpdatePredefTypes(Compilation compilation) {
         Utils.BOOL = compilation.GetSpecialType(SpecialType.System_Boolean);
         Utils.INT32 = compilation.GetSpecialType(SpecialType.System_Int32);

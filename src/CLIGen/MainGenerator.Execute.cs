@@ -76,9 +76,9 @@ public partial class MainGenerator : IIncrementalGenerator
 
         var classMethods = members.OfType<IMethodSymbol>();
 
-        foreach (var member in classMethods) {
-            if (!TryGetCommand(member, model, out var cmd)) {
-                return "Couldn't parse symbol " + member.Name + " into a subcmd";
+        foreach (var method in classMethods) {
+            if (!TryGetCommand(method, model, out var cmd)) {
+                return "Couldn't parse symbol " + method.Name + " into a subcmd";
             }
 
             if (cmd is not null)

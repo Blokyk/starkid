@@ -17,4 +17,6 @@ public record Command(bool HasExitCode, string Name, string? Description, Option
     public bool IsRoot => BackingSymbol is null;
 
     public override string ToString() => "<" + Name + ">";
+
+    public bool HasParams { get; set; }
 }

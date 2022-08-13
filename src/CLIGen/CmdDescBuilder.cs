@@ -82,7 +82,8 @@ public class CmdDescBuilder
             opts.Select(o => o.Desc).ToArray(),
             posArgs.Select(a => a.Desc).ToArray(),
             subs.Select(s => s.WithArgsDesc).ToArray(),
-            IsDirectCmd: isRoot
+            IsDirectCmd: !isRoot,
+            HasParams: cmd.HasParams
         );
 
         var helpSb = new StringBuilder();
@@ -163,13 +164,13 @@ public class CmdDescBuilder
             argExpr += ")";
 
             if (sw is MethodOption methodOpt) {
-                expr += methodOpt.BackingSymbol.Name + '(' + argExpr + " ?? \"\")";
+                expr += methodOpt.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + '(' + argExpr + " ?? \"\")";
 
                 if (methodOpt.NeedsAutoHandling) {
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr += sw.BackingSymbol.Name + " = " + argExpr;
+                expr += sw.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + " = " + argExpr;
             }
 
             sb.AppendLine(
@@ -183,10 +184,8 @@ public class CmdDescBuilder
         if (!isRoot) {
             foreach (var sw in sws) {
                 sb
-                    .Append("private static ")
-                    .Append(sw.Type.Name)
-                    .Append(' ')
-                    .Append(sw.BackingSymbol.Name);
+                    .Append("private static bool ")
+                    .Append(sw.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat));
 
                 if (sw.DefaultValue is not null) {
                     sb
@@ -224,13 +223,13 @@ public class CmdDescBuilder
                     argExpr += "?? \"\"";
                 }
 
-                expr += methodOpt.BackingSymbol.Name + '(' + argExpr + ')';
+                expr += methodOpt.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + '(' + argExpr + ')';
 
                 if (methodOpt.NeedsAutoHandling) {
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr += opt.BackingSymbol.Name + " = Parse<" + opt.Type.Name + ">(arg ?? \"\")";
+                expr += opt.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + " = Parse<" + opt.Type.Name + ">(arg ?? \"\")";
             }
 
             sb.AppendLine(
@@ -275,6 +274,9 @@ public class CmdDescBuilder
         sb.AppendLine("new Action<string>[] {");
 
         foreach (var arg in posArgs) {
+            if (arg.IsParams)
+                continue; // could be break since params is always the last parameter
+
             sb
                 .Append("static arg => ")
                 .Append(arg.BackingSymbol.Name)
@@ -287,6 +289,9 @@ public class CmdDescBuilder
 
 
         foreach (var arg in posArgs) {
+            if (arg.IsParams)
+                continue; // cf above
+
             sb
                 .Append("private static ")
                 .Append(arg.Type.GetNameWithNull())
@@ -351,7 +356,7 @@ public class CmdDescBuilder
         if (!isVoid && methodParams.Length == 0) {
             sb.Append("_func");
         } else {
-            sb.Append("static () => ");
+            sb.Append("() => "); // can't be static because of _params
 
             if (isVoid)
                 sb.Append("{ ");
@@ -360,19 +365,11 @@ public class CmdDescBuilder
 
             var defArgName = new string[methodParams.Length];
 
-            int currPosArgIdx = 0;
-
             for (int i = 0; i < methodParams.Length; i++) {
-                var paramOpt = optsAndSws.FirstOrDefault(
-                    opt => Utils.Equals(opt.BackingSymbol, methodParams[i])
-                );
-
-                if (paramOpt is not null) {
-                    // the opt generator uses backing symbol for field names
-                    defArgName[i] = paramOpt.BackingSymbol.Name;
-                } else {
-                    defArgName[i] = posArgs[currPosArgIdx++].BackingSymbol.Name;
-                }
+                if (methodParams[i].IsParams)
+                    defArgName[i] = "_params.ToArray()";
+                else
+                    defArgName[i] = methodParams[i].Name;
             }
 
             sb.Append(String.Join(", ", defArgName));
@@ -397,12 +394,14 @@ public class CmdDescBuilder
                 domToSubTable[cmd.ParentCmd!] = new() { cmd };
             else
                 list.Add(cmd);
-        } else {
+        } else if (!isRoot) {
             domToSubTable[RootCmd].Add(cmd);
         }
 
         sb.Append($@"
 {GetClassDeclarationLine(cmd, isRoot)}
+        {(cmd.HasParams ? "protected override bool HasParams => true;" : "")}
+
         internal {cmd.Name}CmdDesc() : base(_switches, _options) {{}}
 
         protected {cmd.Name}CmdDesc(

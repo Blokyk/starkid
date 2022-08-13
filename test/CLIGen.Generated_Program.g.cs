@@ -16,8 +16,9 @@ namespace CLIGen.Generated;
 static partial class CLIGenProgram {
     static int Main(string[] args) {
         var currCmdDesc = CmdDesc.root;
+        var argCount = 0;
 
-        var onlyArgs = false;
+        var onlyArgs = false; // set to true if we get '--'
 
         for (int i = 0; i < args.Length; i++) {
             var rawArg = args[i];
@@ -68,6 +69,10 @@ static partial class CLIGenProgram {
                 Console.Error.WriteLine(GetHelpString("Couldn't understand '{0}' in this context", rawArg, currCmdDesc));
                 return 1;
             }
+        }
+
+        if (currCmdDesc.ArgSlotsLeft > 0) {
+            Console.Error.WriteLine(GetHelpString("Expected at least {0} arguments, but only got " + argCount, (currCmdDesc.ArgSlotsLeft + argCount).ToString(), currCmdDesc));
         }
 
         return currCmdDesc.Invoke();
@@ -197,13 +202,22 @@ static partial class CLIGenProgram {
         }
 
         private int posArgIdx = 0;
+        protected virtual bool HasParams { get; } = false;
+
+        protected List<string> _params = new();
+
+        internal int ArgSlotsLeft => _posArgs.Length - posArgIdx;
 
         internal bool TryAddPosArg(string arg) {
             if (posArgIdx < _posArgs.Length) {
                 _posArgs[posArgIdx++](arg);
                 return true;
             } else {
-                return false;
+                if (!HasParams)
+                    return false;
+
+                _params.Add(arg);
+                return true;
             }
         }
 

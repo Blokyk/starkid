@@ -60,6 +60,9 @@ public static partial class Parsex
         Dump();
     }
 
+    [Command("count")]
+    public static int CheckAll(string anotherOne, [Description("The list of files to count")] params string[] files) => files.Length;
+
     [Command("print")]
     public static int Print(
         [Description("fileDesc")] FileInfo file

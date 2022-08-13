@@ -1,5 +1,6 @@
 ﻿using System.IO;
 
+//var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText("/home/blokyk/csharp/sample-cli/Program.cs"));
 var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen.Sample/Parsex.cs"));
 
 var attribAssemblyLoc = typeof(CLIGen.CLIAttribute).Assembly.Location;

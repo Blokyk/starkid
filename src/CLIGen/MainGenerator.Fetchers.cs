@@ -75,12 +75,16 @@ public partial class MainGenerator : IIncrementalGenerator
 
         var args = new List<Argument>(method.Parameters.Length);
 
+        bool hasParams = false;
+
         foreach (var argParam in method.Parameters) {
-            if (!TryGetArg(argParam, model, out var arg))
+            if (!TryGetArg(argParam, model, out var arg, out var isParams))
                 return false;
 
-            if (arg is not null)
+            if (arg is not null) {
                 args.Add(arg);
+                hasParams |= isParams;
+            }
         }
 
         cmd = new Command(
@@ -93,6 +97,7 @@ public partial class MainGenerator : IIncrementalGenerator
             InheritOptions = inheritOptions,
             BackingSymbol = method,
             ParentSymbolName = parentCmdName,
+            HasParams = hasParams
         };
 
         return opts.Count + args.Count == method.Parameters.Length;
@@ -177,12 +182,16 @@ public partial class MainGenerator : IIncrementalGenerator
 
         var args = new List<Argument>(method.Parameters.Length);
 
+        bool hasParams = false;
+
         foreach (var argParam in method.Parameters) {
-            if (!TryGetArg(argParam, model, out var arg))
+            if (!TryGetArg(argParam, model, out var arg, out var isParams))
                 return false;
 
-            if (arg is not null)
+            if (arg is not null) {
                 args.Add(arg);
+                hasParams |= isParams;
+            }
         }
 
         cmd = new Command(
@@ -195,13 +204,15 @@ public partial class MainGenerator : IIncrementalGenerator
             InheritOptions = inheritOptions,
             BackingSymbol = method,
             ParentSymbolName = parentCmdName,
+            HasParams = hasParams
         };
 
         return opts.Count + args.Count == method.Parameters.Length;
     }
 
-    static bool TryGetArg(IParameterSymbol param, SemanticModel model, out Argument? arg) {
+    static bool TryGetArg(IParameterSymbol param, SemanticModel model, out Argument? arg, out bool hasParams) {
         arg = null;
+        hasParams = false;
 
         ExpressionSyntax? defaultVal = null;
         string? argDesc = null;
@@ -221,6 +232,9 @@ public partial class MainGenerator : IIncrementalGenerator
             argDesc = (string?)attr.ConstructorArguments[0].Value;
         }
 
+        if (param.IsParams)
+            hasParams = true;
+
         foreach (var syntax in param.DeclaringSyntaxReferences.Select(r => r.GetSyntax())) {
             if (syntax is not ParameterSyntax paramDec)
                 return false;
@@ -239,7 +253,8 @@ public partial class MainGenerator : IIncrementalGenerator
             ),
             defaultVal
         ) {
-            BackingSymbol = param
+            BackingSymbol = param,
+            IsParams = hasParams
         };
 
         return true;
