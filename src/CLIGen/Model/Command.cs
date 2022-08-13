@@ -1,16 +1,11 @@
 namespace CLIGen.Generator.Model;
 
 public record Command(bool HasExitCode, string Name, string? Description, Option[] Options, Argument[] Args) {
-    private Lazy<WithArgsDesc> _asArgsDesc = new Lazy<WithArgsDesc>(
-        () => new WithArgsDesc(
-                Name,
-                Args.Select(a => a.Desc.Name).ToArray(),
-                Description
-            ),
-        false
+    public WithArgsDesc WithArgsDesc => new WithArgsDesc(
+        Name,
+        Args.Select(a => a.Desc.Name).ToArray(),
+        Description
     );
-
-    public WithArgsDesc WithArgsDesc => _asArgsDesc.Value;
 
     public bool InheritOptions { get; init; }
 
@@ -21,5 +16,5 @@ public record Command(bool HasExitCode, string Name, string? Description, Option
 
     public bool IsRoot => BackingSymbol is null;
 
-    public override string ToString() => "<nah>";
+    public override string ToString() => "<" + Name + ">";
 }
