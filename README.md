@@ -46,16 +46,6 @@ I don't actually plan on maintaining this any further than I need to for lotus, 
 
 - If the generator encounters any error, it just fails silently instead of reporting diagnostics (however, it generates `CLIGen_err.g.txt` with an error message which can help in narrowing down the problem)
 
-- Using escaped reserved keyword (e.g. `@const`) for options/arguments/etc can behave weirdly/unexpectedly or even break the generated code
-
-- The help always contains a line for the CLI without command and one with commands, even if one of those scenarios/invocations is invalid
-
-- It also prints empty command sections :shrug:
-
 - We don't emit any error when someone defines an arg or option of an unsupported type
 
 - Options declared in the "Entry Point" method parameter list are currently not supported, even they could be implemented just like for normal commands. The bug is that I'm lazy
-
-- Using `[Option]` on a method that returns bool is UB right now, but will probably be prohibited in the future, because the semantics of such an option are not clear at all.
-
-- `params` is currently unsupported, and adding that feature would require some modifications to the internal parser logic (including `CmdDesc`s), but is probably doable
