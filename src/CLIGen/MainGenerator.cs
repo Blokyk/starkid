@@ -1,8 +1,10 @@
 using System.IO;
 using System.Text;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 using CLIGen;
+using CLIGen.Generator.Model;
 
 namespace CLIGen.Generator;
 
@@ -45,63 +47,170 @@ public partial class MainGenerator : IIncrementalGenerator
         );
 
         var cliClassDec = context.SyntaxProvider
-            .CreateSyntaxProvider(
+            .ForAttributeWithMetadataName(
+                "CLIGen.CLIAttribute",
                 static (node, _) => HasAnyAttributes(node),
-                static (ctx, _) => GetCLIClass(ctx)
+                static (ctx, _) => GetCmdBuilder(ctx)
             )
             .Collect();
 
-        // Combine the selected classes with the `Compilation`
-        var compilationAndClasses = context.CompilationProvider.Combine(cliClassDec);
-
         // Generate the source using the compilation and enums
-        context.RegisterSourceOutput(compilationAndClasses,
-            static (spc, source) => Execute(source.Item1, source.Item2!, spc));
+        context.RegisterSourceOutput(cliClassDec,
+            static (spc, source) => Execute(source, spc));
     }
 
     static bool HasAnyAttributes(SyntaxNode node)
         => node is ClassDeclarationSyntax { AttributeLists.Count: > 0};
 
-    static ClassDeclarationSyntax? GetCLIClass(GeneratorSyntaxContext ctx) {
-        var node = (ClassDeclarationSyntax)ctx.Node;
+    static CLIData? GetCmdBuilder(GeneratorAttributeSyntaxContext ctx) {
+        var sw = new Stopwatch();
+        sw.Start();
 
-        foreach (var attr in node.AttributeLists.SelectMany(l => l.Attributes)) {
-            if (Utils.GetLastNamePart(attr.Name.ToString().AsSpan()) is "CLIAttribute" or "CLI")
-                return node;
+        var declsBuilder = ImmutableArray.CreateBuilder<ClassDeclarationSyntax>();
+
+        var model = ctx.SemanticModel;
+
+        Utils.UpdatePredefTypes(model.Compilation);
+
+        foreach (var syntaxRef in ctx.TargetSymbol.DeclaringSyntaxReferences) {
+            declsBuilder.Add((syntaxRef.GetSyntax() as ClassDeclarationSyntax)!);
         }
 
-        return null;
-    }
+        var nonNullClassSyntaxes = declsBuilder.ToImmutable();
 
-    public class INamedTypeSymbolComparer
-        : IEqualityComparer<INamedTypeSymbol?>
-    {
-        public static readonly INamedTypeSymbolComparer Default = new();
+        if (nonNullClassSyntaxes.Length == 0)
+            return null;
 
-        public bool Equals(
-           INamedTypeSymbol? x,
-           INamedTypeSymbol? y) {
-            return SymbolEqualityComparer.Default.Equals(x, y);
+        var classSymbol = (ctx.TargetSymbol as INamedTypeSymbol)!;
+
+        var fullClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        // var cliAttrib
+
+        if (!classSymbol.TryGetAttribute(Ressources.CLIAttribName, out var cliAttrib))
+            throw new Exception("Couldn't get CLI attribute for class " + classSymbol.Name);
+
+        if (!AttributeParser.TryParseCLIAttrib(cliAttrib, out var cliAttr))
+            throw new Exception("Couldn't parse CLI attribute on class " + classSymbol.Name);
+
+        var (appName, entryPointName, helpExitCode) = cliAttr;
+
+        string? appDesc = null;
+
+        if (classSymbol.TryGetAttribute(Ressources.DescAttribName, out var descAttrib)) {
+            if (!Utils.TryGetDescription(descAttrib, out appDesc))
+                throw new Exception("Couldn't parse description for class " + classSymbol.Name);
         }
 
-        public int GetHashCode(INamedTypeSymbol? obj) {
-            return SymbolEqualityComparer.Default.GetHashCode(obj);
-        }
-    }
+        var optList = new List<Option>();
+        var cmdList = new List<Command>();
 
-    public class CompSymbolComparer
-   : IEqualityComparer<(Compilation Left, INamedTypeSymbol? Right)>
-    {
-        public static readonly CompSymbolComparer Default = new();
+        var members = classSymbol.GetMembers();
 
-        public bool Equals(
-           (Compilation Left, INamedTypeSymbol? Right) x,
-           (Compilation Left, INamedTypeSymbol? Right) y) {
-            return SymbolEqualityComparer.Default.Equals(x.Right, y.Right);
+        foreach (var member in members.Where(s => s.Kind is SymbolKind.Field or SymbolKind.Property or SymbolKind.Method)) {
+            if (!TryGetOptions(member, model, out var opt)) {
+                throw new Exception("Couldn't parse symbol " + member.Name + " into an option");
+            }
+
+            if (opt is not null)
+                optList.Add(opt);
         }
 
-        public int GetHashCode((Compilation Left, INamedTypeSymbol? Right) obj) {
-            return SymbolEqualityComparer.Default.GetHashCode(obj.Right);
+        var classMethods = members.OfType<IMethodSymbol>();
+
+        foreach (var method in classMethods) {
+            if (!TryGetCommand(method, model, out var cmd)) {
+                throw new Exception("Couldn't parse symbol " + method.Name + " into a subcmd");
+            }
+
+            if (cmd is not null)
+                cmdList.Add(cmd);
         }
+
+        var opts = optList.ToArray();
+        var cmds = cmdList.ToArray();
+
+        //TODO: check that every option and cmd has a unique name and/or alias
+
+        Command? rootCmd = null;
+        var posArgs = Array.Empty<Argument>();
+
+        if (entryPointName is not null) {
+            entryPointName = Utils.GetLastNamePart(entryPointName.AsSpan());
+
+            // TODO: check that, if the entry point name is Main, then the main method
+            // is marked partial without implementation. We also need to create a stub/trampoline
+            // from $cliClassName to our Program's Main method
+
+            rootCmd = cmds.FirstOrDefault(
+                cmd => cmd.BackingSymbol.Name == entryPointName
+            );
+
+            if (rootCmd is null) {
+                // technically, we could use classSymbol.GetMembers(entryPointName),
+                // but that'd probably be slower
+
+                // we don't actually have to use .ToArray here, we could just try to iterate
+                // and error if we can't call MoveNext() exactly once. But that would be
+                // an incredibly small optimisation
+
+                var candidates = classMethods.Where(
+                    m => m.Name == entryPointName
+                ).ToArray();
+
+                if (candidates.Length < 1)
+                    throw new Exception("Could not find any method named " + entryPointName);
+                else if (candidates.Length > 1)
+                    throw new Exception(classSymbol.Name + " contains multiple methods named " + entryPointName);
+
+                var method = candidates[0];
+
+                if (!TryGetEntryPointCommand(method, model, out rootCmd))
+                    throw new Exception("Couldn't parse method " + method.Name + " as an entry point");
+            }
+
+            if (rootCmd is null)
+                throw new Exception("wtf??");
+
+            if (rootCmd.Options.Length != 0)
+                throw new Exception("Entry point cannot have parameters marked as options. Please use fields or properties to declare them.");
+
+            rootCmd = rootCmd with {
+                Name = appName,
+                Description = appDesc ?? rootCmd.Description,
+                ParentSymbolName = null
+            };
+
+            posArgs = rootCmd.Args;
+        }
+
+        for (int i = 0; i < cmds.Length; i++) {
+            if (cmds[i].ParentSymbolName is not null) {
+                if (!TryBindParentCmd(cmds[i], cmds, out var newCmd))
+                    // Are you sure you marked '${cmds[i].ParentCmdName}' with [Command] ?
+                    throw new Exception("Couldn't bind parent cmd '" + cmds[i].ParentSymbolName + "' of sub-cmd '" + cmds[i].Name + "'");
+
+                cmds[i] = newCmd;
+            } else if (rootCmd is not null) {
+                cmds[i].ParentCmd = rootCmd;
+            }
+        }
+
+        if (!TryGetAllUniqueUsings(classSymbol, out var usings))
+            throw new Exception("Couldn't collect all usings for class " + classSymbol.Name);
+
+        sw.Stop();
+        analysisTime = sw.Elapsed;
+
+        return new CLIData(
+            appName,
+            fullClassName,
+            usings,
+            rootCmd is null ? null : (rootCmd, posArgs),
+            opts,
+            appDesc,
+            cmds,
+            helpExitCode
+        );
     }
 }

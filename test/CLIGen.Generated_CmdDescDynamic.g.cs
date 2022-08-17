@@ -18,7 +18,7 @@ using System.IO;
 static partial class CLIGenProgram {
 
     private abstract partial class CmdDesc {
-        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new parsexCmdDesc(), false);
+        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new lotusCmdDesc(), false);
         internal static CmdDesc root => _lazyRoot.Value;
 
 
@@ -29,26 +29,26 @@ private static Dictionary<string, Action<string?>> _switches = new() {
 
 { "--force", set_force },{ "-f", set_force },
 };
-private static void set_force(string? arg) => global::SomeStuff.Parsex.forceOption = AsBool(arg, !false);
+private static void set_force(string? arg) => global::SomeStuff.Lotus.forceOption = AsBool(arg, !false);
 private static Dictionary<string, Action<string>> _options = new() {
 { "--output", outputAction },
 { "--range", rangeAction },{ "-r", rangeAction },
 };
-private static void outputAction(string? arg) => global::SomeStuff.Parsex.OutputFile = Parse<FileInfo>(arg ?? "");
-private static void rangeAction(string? arg) => ThrowIfNotValid(global::SomeStuff.Parsex.ParseRange(arg));
+private static void outputAction(string? arg) => global::SomeStuff.Lotus.OutputFile = Parse<FileInfo>(arg ?? "");
+private static void rangeAction(string? arg) => ThrowIfNotValid(global::SomeStuff.Lotus.ParseRange(arg));
 
     }
 
 
 #pragma warning disable CS8618
 #pragma warning disable CS8625
-    private partial class parsexCmdDesc : CmdDesc {
+    private partial class lotusCmdDesc : CmdDesc {
 
         
 
-        internal parsexCmdDesc() : base(_switches, _options) {}
+        internal lotusCmdDesc() : base(_switches, _options) {}
 
-        protected parsexCmdDesc(
+        protected lotusCmdDesc(
             Dictionary<string, Action<string?>> switches,
             Dictionary<string, Action<string>> options
         )
@@ -61,15 +61,15 @@ private static Dictionary<string, Action<string?>> _switches = new() {
 
 { "--force", set_force },{ "-f", set_force },
 };
-private static void set_force(string? arg) => global::SomeStuff.Parsex.forceOption = AsBool(arg, !false);
+private static void set_force(string? arg) => global::SomeStuff.Lotus.forceOption = AsBool(arg, !false);
 private static Dictionary<string, Action<string>> _options = new() {
 { "--output", outputAction },
 { "--range", rangeAction },{ "-r", rangeAction },
 };
-private static void outputAction(string? arg) => global::SomeStuff.Parsex.OutputFile = Parse<FileInfo>(arg ?? "");
-private static void rangeAction(string? arg) => ThrowIfNotValid(global::SomeStuff.Parsex.ParseRange(arg));
+private static void outputAction(string? arg) => global::SomeStuff.Lotus.OutputFile = Parse<FileInfo>(arg ?? "");
+private static void rangeAction(string? arg) => ThrowIfNotValid(global::SomeStuff.Lotus.ParseRange(arg));
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Action _func = global::SomeStuff.Parsex.Silent;
+private static Action _func = global::SomeStuff.Lotus.Silent;
 internal override Func<int> Invoke => () => { _func(); return 0; };
 
     }
@@ -99,7 +99,7 @@ private static Dictionary<string, Action<string?>> _switches = new() {
 private static Dictionary<string, Action<string>> _options = new() {
 };
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Action _func = global::SomeStuff.Parsex.Silent;
+private static Action _func = global::SomeStuff.Lotus.Silent;
 internal override Func<int> Invoke => () => { _func(); return 0; };
 
     }
@@ -132,7 +132,7 @@ protected override Action<string>[] _posArgs => new Action<string>[] {
 static arg => anotherOne = Parse<String>(arg),
 };
 private static String anotherOne;
-private static Func<String, String[], int> _func = global::SomeStuff.Parsex.CheckAll;
+private static Func<String, String[], int> _func = global::SomeStuff.Lotus.CheckAll;
 internal override Func<int> Invoke => () => _func(anotherOne, _params.ToArray());
 
     }
@@ -165,7 +165,7 @@ protected override Action<string>[] _posArgs => new Action<string>[] {
 static arg => file = Parse<FileInfo>(arg),
 };
 private static FileInfo file;
-private static Func<FileInfo, int> _func = global::SomeStuff.Parsex.Print;
+private static Func<FileInfo, int> _func = global::SomeStuff.Lotus.Print;
 internal override Func<int> Invoke => () => _func(file);
 
     }
@@ -198,7 +198,7 @@ protected override Action<string>[] _posArgs => new Action<string>[] {
 static arg => file = Parse<FileInfo?>(arg),
 };
 private static FileInfo? file = null;
-private static Func<FileInfo?, int> _func = global::SomeStuff.Parsex.Hash;
+private static Func<FileInfo?, int> _func = global::SomeStuff.Lotus.Hash;
 internal override Func<int> Invoke => () => _func(file);
 
     }
@@ -231,7 +231,7 @@ private static bool constOption;
 private static Dictionary<string, Action<string>> _options = new() {
 };
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Func<Boolean, int> _func = global::SomeStuff.Parsex.Graph;
+private static Func<Boolean, int> _func = global::SomeStuff.Lotus.Graph;
 internal override Func<int> Invoke => () => _func(constOption);
 
     }
@@ -264,7 +264,7 @@ private static bool range;
 private static Dictionary<string, Action<string>> _options = new() {
 };
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Func<Boolean, int> _func = global::SomeStuff.Parsex.GraphConst;
+private static Func<Boolean, int> _func = global::SomeStuff.Lotus.GraphConst;
 internal override Func<int> Invoke => () => _func(range);
 
     }
@@ -272,7 +272,7 @@ internal override Func<int> Invoke => () => _func(range);
 
 #pragma warning disable CS8618
 #pragma warning disable CS8625
-    private partial class parsexCmdDesc : CmdDesc {
+    private partial class lotusCmdDesc : CmdDesc {
 
 
         internal override Dictionary<string, Func<CmdDesc>> SubCmds => _subs;
@@ -385,10 +385,10 @@ internal override Func<int> Invoke => () => _func(range);
 
 #pragma warning disable CS8618
 #pragma warning disable CS8625
-    private partial class parsexCmdDesc : CmdDesc {
+    private partial class lotusCmdDesc : CmdDesc {
 
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = "Description:\n  A parser/typechecker for lotus\n\nUsage:\n  parsex [options]\n  parsex [options] <command>\n\nOptions:\n  -f, --force          Ignore parsing/compilation errors before executing \n                       commands \n      --output <file>  The file to output stuff to, instead of stdin\n  -r, --range <range>\n  -h, --help           Print this help message\n\n\nCommands:\n  silent                      Don't print anything to stdout (errors go to \n                              stderr) \n  count <anotherOne> <files>\n  print <file>\n  hash <file>                 Print the hash of the AST graph\n  graph\n";
+        private static readonly string _helpString = "Description:\n  A parser/typechecker for lotus\n\nUsage:\n  lotus [options]\n  lotus [options] <command>\n\nOptions:\n  -f, --force          Ignore parsing/compilation errors before executing \n                       commands \n      --output <file>  The file to output stuff to, instead of stdin\n  -r, --range <range>\n  -h, --help           Print this help message\n\n\nCommands:\n  silent                      Don't print anything to stdout (errors go to \n                              stderr) \n  count <anotherOne> <files>\n  print <file>\n  hash <file>                 Print the hash of the AST graph\n  graph\n";
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
@@ -396,5 +396,5 @@ internal override Func<int> Invoke => () => _func(range);
         }
     }
 }
-// Analysis took 227ms
-// Generation took 45ms
+// Analysis took 160ms
+// Generation took 43ms

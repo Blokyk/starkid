@@ -10,7 +10,7 @@ A C# source generator to create command-line apps given a simple, code-based des
 
 After looking at the implementation of [System.CommandLine.DragonFruit](https://github.com/dotnet/command-line-api/blob/main/docs/DragonFruit-overview.md), I was slightly disappointed to find that it was basically just a redirect to reflection-based parsing. Don't get me wrong, I heavily respect behind that project, both for the simplicity of DragonFruit and the flexibility of System.CommandLine.
 
-I wanted to try my hand at writing a source generator, as well as having a slightly less complex/obscure mechanism for the CLI for [lotus](https://github.com/Blokyk/Parsex). So I started writing, not expecting to actually do anything useful, let alone have an actual generator. And yet here we are.
+I wanted to try my hand at writing a source generator, as well as having a slightly less complex/obscure mechanism for the CLI for [lotus](https://github.com/Blokyk/Lotus). So I started writing, not expecting to actually do anything useful, let alone have an actual generator. And yet here we are.
 
 I don't actually plan on maintaining this any further than I need to for lotus, but feel free to open issues/PR and I'll take a look at them !
 

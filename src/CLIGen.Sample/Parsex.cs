@@ -7,9 +7,9 @@ namespace SomeStuff;
 
 using System.IO;
 
-[CLI("parsex", EntryPoint = nameof(Silent), HelpExitCode = 1)]
+[CLI("lotus", EntryPoint = nameof(Silent), HelpExitCode = 1)]
 [Description("A parser/typechecker for lotus")]
-public static partial class Parsex
+public static partial class Lotus
 {
     [Option("force", shortName: 'f')]
     [Description("Ignore parsing/compilation errors before executing commands")]
@@ -95,7 +95,7 @@ public static partial class Parsex
     }
 }
 
-public static partial class Parsex {
+public static partial class Lotus {
     [Command("graph")]
     public static int Graph(
         [Option("const", 'c')] bool constOption
