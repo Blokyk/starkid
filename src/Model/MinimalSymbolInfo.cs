@@ -46,7 +46,7 @@ public abstract record MinimalSymbolInfo(
     string Name,
     MinimalTypeInfo? ContainingType
 ) {
-    public override string ToString() => Name + ContainingType?.ToString();
+    public override string ToString() => ContainingType?.ToString() + (ContainingType is null ? "" : ".") + Name;
 }
 
 public record MinimalTypeInfo(
