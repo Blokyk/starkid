@@ -4,7 +4,7 @@ namespace Recline.Generator;
 
 public record CLIData(
     string AppName,
-    string FullCLassName,
+    string FullClassName,
     string[] Usings,
     (Command cmd, Argument[] args)? CmdAndArgs,
     Option[] OptsAndSws,
