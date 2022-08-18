@@ -12,9 +12,6 @@ namespace CLIGen.Generator;
 
 public partial class MainGenerator : IIncrementalGenerator
 {
-    internal static Dictionary<string, CmdHelp> _nameToHelp = new();
-    internal static Dictionary<CmdHelp, string> _cachedHelpText = new();
-
     internal static string lastHintName = null!;
     internal static SourceText lastGeneratedText = null!;
     internal static INamedTypeSymbol currClass = null!;
@@ -22,11 +19,58 @@ public partial class MainGenerator : IIncrementalGenerator
 
     private static TimeSpan analysisTime, parserGenerationTime;
 
-    static void Execute(ImmutableArray<CLIData?> classes, SourceProductionContext context) {
-        var result = TryExecute(classes, context);
+    static void Execute(ImmutableArray<CLIData?> classes, SourceProductionContext spc) {
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+        var result = TryExecute(classes, spc);
+
+        watch.Stop();
+        codegenMS = watch.ElapsedMilliseconds;
+
+        spc.ReportDiagnostic(
+            Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "CLI000",
+                    "PostInit took: " + postInitMS + "ms",
+                    "PostInit took: " + postInitMS + "ms",
+                    "Debug",
+                    (postInitMS > 100 ? DiagnosticSeverity.Warning : DiagnosticSeverity.Info),
+                    true
+                ),
+                Location.None
+            )
+        );
+
+        spc.ReportDiagnostic(
+            Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "CLI000",
+                    "Analysis took: " + analysisMS + "ms",
+                    "Analysis took: " + analysisMS + "ms",
+                    "Debug",
+                    (analysisMS > 10 ? DiagnosticSeverity.Warning : DiagnosticSeverity.Info),
+                    true
+                ),
+                Location.None
+            )
+        );
+
+        spc.ReportDiagnostic(
+            Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "CLI000",
+                    "Generation took: " + codegenMS + "ms",
+                    "Generation took: " + codegenMS + "ms",
+                    "Debug",
+                    (codegenMS > 5 ? DiagnosticSeverity.Warning : DiagnosticSeverity.Info),
+                    true
+                ),
+                Location.None
+            )
+        );
 
         if (result is not null)
-            context.AddSource("CLIGen_err.g.txt", ("failed to generate: " + result));
+            spc.AddSource("CLIGen_err.g.txt", ("failed to generate: " + result));
     }
 
     static string? TryExecute(ImmutableArray<CLIData?> datas, SourceProductionContext context) {

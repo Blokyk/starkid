@@ -78,7 +78,7 @@ public class CmdDescBuilder
 
     public void AddHelpText(Command cmd, Command[] subs, Option[] opts, Argument[] posArgs, bool isRoot = false) {
         var help = new CmdHelp(
-            cmd.ParentSymbolName,
+            cmd.ParentCmd?.Name ?? (isRoot ? null : RootCmd.Name),
             cmd.Name,
             cmd.Description,
             opts.Select(o => o.Desc).ToArray(),
@@ -166,13 +166,13 @@ public class CmdDescBuilder
             argExpr += ")";
 
             if (sw is MethodOption methodOpt) {
-                expr += methodOpt.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + '(' + argExpr + " ?? \"\")";
+                expr += methodOpt.BackingSymbol.Name + '(' + argExpr + " ?? \"\")";
 
                 if (methodOpt.NeedsAutoHandling) {
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr += sw.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + " = " + argExpr;
+                expr += sw.BackingSymbol.Name + " = " + argExpr;
             }
 
             sb.AppendLine(
@@ -187,7 +187,7 @@ public class CmdDescBuilder
             foreach (var sw in sws) {
                 sb
                     .Append("private static bool ")
-                    .Append(sw.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat));
+                    .Append(sw.BackingSymbol.Name);
 
                 if (sw.DefaultValue is not null) {
                     sb
@@ -221,17 +221,17 @@ public class CmdDescBuilder
             if (opt is MethodOption methodOpt) {
                 string argExpr = "arg";
 
-                if (methodOpt.BackingSymbol.Parameters[0].NullableAnnotation != NullableAnnotation.Annotated) {
+                if (!methodOpt.BackingSymbol.Parameters[0].IsNullable) {
                     argExpr += "?? \"\"";
                 }
 
-                expr += methodOpt.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + '(' + argExpr + ')';
+                expr += methodOpt.BackingSymbol.Name + '(' + argExpr + ')';
 
                 if (methodOpt.NeedsAutoHandling) {
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr += opt.BackingSymbol.ToDisplayString(Utils.memberMinimalDisplayFormat) + " = Parse<" + opt.Type.Name + ">(arg ?? \"\")";
+                expr += opt.BackingSymbol.Name + " = Parse<" + opt.Type.Name + ">(arg ?? \"\")";
             }
 
             sb.AppendLine(
@@ -312,10 +312,10 @@ public class CmdDescBuilder
         }
     }
 
-    void AppendFunc(IMethodSymbol method, bool isRoot = false) {
+    void AppendFunc(MinimalMethodInfo method, bool isRoot = false) {
         sb.Append("private static ");
 
-        var isVoid = method.ReturnsVoid;
+        var isVoid = method.ReturnVoid;
         var methodParams = method.Parameters;
 
         if (isVoid) {
@@ -327,7 +327,7 @@ public class CmdDescBuilder
             sb.Append("Func<");
         }
 
-        sb.Append(String.Join(", ", methodParams.Select(p => p.Type.GetNameWithNull())));
+        sb.Append(String.Join(", ", methodParams.Select(p => p.Type.Name)));
 
         if (isVoid) {
             if (methodParams.Length != 0)
@@ -342,12 +342,12 @@ public class CmdDescBuilder
 
         sb
             .Append(" _func = ")
-            .Append(method.GetFullName())
+            .Append(method.Name)
             .AppendLine(";");
     }
 
-    void AddFuncAndInvoke(IMethodSymbol method, Option[] optsAndSws, Argument[] posArgs, bool isRoot = false) {
-        var isVoid = method.ReturnsVoid;
+    void AddFuncAndInvoke(MinimalMethodInfo method, Option[] optsAndSws, Argument[] posArgs, bool isRoot = false) {
+        var isVoid = method.Name == "void";
         var methodParams = method.Parameters;
 
         AppendFunc(method, isRoot);

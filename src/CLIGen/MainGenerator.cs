@@ -11,9 +11,15 @@ namespace CLIGen.Generator;
 [Generator]
 public partial class MainGenerator : IIncrementalGenerator
 {
+    public static long postInitMS = -1;
+    public static long analysisMS = -1;
+    public static long codegenMS = -1;
+
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         context.RegisterPostInitializationOutput(
             static postInitCtx => {
+                var watch = new System.Diagnostics.Stopwatch();
+                watch.Start();
                 postInitCtx.AddSource(
                     Ressources.GenNamespace + "_Program.g.cs",
                     SourceText.From(Ressources.ProgClassStr, Encoding.UTF8)
@@ -43,6 +49,8 @@ public partial class MainGenerator : IIncrementalGenerator
                     Ressources.GenNamespace + "_SubCommandAttribute.g.cs",
                     SourceText.From(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen/Static/Attributes/SubCommandAttribute.cs"), Encoding.UTF8)
                 );
+                watch.Stop();
+                postInitMS = watch.ElapsedMilliseconds;
             }
         );
 
@@ -50,7 +58,14 @@ public partial class MainGenerator : IIncrementalGenerator
             .ForAttributeWithMetadataName(
                 "CLIGen.CLIAttribute",
                 static (node, _) => HasAnyAttributes(node),
-                static (ctx, _) => GetCmdBuilder(ctx)
+                static (ctx, _) => {
+                    var watch = new System.Diagnostics.Stopwatch();
+                    watch.Start();
+                    var res = GetCmdBuilder(ctx);
+                    watch.Stop();
+                    analysisMS = watch.ElapsedMilliseconds;
+                    return res;
+                }
             )
             .Collect();
 
@@ -105,9 +120,9 @@ public partial class MainGenerator : IIncrementalGenerator
         var optList = new List<Option>();
         var cmdList = new List<Command>();
 
-        var members = classSymbol.GetMembers();
+        var members = classSymbol.GetMembers().Where(m => m.Kind is SymbolKind.Field or SymbolKind.Property or SymbolKind.Method);
 
-        foreach (var member in members.Where(s => s.Kind is SymbolKind.Field or SymbolKind.Property or SymbolKind.Method)) {
+        foreach (var member in members) {
             if (!TryGetOptions(member, model, out var opt)) {
                 throw new Exception("Couldn't parse symbol " + member.Name + " into an option");
             }
@@ -120,7 +135,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
         foreach (var method in classMethods) {
             if (!TryGetCommand(method, model, out var cmd)) {
-                throw new Exception("Couldn't parse symbol " + method.Name + " into a subcmd");
+                throw new Exception("Couldn't parse symbol " + method.Name + " into a cmd");
             }
 
             if (cmd is not null)

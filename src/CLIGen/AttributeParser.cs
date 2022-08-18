@@ -33,13 +33,15 @@ internal static class AttributeParser
 
         bool inheritOptions = false;
 
-        var inheritOptionsArgPair = attr.NamedArguments.FirstOrDefault(kv => kv.Key == nameof(SubCommandAttribute.InheritOptions));
+        if (attr.NamedArguments.Length != 0) {
+            var inheritOptionsArgPair = attr.NamedArguments.First();
 
-        if (!inheritOptionsArgPair.Equals(default)) {
-            if (!Utils.Equals(inheritOptionsArgPair.Value.Type, Utils.BOOL))
-                return false;
+            if (!inheritOptionsArgPair.Equals(default)) {
+                if (!Utils.Equals(inheritOptionsArgPair.Value.Type, Utils.BOOL))
+                    return false;
 
-            inheritOptions = (bool)inheritOptionsArgPair.Value.Value!;
+                inheritOptions = (bool)inheritOptionsArgPair.Value.Value!;
+            }
         }
 
         subCmdAttr = new(cmdName, parentName) { InheritOptions = inheritOptions };

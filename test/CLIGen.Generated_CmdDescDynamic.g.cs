@@ -69,8 +69,8 @@ private static Dictionary<string, Action<string>> _options = new() {
 private static void outputAction(string? arg) => global::SomeStuff.Lotus.OutputFile = Parse<FileInfo>(arg ?? "");
 private static void rangeAction(string? arg) => ThrowIfNotValid(global::SomeStuff.Lotus.ParseRange(arg));
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Action _func = global::SomeStuff.Lotus.Silent;
-internal override Func<int> Invoke => () => { _func(); return 0; };
+private static Func<int> _func = Silent;
+internal override Func<int> Invoke => _func;
 
     }
 
@@ -99,8 +99,8 @@ private static Dictionary<string, Action<string?>> _switches = new() {
 private static Dictionary<string, Action<string>> _options = new() {
 };
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Action _func = global::SomeStuff.Lotus.Silent;
-internal override Func<int> Invoke => () => { _func(); return 0; };
+private static Func<int> _func = Silent;
+internal override Func<int> Invoke => _func;
 
     }
 
@@ -132,7 +132,7 @@ protected override Action<string>[] _posArgs => new Action<string>[] {
 static arg => anotherOne = Parse<String>(arg),
 };
 private static String anotherOne;
-private static Func<String, String[], int> _func = global::SomeStuff.Lotus.CheckAll;
+private static Func<String?, String[], int> _func = CheckAll;
 internal override Func<int> Invoke => () => _func(anotherOne, _params.ToArray());
 
     }
@@ -165,7 +165,7 @@ protected override Action<string>[] _posArgs => new Action<string>[] {
 static arg => file = Parse<FileInfo>(arg),
 };
 private static FileInfo file;
-private static Func<FileInfo, int> _func = global::SomeStuff.Lotus.Print;
+private static Func<FileInfo, int> _func = Print;
 internal override Func<int> Invoke => () => _func(file);
 
     }
@@ -198,7 +198,7 @@ protected override Action<string>[] _posArgs => new Action<string>[] {
 static arg => file = Parse<FileInfo?>(arg),
 };
 private static FileInfo? file = null;
-private static Func<FileInfo?, int> _func = global::SomeStuff.Lotus.Hash;
+private static Func<FileInfo, int> _func = Hash;
 internal override Func<int> Invoke => () => _func(file);
 
     }
@@ -231,7 +231,7 @@ private static bool constOption;
 private static Dictionary<string, Action<string>> _options = new() {
 };
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Func<Boolean, int> _func = global::SomeStuff.Lotus.Graph;
+private static Func<Boolean, int> _func = Graph;
 internal override Func<int> Invoke => () => _func(constOption);
 
     }
@@ -264,7 +264,7 @@ private static bool range;
 private static Dictionary<string, Action<string>> _options = new() {
 };
 protected override Action<string>[] _posArgs => Array.Empty<Action<string>>();
-private static Func<Boolean, int> _func = global::SomeStuff.Lotus.GraphConst;
+private static Func<Boolean, int> _func = GraphConst;
 internal override Func<int> Invoke => () => _func(range);
 
     }
@@ -304,7 +304,7 @@ internal override Func<int> Invoke => () => _func(range);
     private partial class silentCmdDesc : CmdDesc {
 
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = "Description:\n  Don't print anything to stdout (errors go to stderr)\n\nUsage:\n  silent\n  \n\nOptions:\n  -h, --help  Print this help message\n\n\n";
+        private static readonly string _helpString = "Description:\n  Don't print anything to stdout (errors go to stderr)\n\nUsage:\n  lotus silent\n  \n\nOptions:\n  -h, --help  Print this help message\n\n\n";
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
@@ -318,7 +318,7 @@ internal override Func<int> Invoke => () => _func(range);
     private partial class countCmdDesc : CmdDesc {
 
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = "Usage:\n  count <anotherOne> <files>...\n  \n\nOptions:\n  -h, --help  Print this help message\n\nArguments:\n  anotherOne\n  files       The list of files to count\n\n";
+        private static readonly string _helpString = "Usage:\n  lotus count <anotherOne> <files>...\n  \n\nOptions:\n  -h, --help  Print this help message\n\nArguments:\n  anotherOne\n  files       The list of files to count\n\n";
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
@@ -332,7 +332,7 @@ internal override Func<int> Invoke => () => _func(range);
     private partial class printCmdDesc : CmdDesc {
 
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = "Usage:\n  print <file>\n  \n\nOptions:\n  -h, --help  Print this help message\n\nArguments:\n  file  fileDesc\n\n";
+        private static readonly string _helpString = "Usage:\n  lotus print <file>\n  \n\nOptions:\n  -h, --help  Print this help message\n\nArguments:\n  file  fileDesc\n\n";
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
@@ -346,7 +346,7 @@ internal override Func<int> Invoke => () => _func(range);
     private partial class hashCmdDesc : CmdDesc {
 
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = "Description:\n  Print the hash of the AST graph\n\nUsage:\n  hash <file>\n  \n\nOptions:\n  -h, --help  Print this help message\n\nArguments:\n  file  fileDesc\n\n";
+        private static readonly string _helpString = "Description:\n  Print the hash of the AST graph\n\nUsage:\n  lotus hash <file>\n  \n\nOptions:\n  -h, --help  Print this help message\n\nArguments:\n  file  fileDesc\n\n";
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
@@ -360,7 +360,7 @@ internal override Func<int> Invoke => () => _func(range);
     private partial class graphCmdDesc : CmdDesc {
 
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = "Usage:\n  graph [options]\n  \n  graph [options] [const]\n\nOptions:\n  -c, --const\n  -h, --help   Print this help message\n\n\nCommands:\n  const\n";
+        private static readonly string _helpString = "Usage:\n  lotus graph [options]\n  \n  lotus graph [options] [const]\n\nOptions:\n  -c, --const\n  -h, --help   Print this help message\n\n\nCommands:\n  const\n";
 
         private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
@@ -396,5 +396,5 @@ internal override Func<int> Invoke => () => _func(range);
         }
     }
 }
-// Analysis took 160ms
-// Generation took 43ms
+// Analysis took 3ms
+// Generation took 0ms

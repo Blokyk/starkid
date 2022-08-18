@@ -1,7 +1,9 @@
 namespace CLIGen.Generator.Model;
 
 public record Option(ITypeSymbol Type, OptDesc Desc, ExpressionSyntax? DefaultValue) {
-    public ISymbol BackingSymbol { get; set; } = null!;
+    public MinimalSymbolInfo BackingSymbol { get; set; } = null!;
 
-    public bool IsSwitch => Utils.Equals(Type, Utils.BOOL);
+
+    private Lazy<bool> _isSwitch = new Lazy<bool>(() => Utils.Equals(Type, Utils.BOOL));
+    public virtual bool IsSwitch { get => _isSwitch.Value; init => _isSwitch = new Lazy<bool>(value); }
 }

@@ -1,32 +1,106 @@
 ﻿using System.IO;
+using CLIGen.Generator;
+
+var sampleDir = "../CLIGen.Sample/";
+var testDir = "../../test/";
 
 //var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText("/home/blokyk/csharp/sample-cli/Program.cs"));
-var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText("/home/blokyk/csharp/cli-gen/src/CLIGen.Sample/Parsex.cs"));
+var parsexTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + "Parsex.cs"));
+var parsex2Tree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + "Parsex-2.cs"));
+var dotnetTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + "Dotnet.cs"));
 
 var attribAssemblyLoc = typeof(CLIGen.CLIAttribute).Assembly.Location;
 
+var generator = new MainGenerator();
+
 var unit = CSharpCompilation.Create(
     "Tests",
-    syntaxTrees: new[] { syntaxTree },
-    references: new [] {
-        MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-        MetadataReference.CreateFromFile(attribAssemblyLoc)
+    syntaxTrees: new[] { parsexTree },
+    references: new[] {
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            MetadataReference.CreateFromFile(attribAssemblyLoc)
     }
 );
 
-var driver = CSharpGeneratorDriver.Create(new CLIGen.Generator.MainGenerator()).RunGenerators(unit);
+Console.WriteLine("\x1b[33m  init -- parsex\x1b[0m"); {
 
-var driverResults = driver.GetRunResult().Results;
+    var driver = CSharpGeneratorDriver.Create(generator);
+    var genRun = driver.RunGenerators(unit);
+    var results = genRun.GetRunResult().Results[0];
 
-foreach (var result in driverResults) {
-    if (result.Diagnostics.Length != 0) {
-        Console.WriteLine("Generated the following diagnostics :");
-        Console.WriteLine(String.Join("\t\n", result.Diagnostics.Select(d => d.Descriptor.Title.ToString())));
+    foreach (var diag in results.Diagnostics) {
+        Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
     }
 
-    Console.WriteLine("Copying " + result.GeneratedSources.Length + " results to out/");
+    var errorCount = results.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Count() + (results.Exception is not null ? 1 : 0);
 
-    foreach (var src in result.GeneratedSources) {
-        File.WriteAllText("../../test/" + src.HintName, src.SourceText.ToString());
+    if (errorCount != 0) {
+        Console.WriteLine("\x1b[31mThere were " + errorCount + " errors.\x1b[0m");
+    } else {
+        Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
+
+        foreach (var src in results.GeneratedSources) {
+            using var writer = new StreamWriter(testDir + src.HintName);
+
+            src.SourceText.Write(writer);
+        }
     }
+
+    Console.WriteLine($"Total: {genRun.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
+}
+
+Console.WriteLine("\x1b[33m  mod -- parsex-2\x1b[0m"); {
+    var newUnit = unit.ReplaceSyntaxTree(parsexTree, parsex2Tree);
+
+    var driver = CSharpGeneratorDriver.Create(generator);
+    var genRun = driver.RunGenerators(unit);
+    var results = genRun.GetRunResult().Results[0];
+
+    foreach (var diag in results.Diagnostics) {
+        Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
+    }
+
+    var errorCount = results.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Count() + (results.Exception is not null ? 1 : 0);
+
+    if (errorCount != 0) {
+        Console.WriteLine("\x1b[31mThere were " + errorCount + " errors.\x1b[0m");
+    } else {
+        Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
+
+        foreach (var src in results.GeneratedSources) {
+            using var writer = new StreamWriter(testDir + src.HintName);
+
+            src.SourceText.Write(writer);
+        }
+    }
+
+    Console.WriteLine($"Total: {genRun.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
+}
+
+Console.WriteLine("\x1b[33m  change -- dotnet\x1b[0m"); {
+    var newUnit = unit.ReplaceSyntaxTree(parsexTree, dotnetTree);
+
+    var driver = CSharpGeneratorDriver.Create(generator);
+    var genRun = driver.RunGenerators(unit);
+    var results = genRun.GetRunResult().Results[0];
+
+    foreach (var diag in results.Diagnostics) {
+        Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
+    }
+
+    var errorCount = results.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Count() + (results.Exception is not null ? 1 : 0);
+
+    if (errorCount != 0) {
+        Console.WriteLine("\x1b[31mThere were " + errorCount + " errors.\x1b[0m");
+    } else {
+        Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
+
+        foreach (var src in results.GeneratedSources) {
+            using var writer = new StreamWriter(testDir + src.HintName);
+
+            src.SourceText.Write(writer);
+        }
+    }
+
+    Console.WriteLine($"Total: {genRun.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
 }

@@ -95,7 +95,7 @@ public partial class MainGenerator : IIncrementalGenerator
             args.ToArray()
         ) {
             InheritOptions = inheritOptions,
-            BackingSymbol = method,
+            BackingSymbol = MinimalMethodInfo.FromSymbol(method),
             ParentSymbolName = parentCmdName,
             HasParams = hasParams
         };
@@ -202,7 +202,7 @@ public partial class MainGenerator : IIncrementalGenerator
             args.ToArray()
         ) {
             InheritOptions = inheritOptions,
-            BackingSymbol = method,
+            BackingSymbol = MinimalMethodInfo.FromSymbol(method),
             ParentSymbolName = parentCmdName,
             HasParams = hasParams
         };
@@ -253,16 +253,16 @@ public partial class MainGenerator : IIncrementalGenerator
             ),
             defaultVal
         ) {
-            BackingSymbol = param,
+            BackingSymbol = MinimalParameterInfo.FromSymbol(param),
             IsParams = hasParams
         };
 
         return true;
     }
 
-    static bool TryGetOptions(ISymbol member, SemanticModel model, out Option? opt) {
+    static bool TryGetOptions(ISymbol symbol, SemanticModel model, out Option? opt) {
         opt = null;
-        var attributes = member.GetAttributes();
+        var attributes = symbol.GetAttributes();
 
         if (attributes.IsDefaultOrEmpty) {
             return true;
@@ -310,14 +310,14 @@ public partial class MainGenerator : IIncrementalGenerator
         ITypeSymbol type;
         ExpressionSyntax? defaultVal = null;
 
-        switch (member) {
+        switch (symbol) {
             case IFieldSymbol:
             case IPropertySymbol: {
-                type = (member.Kind is SymbolKind.Field)
-                    ? ((IFieldSymbol)member).Type
-                    : ((IPropertySymbol)member).Type;
+                type = (symbol.Kind is SymbolKind.Field)
+                    ? ((IFieldSymbol)symbol).Type
+                    : ((IPropertySymbol)symbol).Type;
 
-                foreach (var syntax in member.DeclaringSyntaxReferences.Select(r => r.GetSyntax())) {
+                foreach (var syntax in symbol.DeclaringSyntaxReferences.Select(r => r.GetSyntax())) {
                     if (syntax is PropertyDeclarationSyntax propDec) {
                         if (propDec.Initializer is not null) {
                             defaultVal = propDec.Initializer.Value;
@@ -372,16 +372,16 @@ public partial class MainGenerator : IIncrementalGenerator
                 if (!methodSymbol.IsStatic | methodSymbol.IsGenericMethod)
                     return false;
 
-                if (methodSymbol.Parameters.Length != 1)
+                if (methodSymbol.Parameters.Length > 1)
                     return false;
 
-                var rawArgParam = methodSymbol.Parameters[0];
+                var rawArgParam = methodSymbol.Parameters.FirstOrDefault();
 
-                if (!Utils.Equals(rawArgParam.Type, Utils.STR))
+                if (rawArgParam is not null && !Utils.Equals(rawArgParam.Type, Utils.STR))
                     return false;
 
                 if (argName is null)
-                    argName = rawArgParam.Name;
+                    argName = rawArgParam?.Name ?? "";
 
                 opt = new MethodOption(
                     new OptDesc(
@@ -392,8 +392,15 @@ public partial class MainGenerator : IIncrementalGenerator
                     ),
                     needsAutoHandling
                 ) {
-                    BackingSymbol = methodSymbol
+                    BackingSymbol = MinimalMethodInfo.FromSymbol(methodSymbol),
+                    IsSwitch = rawArgParam is null,
                 };
+
+                if (opt.IsSwitch) {
+                    opt = opt with {
+                        Desc = new SwitchDesc(longName, shortName, desc)
+                    };
+                }
 
                 return true;
             }
@@ -404,11 +411,14 @@ public partial class MainGenerator : IIncrementalGenerator
         opt = new Option(
             type,
             new OptDesc(
-                longName, shortName, argName ?? member.Name, desc
+                longName, shortName, argName ?? symbol.Name, desc
             ),
             defaultVal
         ) {
-            BackingSymbol = member
+            BackingSymbol
+                = symbol is IParameterSymbol paramSymbol
+                    ? MinimalParameterInfo.FromSymbol(paramSymbol)
+                    : MinimalMemberInfo.FromSymbol(symbol)
         };
 
         if (opt.IsSwitch) {

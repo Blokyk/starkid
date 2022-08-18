@@ -12,7 +12,7 @@ public record Command(bool HasExitCode, string Name, string? Description, Option
     public Command? ParentCmd { get; set; }
     public string? ParentSymbolName { get; set; }
 
-    public IMethodSymbol BackingSymbol { get; set; } = null!;
+    public MinimalMethodInfo BackingSymbol { get; set; } = null!;
 
     public bool IsRoot => BackingSymbol is null;
 
