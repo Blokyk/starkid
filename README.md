@@ -1,4 +1,4 @@
-# CLIGen
+# Recline
 
 A C# source generator to create command-line apps given a simple, code-based description
 
@@ -44,7 +44,7 @@ I don't actually plan on maintaining this any further than I need to for lotus, 
 
 - If the generator can't find a valid description class, it will only generate *a part* of the code, leading to errors
 
-- If the generator encounters any error, it just fails silently instead of reporting diagnostics (however, it generates `CLIGen_err.g.txt` with an error message which can help in narrowing down the problem)
+- If the generator encounters any error, it just fails silently instead of reporting diagnostics (however, it generates `Recline_err.g.txt` with an error message which can help in narrowing down the problem)
 
 - We don't emit any error when someone defines an arg or option of an unsupported type
 

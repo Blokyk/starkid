@@ -11,6 +11,7 @@
 # Build artifact
 bin/
 obj/
+raw-sample/
 
 # Misc
 *.old
