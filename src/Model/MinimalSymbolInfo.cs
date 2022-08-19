@@ -8,32 +8,44 @@ public abstract record MinimalSymbolInfo(
 
     internal static class Cache
     {
-        private static WeakReference<Dictionary<ITypeSymbol, string>> _typeNameMapRef = new(new());
-        private static WeakReference<Dictionary<ITypeSymbol, MinimalTypeInfo>> _typeInfoMapRef = new(new());
+        private static readonly SymbolEqualityComparer symbolComparer = SymbolEqualityComparer.IncludeNullability;
+        private static readonly Dictionary<ITypeSymbol, string> _typeFullNameMap = new(symbolComparer);
+        private static readonly Dictionary<ITypeSymbol, string> _typeShortNameMap = new(symbolComparer);
+        private static readonly Dictionary<ITypeSymbol, MinimalTypeInfo> _typeInfoMap = new(symbolComparer);
 
-        internal static string GetTypeName(ITypeSymbol type) {
-            if (!_typeNameMapRef.TryGetTarget(out var typeNameMap)) {
-                typeNameMap = new();
-                _typeNameMapRef.SetTarget(typeNameMap);
+        private static void ResetIfNeeded<T, U>(Dictionary<T, U> dic) {
+            if (dic.Count > 100)
+                dic.Clear();
+        }
+
+        internal static string GetFullTypeName(ITypeSymbol type) {
+            ResetIfNeeded(_typeFullNameMap);
+
+            if (!_typeFullNameMap.TryGetValue(type, out var name)) {
+                name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                _typeFullNameMap.Add(type, name);
             }
 
-            if (!typeNameMap.TryGetValue(type, out var name)) {
-                name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                typeNameMap.Add(type, name);
+            return name;
+        }
+
+        internal static string GetShortTypeName(ITypeSymbol type) {
+            ResetIfNeeded(_typeShortNameMap);
+
+            if (!_typeShortNameMap.TryGetValue(type, out var name)) {
+                name = type.GetNameWithNull();
+                _typeShortNameMap.Add(type, name);
             }
 
             return name;
         }
 
         internal static MinimalTypeInfo GetTypeInfo(ITypeSymbol type) {
-            if (!_typeInfoMapRef.TryGetTarget(out var typeInfoMap)) {
-                typeInfoMap = new();
-                _typeInfoMapRef.SetTarget(typeInfoMap);
-            }
+            ResetIfNeeded(_typeInfoMap);
 
-            if (!typeInfoMap.TryGetValue(type, out var info)) {
+            if (!_typeInfoMap.TryGetValue(type, out var info)) {
                 info = MinimalTypeInfo.FromSymbol(type);
-                typeInfoMap.Add(type, info);
+                _typeInfoMap.Add(type, info);
             }
 
             return info;
@@ -54,7 +66,7 @@ public record MinimalTypeInfo(
         if (type.ContainingType is not null)
             containingType = Cache.GetTypeInfo(type.ContainingType);
 
-        return new MinimalTypeInfo(type.GetNameWithNull(), containingType, Cache.GetTypeName(type));
+        return new MinimalTypeInfo(Cache.GetShortTypeName(type), containingType, Cache.GetFullTypeName(type));
     }
 }
 
@@ -63,7 +75,7 @@ public record MinimalMemberInfo(
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo Type
 ) : MinimalSymbolInfo(Name, ContainingType) {
-    public override string ToString() => ContainingType!.ToString() + "." + Name;
+    public override string ToString() => ContainingType!.ToString() + "." + Utils.GetSafeName(Name);
 
     public static MinimalMemberInfo FromSymbol(ISymbol symbol) {
         if (symbol is IPropertySymbol propSymbol)
@@ -83,7 +95,7 @@ public record MinimalMethodInfo(
     MinimalTypeInfo Type,
     ImmutableArray<MinimalParameterInfo> Parameters
 ) : MinimalMemberInfo(Name, ContainingType, Type) {
-    public override string ToString() => ContainingType!.ToString() + "." + Name;
+    public override string ToString() => ContainingType!.ToString() + "." + Utils.GetSafeName(Name);
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
         => new(
@@ -93,7 +105,7 @@ public record MinimalMethodInfo(
             symbol.Parameters.Select(p => MinimalParameterInfo.FromSymbol(p)).ToImmutableArray()
         );
 
-    public bool ReturnVoid => Name == "void";
+    public bool ReturnVoid => Type.FullName == "void";
 }
 
 public record MinimalParameterInfo(
@@ -112,7 +124,7 @@ public record MinimalParameterInfo(
             symbol.HasExplicitDefaultValue ? new Optional<object?>(symbol.ExplicitDefaultValue) : new Optional<object?>()
         );
 
-    public override string ToString() => Name;
+    public override string ToString() => Utils.GetSafeName(Name);
 
     public bool HasDefaultValue => DefaultValue.HasValue;
 }

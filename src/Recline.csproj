@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>true</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <NoWarn>RS1024</NoWarn>
+    <NoWarn>RS1024,RS2008</NoWarn>
   </PropertyGroup>
 
   <!-- The following libraries include the source generator interfaces and types we need -->
@@ -21,8 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="System.Text"/>
     <Using Remove="System.IO"/>
+    <Using Include="System.Text"/>
+    <Using Include="System.Collections.Immutable"/>
     <Using Include="Microsoft.CodeAnalysis"/>
     <Using Include="Microsoft.CodeAnalysis.Text"/>
     <Using Include="Microsoft.CodeAnalysis.CSharp"/>

@@ -1,13 +1,14 @@
-﻿#nullable enable
+#nullable enable
 
 using System;
+using System.Linq;
 using Recline;
 
 namespace SomeStuff;
 
 using System.IO;
 
-[CLI("lotus", EntryPoint = nameof(Silent), HelpExitCode = 1)]
+[CLI("lotus", EntryPoint = nameof(Silent), HelpExitCode = 0)]
 [Description("A parser/typechecker for lotus")]
 public static partial class Lotus
 {
@@ -30,7 +31,7 @@ public static partial class Lotus
 
     public static (int start, int end) rangeInfo;
 
-    [Option("range", shortName: 'r', ArgName = "range")]
+    [Option("range", shortName: 'r', ArgName = "rawStr")]
     public static bool ParseRange(string? rawStr) {
 
         // This method can return 'void' for manual error handling,
@@ -51,13 +52,13 @@ public static partial class Lotus
 
     [Command("silent")]
     [Description("Don't print anything to stdout (errors go to stderr)")]
-    public static void Silent() {
+    public static void Silent(bool arg) {
         if (forceOption)
             Console.WriteLine("Silently forcing ??");
         else
             Console.WriteLine("👁️  _ 👁️");
 
-        Dump();
+        Dump(others: arg);
     }
 
     [Command("count")]
@@ -101,7 +102,7 @@ public static partial class Lotus {
         [Option("const", 'c')] bool constOption
     ) => constOption ? 0xf : 'g' % 0xf;
 
-    [SubCommand("const", nameof(Graph), InheritOptions = false)]
+    [SubCommand("const", nameof(Graph))]
     public static int GraphConst(
         [Option("range", 'r')] bool range
     ) {
@@ -110,12 +111,12 @@ public static partial class Lotus {
         return 0xf;
     }
 
-    static void Dump([System.Runtime.CompilerServices.CallerArgumentExpression("others")] string expr = "", params string[] others) {
+    static void Dump([System.Runtime.CompilerServices.CallerArgumentExpression("others")] string expr = "", params object[] others) {
         Console.WriteLine($@"
             forceOption = {forceOption}
             OutputFile = {OutputFile}
             rangeInfo = {rangeInfo}
-            {expr} = {string.Join(", ", others)}
+            {expr} = {string.Join(", ", others.Select(o => o.ToString()))}
         ");
     }
 }

@@ -1,8 +1,6 @@
-#nullable enable
-
-using System;
-
+#if !GEN
 namespace Recline;
+#endif
 
 [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
 public class CommandAttribute : System.Attribute

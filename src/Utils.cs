@@ -3,12 +3,19 @@ namespace Recline.Generator;
 internal static partial class Utils
 {
     internal static INamedTypeSymbol BOOL = null!;
+    internal static MinimalTypeInfo BOOLMinInfo = null!;
     internal static INamedTypeSymbol INT32 = null!;
+    internal static MinimalTypeInfo INT32MinInfo = null!;
     internal static INamedTypeSymbol CHAR = null!;
+    internal static MinimalTypeInfo CHARMinInfo = null!;
     internal static INamedTypeSymbol STR = null!;
+    internal static MinimalTypeInfo STRMinInfo = null!;
     internal static INamedTypeSymbol VOID = null!;
+    internal static MinimalTypeInfo VOIDMinInfo = null!;
     internal static INamedTypeSymbol EXCEPT = null!;
+    internal static MinimalTypeInfo EXCEPTMinInfo = null!;
     internal static INamedTypeSymbol NULLABLE = null!;
+    internal static MinimalTypeInfo NULLABLEMinInfo = null!;
 
     internal static SymbolDisplayFormat memberMinimalDisplayFormat = new(
         parameterOptions: SymbolDisplayParameterOptions.IncludeName,
@@ -26,6 +33,13 @@ internal static partial class Utils
         Utils.VOID = compilation.GetSpecialType(SpecialType.System_Void);
         Utils.NULLABLE = compilation.GetSpecialType(SpecialType.System_Nullable_T);
         Utils.EXCEPT = compilation.GetTypeByMetadataName("System.Exception")!;
+        Utils.BOOLMinInfo = MinimalTypeInfo.FromSymbol(BOOL);
+        Utils.INT32MinInfo = MinimalTypeInfo.FromSymbol(INT32);
+        Utils.CHARMinInfo = MinimalTypeInfo.FromSymbol(CHAR);
+        Utils.STRMinInfo = MinimalTypeInfo.FromSymbol(STR);
+        Utils.VOIDMinInfo = MinimalTypeInfo.FromSymbol(VOID);
+        Utils.EXCEPTMinInfo = MinimalTypeInfo.FromSymbol(EXCEPT);
+        Utils.NULLABLEMinInfo = MinimalTypeInfo.FromSymbol(NULLABLE);
     }
 
     public static bool TryGetAttribute(this INamedTypeSymbol type, string name, out AttributeData attr) {
@@ -49,6 +63,9 @@ internal static partial class Utils
     public static string GetFullName(this IMethodSymbol method) {
         return method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + "." + method.Name;
     }
+
+    public static string GetErrorName(this ISymbol symbol)
+        => symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
 
     // determine the namespace the class/enum/struct is declared in, if any
     public static string? GetNamespace(BaseTypeDeclarationSyntax syntax) {
@@ -186,22 +203,25 @@ internal static partial class Utils
                 return GetNameWithNull(arrayTypeSymbol.ElementType) + "[]";
             }
 
+            if (symbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType) {
+                return symbol.Name + "<" + String.Join(",", namedTypeSymbol.TypeArguments.Select(a => GetNameWithNull(a))) + ">";
+            }
+
             return symbol.Name;
         }
+
+        if (symbol.Name == "Nullable")
+            return GetRawName(symbol);
 
         return GetRawName(symbol) + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
     }
 
+    public static string GetSafeName(string name) {
+        if (SyntaxFacts.IsKeywordKind(SyntaxFacts.GetKeywordKind(name)))
+            return '@' + name;
+
+        return name;
+    }
+
     public static bool Equals(this ISymbol? s1, ISymbol? s2) => SymbolEqualityComparer.Default.Equals(s1, s2);
-}
-
-public sealed class NotNullWhenAttribute : Attribute {
-    /// <summary>Initializes the attribute with the specified return value condition.</summary>
-    /// <param name="returnValue">
-    /// The return value condition. If the method returns this value, the associated parameter will not be null.
-    /// </param>
-    public NotNullWhenAttribute(bool returnValue) => ReturnValue = returnValue;
-
-    /// <summary>Gets the return value condition.</summary>
-    public bool ReturnValue { get; }
 }

@@ -1,27 +1,21 @@
-#nullable enable
-
-using System;
-
+#if !GEN
 namespace Recline;
+#endif
 
 [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
 public sealed class SubCommandAttribute : CommandAttribute
 {
-    public string ParentCmdMethodName { get; }
+    public string ParentCmd { get; }
 
-    public bool InheritOptions { get; set; } = false;
-
-    public SubCommandAttribute(string cmdName, string parentCmdMethodName) : base(cmdName) {
-        ParentCmdMethodName = parentCmdMethodName;
+    public SubCommandAttribute(string cmdName, string parentCmdName) : base(cmdName) {
+        ParentCmd = parentCmdName;
     }
 
     public void Deconstruct(
         out string cmdName,
-        out string parentCmdMethodName,
-        out bool inheritOptions
+        out string parentCmdName
     ) {
         cmdName = CmdName;
-        parentCmdMethodName = ParentCmdMethodName;
-        inheritOptions = InheritOptions;
+        parentCmdName = ParentCmd;
     }
 }

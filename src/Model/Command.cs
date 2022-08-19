@@ -19,4 +19,6 @@ public record Command(bool HasExitCode, string Name, string? Description, Option
     public override string ToString() => "<" + Name + ">";
 
     public bool HasParams { get; set; }
+
+    public string GetNameWithParent() => ParentCmd is null ? Name : ParentCmd.GetNameWithParent() + " " + Name;
 }

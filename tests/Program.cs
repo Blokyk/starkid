@@ -59,7 +59,7 @@ Console.WriteLine("\x1b[33m  init -- parsex\x1b[0m"); {
 Console.WriteLine("\x1b[33m  mod -- parsex-2\x1b[0m"); {
     var newUnit = unit.ReplaceSyntaxTree(parsexTree, parsex2Tree);
 
-    var genRun = driver.RunGenerators(unit);
+    var genRun = driver.RunGenerators(newUnit);
     var results = genRun.GetRunResult().Results[0];
 
     foreach (var diag in results.Diagnostics) {
@@ -86,7 +86,7 @@ Console.WriteLine("\x1b[33m  mod -- parsex-2\x1b[0m"); {
 Console.WriteLine("\x1b[33m  change -- dotnet\x1b[0m"); {
     var newUnit = unit.ReplaceSyntaxTree(parsexTree, dotnetTree);
 
-    var genRun = driver.RunGenerators(unit);
+    var genRun = driver.RunGenerators(newUnit);
     var results = genRun.GetRunResult().Results[0];
 
     foreach (var diag in results.Diagnostics) {

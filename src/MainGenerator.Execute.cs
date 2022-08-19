@@ -1,11 +1,3 @@
-using System.Collections.Immutable;
-using System.Collections.Concurrent;
-
-using Recline;
-using Recline.Generator;
-using Recline.Generator.Model;
-
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using System.Diagnostics;
 
 namespace Recline.Generator;
@@ -19,68 +11,72 @@ public partial class MainGenerator : IIncrementalGenerator
 
     private static TimeSpan analysisTime, parserGenerationTime;
 
-    static void Execute(ImmutableArray<CLIData?> classes, SourceProductionContext spc) {
+    static void GenerateFromData(ImmutableArray<(CLIData? data, ImmutableArray<Diagnostic> diags)> tuples, SourceProductionContext spc) {
+        spc.ReportDiagnostic(
+            Diagnostic.Create(
+                Diagnostics.TimingInfo,
+                Location.None,
+                "PostInit", postInitMS
+            )
+        );
+
+        spc.ReportDiagnostic(
+            Diagnostic.Create(
+                Diagnostics.TimingInfo,
+                Location.None,
+                "Transform", analysisMS
+            )
+        );
+
         var watch = new System.Diagnostics.Stopwatch();
         watch.Start();
-        var result = TryExecute(classes, spc);
+
+        var allDiags = tuples.SelectMany(t => t.diags).Where(d => d is not null).ToArray();
+
+        if (allDiags.Length > 0) {
+            foreach (var diag in allDiags) {
+                spc.ReportDiagnostic(diag);
+            }
+
+            return;
+        }
+
+        var allDatas = tuples.Select(t => t.data).Where(d => d is not null)!.ToImmutableArray<CLIData>();
+
+        if (allDatas.Length < 1)
+            return; // it's already been reported
+
+        if (allDatas.Length > 1) {
+            spc.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TooManyCLIClasses,
+                    Location.None,
+                    allDatas[0].FullClassName, allDatas[1].FullClassName
+                )
+            );
+
+            return;
+        }
+
+        GenerateFromDataCore(allDatas, spc);
 
         watch.Stop();
         codegenMS = watch.ElapsedMilliseconds;
 
         spc.ReportDiagnostic(
             Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "CLI000",
-                    "PostInit took: " + postInitMS + "ms",
-                    "PostInit took: " + postInitMS + "ms",
-                    "Debug",
-                    (postInitMS > 100 ? DiagnosticSeverity.Warning : DiagnosticSeverity.Info),
-                    true
-                ),
-                Location.None
+                Diagnostics.TimingInfo,
+                Location.None,
+                "Generation", codegenMS
             )
         );
-
-        spc.ReportDiagnostic(
-            Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "CLI000",
-                    "Analysis took: " + analysisMS + "ms",
-                    "Analysis took: " + analysisMS + "ms",
-                    "Debug",
-                    (analysisMS > 10 ? DiagnosticSeverity.Warning : DiagnosticSeverity.Info),
-                    true
-                ),
-                Location.None
-            )
-        );
-
-        spc.ReportDiagnostic(
-            Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "CLI000",
-                    "Generation took: " + codegenMS + "ms",
-                    "Generation took: " + codegenMS + "ms",
-                    "Debug",
-                    (codegenMS > 5 ? DiagnosticSeverity.Warning : DiagnosticSeverity.Info),
-                    true
-                ),
-                Location.None
-            )
-        );
-
-        if (result is not null)
-            spc.AddSource("Recline_err.g.txt", ("failed to generate: " + result));
     }
 
-    static string? TryExecute(ImmutableArray<CLIData?> datas, SourceProductionContext context) {
-        if (datas.Length != 1 || datas[0] is null)
-            return "Expected only 1 CLI declaration, got " + datas.Length;
-
-        var (appName, fullClassName, usings, cmdAndArgs, opts, appDesc, cmds, helpExitCode) = datas[0]!;
-
+    static void GenerateFromDataCore(ImmutableArray<CLIData> datas, SourceProductionContext context) {
         var sw = new Stopwatch();
         sw.Start();
+
+        var (appName, fullClassName, usings, cmdAndArgs, opts, appDesc, cmds, helpExitCode) = datas[0]!;
 
         var descBuilder = new CmdDescBuilder(
             appName,
@@ -102,6 +98,11 @@ public partial class MainGenerator : IIncrementalGenerator
         parserGenerationTime = sw.Elapsed;
 
         context.AddSource(
+            Ressources.GenNamespace + "_Program.g.cs",
+            SourceText.From(Ressources.ProgClassStr, Encoding.UTF8)
+        );
+
+        context.AddSource(
             Ressources.GenNamespace + "_CmdDescDynamic.g.cs",
             SourceText.From(
                 descDynamicText
@@ -112,7 +113,5 @@ public partial class MainGenerator : IIncrementalGenerator
                 Encoding.UTF8
             )
         );
-
-        return null;
     }
 }

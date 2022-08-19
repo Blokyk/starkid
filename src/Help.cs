@@ -10,7 +10,9 @@ public record CmdHelp(
     bool IsDirectCmd = true,
     bool HasParams = false
 ) {
-    public StringBuilder AppendTo(StringBuilder sb) {
+    public override string ToString() {
+        var sb = new StringBuilder();
+
         if (Description is not null) {
             sb
                 .AppendLine("Description:")
@@ -92,7 +94,7 @@ public record CmdHelp(
             .AppendLine();
         AppendDescs(sb, "Commands", SubCmds.Cast<Desc>().ToArray());
 
-        return sb;
+        return sb.ToString();
     }
 
     private static readonly char[] splitWithSpaceArray = new[] { ' ' };

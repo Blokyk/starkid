@@ -1,8 +1,6 @@
-#nullable enable
-
-using System;
-
+#if !GEN
 namespace Recline;
+#endif
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public sealed class DescriptionAttribute : System.Attribute

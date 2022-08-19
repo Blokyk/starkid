@@ -1,8 +1,8 @@
 namespace Recline.Generator;
 
-internal static class AttributeParser
+internal class AttributeParser
 {
-    public static bool TryParseCmdAttrib(AttributeData attr, out CommandAttribute cmdAttr) {
+    public bool TryParseCmdAttrib(AttributeData attr, out CommandAttribute cmdAttr) {
         cmdAttr = null!;
 
         if (attr.ConstructorArguments.Length < 1)
@@ -15,7 +15,7 @@ internal static class AttributeParser
         return true;
     }
 
-    public static bool TryParseSubCmdAttrib(AttributeData attr, out SubCommandAttribute subCmdAttr) {
+    public bool TryParseSubCmdAttrib(AttributeData attr, out SubCommandAttribute subCmdAttr) {
         subCmdAttr = null!;
 
         if (attr.ConstructorArguments.Length < 2)
@@ -31,7 +31,7 @@ internal static class AttributeParser
             return false;
         var parentName = (string)attr.ConstructorArguments[1].Value!;
 
-        bool inheritOptions = false;
+        /*bool inheritOptions = false;
 
         if (attr.NamedArguments.Length != 0) {
             var inheritOptionsArgPair = attr.NamedArguments.First();
@@ -42,14 +42,14 @@ internal static class AttributeParser
 
                 inheritOptions = (bool)inheritOptionsArgPair.Value.Value!;
             }
-        }
+        }*/
 
-        subCmdAttr = new(cmdName, parentName) { InheritOptions = inheritOptions };
+        subCmdAttr = new(cmdName, parentName);
 
         return true;
     }
 
-    public static bool TryParseOptAttrib(AttributeData attr, out OptionAttribute optAttr) {
+    public bool TryParseOptAttrib(AttributeData attr, out OptionAttribute optAttr) {
         optAttr = null!;
 
         string longName;
@@ -87,7 +87,7 @@ internal static class AttributeParser
         return true;
     }
 
-    public static bool TryParseDescAttrib(AttributeData attr, out DescriptionAttribute descAttr) {
+    public bool TryParseDescAttrib(AttributeData attr, out DescriptionAttribute descAttr) {
         descAttr = null!;
 
         if (attr.ConstructorArguments.Length < 1)
@@ -101,7 +101,7 @@ internal static class AttributeParser
         return true;
     }
 
-    public static bool TryParseCLIAttrib(AttributeData attr, out CLIAttribute cliAttr) {
+    public bool TryParseCLIAttrib(AttributeData attr, out CLIAttribute cliAttr) {
         cliAttr = null!;
 
         // appName
@@ -123,7 +123,7 @@ internal static class AttributeParser
         return true;
     }
 
-    public static bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, out T val) {
+    public bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, out T val) {
         val = default!;
 
         var ctorArgs = attrib.ConstructorArguments;
@@ -140,7 +140,7 @@ internal static class AttributeParser
         return true;
     }
 
-    public static bool TryGetProp<T>(AttributeData attrib, string propName, INamedTypeSymbol type, T defaultVal, out T val) {
+    public bool TryGetProp<T>(AttributeData attrib, string propName, INamedTypeSymbol type, T defaultVal, out T val) {
         val = defaultVal;
 
         var namedArgs = attrib.NamedArguments;

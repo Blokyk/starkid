@@ -1,8 +1,6 @@
-#nullable enable
-
-using System;
-
+#if !GEN
 namespace Recline;
+#endif
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
 public sealed class OptionAttribute : System.Attribute

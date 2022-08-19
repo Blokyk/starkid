@@ -1,4 +1,4 @@
-public static class Utils
+internal static class Utils
 {
     public static string FormatSeverity(this Diagnostic diag)
         => "\x1b["

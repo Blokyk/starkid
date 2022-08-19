@@ -1,8 +1,6 @@
-﻿#nullable enable
-
-using System;
-
+﻿#if !GEN
 namespace Recline;
+#endif
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class CLIAttribute : CommandAttribute

@@ -1,18 +1,10 @@
-using System.Collections.Immutable;
-using System.Collections.Concurrent;
-
-using Recline;
-using Recline.Generator;
 using Recline.Generator.Model;
-
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using System.Diagnostics;
 
 using static Recline.Generator.Ressources;
 
 namespace Recline.Generator;
 
-public class CmdDescBuilder
+internal class CmdDescBuilder
 {
     public string CliClassName { get; }
     public string[] RequiredUsings { get; }
@@ -78,7 +70,7 @@ public class CmdDescBuilder
 
     public void AddHelpText(Command cmd, Command[] subs, Option[] opts, Argument[] posArgs, bool isRoot = false) {
         var help = new CmdHelp(
-            cmd.ParentCmd?.Name ?? (isRoot ? null : RootCmd.Name),
+            cmd.ParentCmd?.GetNameWithParent() ?? (isRoot ? null : RootCmd.Name),
             cmd.Name,
             cmd.Description,
             opts.Select(o => o.Desc).ToArray(),
@@ -88,14 +80,12 @@ public class CmdDescBuilder
             HasParams: cmd.HasParams
         );
 
-        var helpSb = new StringBuilder();
-
-        help.AppendTo(helpSb);
+        var helpStr = help.ToString();
 
         sb.Append($@"
 {GetClassDeclarationLine(cmd, isRoot)}
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = {SyntaxFactory.Literal(helpSb.ToString()).ToString()};
+        private static readonly string _helpString = {SyntaxFactory.Literal(helpStr).ToString()};
 
         private static void DisplayHelp(string? val) {{
             Console.Error.WriteLine(_helpString);
@@ -129,7 +119,7 @@ public class CmdDescBuilder
         var sws = new List<Option>(optsAndSws.Length);
 
         foreach (var thing in optsAndSws) {
-            if (Utils.Equals(thing.Type, Utils.BOOL))
+            if (thing.Type == Utils.BOOLMinInfo)
                 sws.Add(thing);
             else
                 opts.Add(thing);
@@ -145,7 +135,7 @@ public class CmdDescBuilder
 ");
 
         foreach (var sw in sws) {
-            sb.AppendLine(GetOptDictLine(sw.Desc.LongName, sw.Desc.Alias, "set_" + sw.Desc.Name));
+            sb.AppendLine(GetOptDictLine(sw.Desc.LongName, sw.Desc.Alias, "set_" + sw.BackingSymbol.Name));
         }
 
         sb.AppendLine("};");
@@ -156,28 +146,21 @@ public class CmdDescBuilder
             if (isRoot)
                 expr = CliClassName + ".";
 
-            var argExpr = "AsBool(arg, ";
-
-            if (sw.DefaultValue is null)
-                argExpr += "true";
-            else
-                argExpr += "!" + sw.DefaultValue.ToString();
-
-            argExpr += ")";
+            var argExpr = GetParsingExpression(sw.Type, sw.DefaultValueExpr);
 
             if (sw is MethodOption methodOpt) {
-                expr += methodOpt.BackingSymbol.Name + '(' + argExpr + " ?? \"\")";
+                expr = methodOpt.BackingSymbol.ToString() + '(' + argExpr + " ?? \"\")";
 
                 if (methodOpt.NeedsAutoHandling) {
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr += sw.BackingSymbol.Name + " = " + argExpr;
+                expr += Utils.GetSafeName(sw.BackingSymbol.Name) + " = " + argExpr;
             }
 
             sb.AppendLine(
                 GetOptFuncLine(
-                    "set_" + sw.Desc.Name,
+                    "set_" + sw.BackingSymbol.Name,
                     expr
                 )
             );
@@ -185,14 +168,17 @@ public class CmdDescBuilder
 
         if (!isRoot) {
             foreach (var sw in sws) {
+                if (sw is MethodOption)
+                    continue;
+
                 sb
                     .Append("private static bool ")
-                    .Append(sw.BackingSymbol.Name);
+                    .Append(Utils.GetSafeName(sw.BackingSymbol.Name));
 
-                if (sw.DefaultValue is not null) {
+                if (sw.DefaultValueExpr is not null) {
                     sb
                         .Append(" = ")
-                        .Append(sw.DefaultValue.ToString());
+                        .Append(sw.DefaultValueExpr);
                 }
 
                 sb
@@ -207,7 +193,7 @@ public class CmdDescBuilder
         sb.AppendLine($@"private static Dictionary<string, Action<string>> _options = new() {{");
 
         foreach (var opt in opts) {
-            sb.AppendLine(GetOptDictLine(opt.Desc.LongName, opt.Desc.Alias, opt.Desc.Name + "Action"));
+            sb.AppendLine(GetOptDictLine(opt.Desc.LongName, opt.Desc.Alias, opt.BackingSymbol.Name + "Action"));
         }
 
         sb.AppendLine("};");
@@ -215,28 +201,29 @@ public class CmdDescBuilder
         foreach (var opt in opts) {
             string expr = "";
 
-            if (isRoot)
-                expr = CliClassName + ".";
-
             if (opt is MethodOption methodOpt) {
-                string argExpr = "arg";
+                string argExpr = "";
 
-                if (!methodOpt.BackingSymbol.Parameters[0].IsNullable) {
-                    argExpr += "?? \"\"";
+                if (!methodOpt.IsSwitch) {
+                    argExpr = "__arg";
+
+                    if (!methodOpt.BackingSymbol.Parameters[0].IsNullable) {
+                        argExpr += "?? \"\"";
+                    }
                 }
 
-                expr += methodOpt.BackingSymbol.Name + '(' + argExpr + ')';
+                expr = methodOpt.BackingSymbol.ToString() + '(' + argExpr + ')';
 
                 if (methodOpt.NeedsAutoHandling) {
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr += opt.BackingSymbol.Name + " = Parse<" + opt.Type.Name + ">(arg ?? \"\")";
+                expr = (isRoot ? CliClassName  + "." : "") + Utils.GetSafeName(opt.BackingSymbol.Name) + " = " + GetParsingExpression(opt.Type, opt.DefaultValueExpr);
             }
 
             sb.AppendLine(
                 GetOptFuncLine(
-                    opt.Desc.Name + "Action",
+                    opt.BackingSymbol.Name + "Action",
                     expr
                 )
             );
@@ -244,16 +231,19 @@ public class CmdDescBuilder
 
         if (!isRoot) {
             foreach (var opt in opts) {
+                if (opt is MethodOption)
+                    continue;
+
                 sb
                     .Append("private static ")
-                    .Append(opt.Type.GetNameWithNull())
+                    .Append(opt.Type.Name)
                     .Append(' ')
                     .Append(opt.BackingSymbol.Name);
 
-                if (opt.DefaultValue is not null) {
+                if (opt.DefaultValueExpr is not null) {
                     sb
                         .Append(" = ")
-                        .Append(opt.DefaultValue.ToString());
+                        .Append(opt.DefaultValueExpr);
                 }
 
                 sb
@@ -263,6 +253,14 @@ public class CmdDescBuilder
         }
 
         #endregion
+    }
+
+    string GetParsingExpression(MinimalTypeInfo type, string? defaultValExpr) {
+        if (type == Utils.BOOLMinInfo) {
+            return "AsBool(__arg, " + (defaultValExpr is not null ? "!" + defaultValExpr : "true") + ")";
+        } else {
+            return "Parse<" + type.FullName + ">(__arg ?? \"\")" + (defaultValExpr is not null ? "??" + defaultValExpr : "");
+        }
     }
 
     void AddArgs(Argument[] posArgs, bool isRoot = true) {
@@ -280,11 +278,11 @@ public class CmdDescBuilder
                 continue; // could be break since params is always the last parameter
 
             sb
-                .Append("static arg => ")
+                .Append("static __arg => ")
                 .Append(arg.BackingSymbol.Name)
-                .Append(" = Parse<")
-                .Append(arg.Type.GetNameWithNull())
-                .AppendLine(">(arg),");
+                .Append(" = ")
+                .Append(GetParsingExpression(arg.Type, arg.DefaultValueExpr))
+                .Append(",");
         }
 
         sb.AppendLine("};");
@@ -296,14 +294,14 @@ public class CmdDescBuilder
 
             sb
                 .Append("private static ")
-                .Append(arg.Type.GetNameWithNull())
+                .Append(arg.Type.Name)
                 .Append(' ')
                 .Append(arg.BackingSymbol.Name);
 
-            if (arg.DefaultValue is not null) {
+            if (arg.DefaultValueExpr is not null) {
                 sb
                     .Append(" = ")
-                    .Append(arg.DefaultValue.ToString());
+                    .Append(arg.DefaultValueExpr);
             }
 
             sb
@@ -342,12 +340,12 @@ public class CmdDescBuilder
 
         sb
             .Append(" _func = ")
-            .Append(method.Name)
+            .Append(method.ToString())
             .AppendLine(";");
     }
 
     void AddFuncAndInvoke(MinimalMethodInfo method, Option[] optsAndSws, Argument[] posArgs, bool isRoot = false) {
-        var isVoid = method.Name == "void";
+        var isVoid = method.ReturnVoid;
         var methodParams = method.Parameters;
 
         AppendFunc(method, isRoot);
@@ -371,7 +369,7 @@ public class CmdDescBuilder
                 if (methodParams[i].IsParams)
                     defArgName[i] = "_params.ToArray()";
                 else
-                    defArgName[i] = methodParams[i].Name;
+                    defArgName[i] = Utils.GetSafeName(methodParams[i].Name);
             }
 
             sb.Append(String.Join(", ", defArgName));
@@ -470,7 +468,7 @@ static partial class {ProgClassName} {{
     }
 
     static string GetOptFuncLine(string methodName, string expr) {
-        return $@"private static void {methodName}(string? arg) => {expr};";
+        return $@"private static void {methodName}(string? __arg) => {expr};";
     }
 
     static string GetDictLine(string key, string value)
