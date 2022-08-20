@@ -113,5 +113,7 @@ public partial class MainGenerator : IIncrementalGenerator
                 Encoding.UTF8
             )
         );
+
+        MinimalSymbolInfo.Cache.FullReset();
     }
 }

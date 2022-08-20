@@ -126,6 +126,17 @@ internal class ModelBuilder
 
                     cmdName = cmdAttr.CmdName;
 
+                    if (string.IsNullOrWhiteSpace(cmdName)) {
+                        _diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyCmdName,
+                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
+                            )
+                        );
+
+                        isValidCmd = false;
+                    }
+
                     break;
                 }
                 case Ressources.SubCmdAttribName: {
@@ -148,7 +159,19 @@ internal class ModelBuilder
 
                     (cmdName, parentCmdName) = subCmdAttr;
 
-                    parentCmdName = Utils.GetLastNamePart(parentCmdName.AsSpan());
+                    if (string.IsNullOrWhiteSpace(cmdName)) {
+                        _diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyCmdName,
+                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
+                            )
+                        );
+
+                        isValidCmd = false;
+                    }
+
+                    if (parentCmdName is not null) // the other case will be handled by BindParentCmd()
+                        parentCmdName = Utils.GetLastNamePart(parentCmdName.AsSpan());
 
                     break;
                 }
@@ -337,6 +360,8 @@ internal class ModelBuilder
         bool hadOptAttrib = false;
         bool hadCmdAttr = false;
 
+        bool isValidOpt = true;
+
         foreach (var attr in attributes) {
 
             switch (attr.AttributeClass?.Name) {
@@ -354,6 +379,28 @@ internal class ModelBuilder
                         return false;
 
                     (longName, shortName, _) = optAttr;
+
+                    if (string.IsNullOrWhiteSpace(longName)) {
+                        _diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyOptLongName,
+                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
+                            )
+                        );
+
+                        isValidOpt = false;
+                    }
+
+                    if (char.IsWhiteSpace(shortName)) { // '\0' is not whitespace :P
+                        _diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyOptShortName,
+                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
+                            )
+                        );
+
+                        isValidOpt = false;
+                    }
 
                     if (optAttr.ArgName is not null)
                         argName = optAttr.ArgName;
@@ -382,7 +429,7 @@ internal class ModelBuilder
                 )
             );
 
-            return false; // no point in trying to parse this
+            return false; // no point in trying to parse this lol
         }
 
         if (!symbol.IsStatic && symbol is not IParameterSymbol) {
@@ -394,7 +441,7 @@ internal class ModelBuilder
                 )
             );
 
-            return false;
+            isValidOpt = false;
         }
 
         if (symbol is IFieldSymbol fieldSymbol && fieldSymbol.IsReadOnly) {
@@ -406,35 +453,54 @@ internal class ModelBuilder
                 )
             );
 
-            return false;
+            isValidOpt = false;
         }
 
         ITypeSymbol type;
         string? defaultVal = null;
 
         switch (symbol) {
-            case IFieldSymbol:
-            case IPropertySymbol: {
-                type = (symbol.Kind is SymbolKind.Field)
-                    ? ((IFieldSymbol)symbol).Type
-                    : ((IPropertySymbol)symbol).Type;
+            case IFieldSymbol field:
+                if (field.IsReadOnly || field.IsConst) {
+                    _diagnostics.Add(
+                        Diagnostic.Create(
+                            Diagnostics.NonWritableOptField,
+                            symbol.Locations[0],
+                            symbol.GetErrorName()
+                        )
+                    );
 
-                foreach (var syntax in symbol.DeclaringSyntaxReferences.Select(r => r.GetSyntax())) {
-                    if (syntax is PropertyDeclarationSyntax propDec) {
-                        if (propDec.Initializer is not null) {
-                            defaultVal = propDec.Initializer.Value.ToString();
-                            break;
-                        }
-                    } else if (syntax is VariableDeclaratorSyntax fieldDec) {
-                        // IFieldSymbol are not declared by FieldDeclarationSyntax...
-                        if (fieldDec.Initializer is not null) {
-                            defaultVal = fieldDec.Initializer!.Value.ToString();
-                            break;
-                        }
-                    } else {
-                        return false;
-                    }
+                    isValidOpt = false;
                 }
+
+                type = field.Type;
+
+                var varDec = (VariableDeclaratorSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
+
+                if (varDec.Initializer is not null)
+                    defaultVal = varDec.Initializer.Value.ToString();
+
+                break;
+            case IPropertySymbol prop: {
+                if (prop.IsReadOnly || prop.SetMethod!.DeclaredAccessibility is not Accessibility.Public or Accessibility.NotApplicable) {
+                    _diagnostics.Add(
+                        Diagnostic.Create(
+                            Diagnostics.NonWritableOptProp,
+                            symbol.Locations[0],
+                            symbol.GetErrorName()
+                        )
+                    );
+
+                    isValidOpt = false;
+                }
+
+                type = prop.Type;
+
+                var propDec = (PropertyDeclarationSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
+
+                if (propDec.Initializer is not null)
+                    defaultVal = propDec.Initializer.Value.ToString();
+
 
                 // TODO: check that defaultVal is valid outside of the containing class
                 // and maybe transform it (when possible) if not (e.g. qualifying names) ?
@@ -445,15 +511,10 @@ internal class ModelBuilder
             case IParameterSymbol parameterSymbol: {
                 type = parameterSymbol.Type;
 
-                foreach (var syntax in parameterSymbol.DeclaringSyntaxReferences.Select(r => r.GetSyntax())) {
-                    if (syntax is not ParameterSyntax paramDec)
-                        return false;
+                var paramDec = (ParameterSyntax)parameterSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
-                    if (paramDec.Default is not null) {
-                        defaultVal = paramDec.Default.Value.ToString();
-                        break;
-                    }
-                }
+                if (paramDec.Default is not null)
+                    defaultVal = paramDec.Default.Value.ToString();
 
                 break;
             }
@@ -462,7 +523,7 @@ internal class ModelBuilder
 
                 bool needsAutoHandling = !methodSymbol.ReturnsVoid;
 
-                bool isValidOpt = true;
+                isValidOpt = true;
 
                 if (needsAutoHandling
                     && !Utils.Equals(type, Utils.BOOL)
@@ -559,8 +620,11 @@ internal class ModelBuilder
                 return true;
             }
             default:
-                return false;
+                throw new ArgumentException("Symbol must an IFieldSymbol, IPropertySymbol, IParameterSymbol or IMethodSymbol, but it was " + symbol.GetType().Name, nameof(symbol));
         }
+
+        if (!isValidOpt)
+            return false;
 
         opt = new Option(
             MinimalTypeInfo.FromSymbol(type),

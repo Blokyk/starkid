@@ -11,6 +11,8 @@ public record CmdHelp(
     bool HasParams = false
 ) {
     public override string ToString() {
+        var isRoot = ParentCmd is null;
+
         var sb = new StringBuilder();
 
         if (Description is not null) {
@@ -29,7 +31,7 @@ public record CmdHelp(
         void appendNameAndOpts() {
             sb.Append("  ");
 
-            if (ParentCmd is not null) {
+            if (!isRoot) {
                 sb.Append(ParentCmd).Append(' ');
             }
 

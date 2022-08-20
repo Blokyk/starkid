@@ -13,6 +13,12 @@ public abstract record MinimalSymbolInfo(
         private static readonly Dictionary<ITypeSymbol, string> _typeShortNameMap = new(symbolComparer);
         private static readonly Dictionary<ITypeSymbol, MinimalTypeInfo> _typeInfoMap = new(symbolComparer);
 
+        internal static void FullReset() {
+            _typeFullNameMap.Clear();
+            _typeShortNameMap.Clear();
+            _typeInfoMap.Clear();
+        }
+
         private static void ResetIfNeeded<T, U>(Dictionary<T, U> dic) {
             if (dic.Count > 100)
                 dic.Clear();

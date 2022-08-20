@@ -158,7 +158,7 @@ namespace Recline;
                 entryPointName,
                 cmds,
                 classMethods,
-                Location.Create(cliAttrib.ApplicationSyntaxReference!.SyntaxTree, cliAttrib.ApplicationSyntaxReference!.Span),
+                cliAttrib.ApplicationSyntaxReference!.SyntaxTree.GetLocation(cliAttrib.ApplicationSyntaxReference!.Span),
                 out rootCmd
             );
 
