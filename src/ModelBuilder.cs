@@ -96,17 +96,17 @@ internal class ModelBuilder
 
         foreach (var attr in attributes) {
             switch (attr.AttributeClass?.Name) {
-                case Ressources.OptAttribName: // in case this is an option method, abort
+                case Resources.OptAttribName: // in case this is an option method, abort
                     hadOptAttr = true;
                     break;
-                case Ressources.DescAttribName: {
+                case Resources.DescAttribName: {
                     if (!_attribParser.TryParseDescAttrib(attr, out var descAttr))
                         return false;
 
                     desc = descAttr.Desc;
                     break;
                 }
-                case Ressources.CmdAttribName: {
+                case Resources.CmdAttribName: {
                     if (hadCmdAttr) {
                         _diagnostics.Add(
                             Diagnostic.Create(
@@ -139,7 +139,7 @@ internal class ModelBuilder
 
                     break;
                 }
-                case Ressources.SubCmdAttribName: {
+                case Resources.SubCmdAttribName: {
                     if (hadCmdAttr) {
                         _diagnostics.Add(
                             Diagnostic.Create(
@@ -294,10 +294,10 @@ internal class ModelBuilder
         var attributes = param.GetAttributes();
 
         foreach (var attr in attributes) {
-            if (attr.AttributeClass?.Name == Ressources.OptAttribName)
+            if (attr.AttributeClass?.Name == Resources.OptAttribName)
                 return true;
 
-            if ((attr.AttributeClass?.Name) == Ressources.DescAttribName) {
+            if ((attr.AttributeClass?.Name) == Resources.DescAttribName) {
                 if (attr.ConstructorArguments.Length < 1)
                     return false;
 
@@ -365,11 +365,11 @@ internal class ModelBuilder
         foreach (var attr in attributes) {
 
             switch (attr.AttributeClass?.Name) {
-                case Ressources.CmdAttribName:
-                case Ressources.SubCmdAttribName:
+                case Resources.CmdAttribName:
+                case Resources.SubCmdAttribName:
                     hadCmdAttr = true;
                     break;
-                case Ressources.OptAttribName:
+                case Resources.OptAttribName:
                     if (hadOptAttrib)
                         return false;
 
@@ -406,7 +406,7 @@ internal class ModelBuilder
                         argName = optAttr.ArgName;
 
                     break;
-                case Ressources.DescAttribName:
+                case Resources.DescAttribName:
                     if (!_attribParser.TryParseDescAttrib(attr, out var descAttr))
                         return false;
 

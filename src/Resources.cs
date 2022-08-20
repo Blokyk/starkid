@@ -1,6 +1,6 @@
 namespace Recline.Generator;
 
-internal static class Ressources {
+internal static class Resources {
     public const int MAX_LINE_LENGTH = 80;
 
     //TODO: add list of parsable types for options

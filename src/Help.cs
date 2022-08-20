@@ -71,7 +71,7 @@ public record CmdHelp(
 
             var allCmdsStr = String.Join(" | ", SubCmds.Select(cmd => cmd.Name));
 
-            if (allCmdsStr.Length > 40 || sb.Length + allCmdsStr.Length > Ressources.MAX_LINE_LENGTH) {
+            if (allCmdsStr.Length > 40 || sb.Length + allCmdsStr.Length > Resources.MAX_LINE_LENGTH) {
                 sb.Append("command");
             } else {
                 sb.Append(allCmdsStr);
@@ -130,7 +130,7 @@ public record CmdHelp(
 
             // if there's not enough space for the description, skip a line
             // and indent before inserting it
-            if (pre.Length + opt.Description.Length > Ressources.MAX_LINE_LENGTH) {
+            if (pre.Length + opt.Description.Length > Resources.MAX_LINE_LENGTH) {
                 sb
                     //.AppendLine()
                     .Append(indentStr);
@@ -138,7 +138,7 @@ public record CmdHelp(
                 sb.Append(indentStr);
             }
 
-            var charsLeft = Ressources.MAX_LINE_LENGTH - maxIndentLength;
+            var charsLeft = Resources.MAX_LINE_LENGTH - maxIndentLength;
 
             if (opt.Description.Length <= charsLeft) {
                 sb.AppendLine(opt.Description);
@@ -152,7 +152,7 @@ public record CmdHelp(
             for (int j = 0; j < descWords.Length; j++) {
                 ref var word = ref descWords[j];
 
-                if (currDescLineLength + word.Length + 1 + maxIndentLength > Ressources.MAX_LINE_LENGTH) {
+                if (currDescLineLength + word.Length + 1 + maxIndentLength > Resources.MAX_LINE_LENGTH) {
                     sb
                         .AppendLine()
                         .Append(maxIndentStr);

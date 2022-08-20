@@ -98,12 +98,12 @@ public partial class MainGenerator : IIncrementalGenerator
         parserGenerationTime = sw.Elapsed;
 
         context.AddSource(
-            Ressources.GenNamespace + "_Program.g.cs",
-            SourceText.From(Ressources.ProgClassStr, Encoding.UTF8)
+            Resources.GenNamespace + "_Program.g.cs",
+            SourceText.From(Resources.ProgClassStr, Encoding.UTF8)
         );
 
         context.AddSource(
-            Ressources.GenNamespace + "_CmdDescDynamic.g.cs",
+            Resources.GenNamespace + "_CmdDescDynamic.g.cs",
             SourceText.From(
                 descDynamicText
 #if DEBUG

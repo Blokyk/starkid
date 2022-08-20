@@ -1,6 +1,6 @@
 using Recline.Generator.Model;
 
-using static Recline.Generator.Ressources;
+using static Recline.Generator.Resources;
 
 namespace Recline.Generator;
 

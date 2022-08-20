@@ -35,7 +35,7 @@ public partial class MainGenerator : IIncrementalGenerator
 
                 foreach (var filename in _staticFilenames) {
                     postInitCtx.AddSource(
-                        Ressources.GenNamespace + "_" + filename + ".g.cs",
+                        Resources.GenNamespace + "_" + filename + ".g.cs",
                         SourceText.From(File.ReadAllText(staticFolderPath + filename + ".cs"), Encoding.UTF8)
                     );
                 }
@@ -57,7 +57,7 @@ namespace Recline;
                 }
 
                 postInitCtx.AddSource(
-                    Ressources.GenNamespace + "_Attributes.g.cs",
+                    Resources.GenNamespace + "_Attributes.g.cs",
                     SourceText.From(sb.ToString(), Encoding.UTF8)
                 );
                 watch.Stop();
@@ -104,7 +104,7 @@ namespace Recline;
         var classSymbol = (ctx.TargetSymbol as INamedTypeSymbol)!;
 
         var fullClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        if (!classSymbol.TryGetAttribute(Ressources.CLIAttribName, out var cliAttrib))
+        if (!classSymbol.TryGetAttribute(Resources.CLIAttribName, out var cliAttrib))
             throw new Exception("Couldn't get CLI attribute for class " + classSymbol.Name);
 
         if (!attribParser.TryParseCLIAttrib(cliAttrib, out var cliAttr))
@@ -114,7 +114,7 @@ namespace Recline;
 
         string? appDesc = null;
 
-        if (classSymbol.TryGetAttribute(Ressources.DescAttribName, out var descAttrib)) {
+        if (classSymbol.TryGetAttribute(Resources.DescAttribName, out var descAttrib)) {
             if (!Utils.TryGetDescription(descAttrib, out appDesc))
                 return (null, ImmutableArray<Diagnostic>.Empty); // no need to add diagnostics, cause the syntax is already invalid
         }
