@@ -151,19 +151,9 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor OptMustNotBeReadonly
-        = new(
-            "CLI205",
-            "Member '{0}' can't be readonly to be an option",
-            "Options can't be marked readonly",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
     public static readonly DiagnosticDescriptor OptsInEntryMethod
         = new(
-            "CLI206",
+            "CLI205",
             "Entry-point methods '{0}' can't have parameters with [Option]",
             "Entry-point methods currently don't allow [Options] parameters, use fields and properties instead",
             "Recline.Analysis",
@@ -173,7 +163,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptShortName
         = new(
-            "CLI207",
+            "CLI206",
             "Whitespace characters can't be used for option's aliases",
             "Whitespace characters can't be used for option's aliases",
             "Recline.Analysis",
@@ -183,7 +173,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptLongName
         = new(
-            "CLI208",
+            "CLI207",
             "Null/empty/whitespace-only option names are disallowed",
             "Option names cannot be null, empty or only contain whitespace",
             "Recline.Analysis",
@@ -193,7 +183,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NonWritableOptField
         = new(
-            "CLI209",
+            "CLI208",
             "Can't use 'readonly' on option fields",
             "Fields marked with [Option] must be writable",
             "Recline.Analysis",
@@ -203,7 +193,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NonWritableOptProp
         = new(
-            "CLI209",
+            "CLI208",
             "An option's property must have a public set accessor",
             "Properties marked with [Option] must have a public set accessor",
             "Recline.Analysis",

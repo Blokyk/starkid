@@ -443,18 +443,6 @@ internal class ModelBuilder
             isValidOpt = false;
         }
 
-        if (symbol is IFieldSymbol fieldSymbol && fieldSymbol.IsReadOnly) {
-            _diagnostics.Add(
-                Diagnostic.Create(
-                    Diagnostics.OptMustNotBeReadonly,
-                    symbol.Locations[0],
-                    symbol.GetErrorName()
-                )
-            );
-
-            isValidOpt = false;
-        }
-
         ITypeSymbol type;
         string? defaultVal = null;
 
@@ -535,18 +523,6 @@ internal class ModelBuilder
                             Diagnostics.OptMethodWrongReturnType,
                             methodSymbol.Locations[0],
                             methodSymbol.GetErrorName(), methodSymbol.ReturnType.GetErrorName()
-                        )
-                    );
-
-                    isValidOpt = false;
-                }
-
-                if (!methodSymbol.IsStatic) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.OptMustBeStatic,
-                            methodSymbol.Locations[0],
-                            methodSymbol.GetErrorName()
                         )
                     );
 
