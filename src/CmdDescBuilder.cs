@@ -84,6 +84,7 @@ internal class CmdDescBuilder
 
         sb.Append($@"
 {GetClassDeclarationLine(cmd, isRoot)}
+        public override string Name => ""{cmd.Name}"";
         internal override string HelpString => _helpString;
         private static readonly string _helpString = {SyntaxFactory.Literal(helpStr).ToString()};
 

@@ -34,9 +34,11 @@ namespace {GenNamespace};
 
     public const string ProgClassName = ClassPrefix + "Program";
     public const string ProgClassStr = $@"{GenFileHeader}
-static partial class {ProgClassName} {{
+internal static partial class {ProgClassName} {{
+    private static CmdDesc currCmdDesc = CmdDesc.root;
+    private static string prevCmdName = CmdDesc.root.Name;
+
     static int Main(string[] args) {{
-        var currCmdDesc = CmdDesc.root;
         var argCount = 0;
 
         var onlyArgs = false; // set to true if we get '--'
@@ -71,7 +73,16 @@ static partial class {ProgClassName} {{
                 }}
 
                 if (currCmdDesc.SubCmds.TryGetValue(arg, out var getSubCmdDesc)) {{
+                    var oldArgCount = currCmdDesc.PosArgCount;
+
+                    prevCmdName = currCmdDesc.Name;
                     currCmdDesc = getSubCmdDesc();
+
+                    if (oldArgCount != 0) {{
+                        Console.Error.WriteLine(GetHelpString(""Can't invoke sub-command '{{0}}' with arguments for parent command '"" + prevCmdName + ""'"", currCmdDesc.Name));
+                        return 1;
+                    }}
+
                     continue;
                 }}
 
@@ -128,11 +139,22 @@ static partial class {ProgClassName} {{
         return true;
     }}
 
+    static string InRed(string msg)
+        => ""\x1b[31m"" + msg + ""\x1b[0m\n"";
+    static string FormatError(string reason, object obj1)
+        => InRed(string.Format(reason, ""\x1b[1m"" + obj1.ToString() + ""\x1b[22m""));
+
     static string GetHelpString(string reason, CmdDesc desc)
-        => ""\x1b[31m"" + reason + ""\x1b[0m\n"" + desc.HelpString;
+        => InRed(reason) + desc.HelpString;
+
+    static string GetHelpString(string reason)
+        => GetHelpString(reason, currCmdDesc);
 
     static string GetHelpString(string reason, string argName, CmdDesc desc)
-        => GetHelpString(string.Format(reason, ""\x1b[1m"" + argName + ""\x1b[22m""), desc);
+        => GetHelpString(FormatError(reason, argName), desc);
+
+    static string GetHelpString(string reason, string argName)
+        => GetHelpString(reason, argName, currCmdDesc);
 
     internal static void UpdateWith<TKey, TValue>(
         this Dictionary<TKey, TValue> dic1,
@@ -172,17 +194,17 @@ static partial class {ProgClassName} {{
         if (val is ""false"")
             return false;
 
-        throw new FormatException(""Couldn't understand "" + val + "" as a boolean value"");
+        throw new FormatException(""Couldn't understand '"" + val + ""' as a boolean value"");
     }}
 
     internal static void ThrowIfNotValid(bool val, [CallerArgumentExpression(""val"")] string expr = """") {{
         if (!val)
-            throw new Exception(""Expression "" + expr + "" returned false"");
+            throw new Exception(""Expression '"" + expr + ""' returned false"");
     }}
 
     internal static void ThrowIfNotValid(int val, [CallerArgumentExpression(""val"")] string expr = """") {{
         if (val != 0)
-            throw new Exception(""Expression "" + expr + "" returned a non-zero value"");
+            throw new Exception(""Expression '"" + expr + ""' returned a non-zero value"");
     }}
 
     internal static void ThrowIfNotValid(string? val) {{
@@ -196,6 +218,7 @@ static partial class {ProgClassName} {{
     }}
 
     private abstract partial class CmdDesc {{
+        public abstract string Name {{ get; }}
         private static Dictionary<string, Func<CmdDesc>> _subs = new() {{}};
 
         private static readonly Func<int> _func = static () => {{
@@ -224,6 +247,7 @@ static partial class {ProgClassName} {{
         }}
 
         private int posArgIdx = 0;
+        public int PosArgCount => posArgIdx + _params.Count;
         protected virtual bool HasParams {{ get; }} = false;
 
         protected List<string> _params = new();
