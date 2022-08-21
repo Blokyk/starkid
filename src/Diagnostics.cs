@@ -23,7 +23,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor CmdMustBeStatic
         = new(
-            "CLI010",
+            "CLI100",
             "Method '{0}' must be static to be a command",
             "Methods marked with [Command] must be static",
             "Recline.Analysis",
@@ -33,7 +33,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor CmdCantBeGeneric
         = new(
-            "CLI011",
+            "CLI101",
             "Method '{0}' can't be generic to be a command",
             "Methods marked with [Command] can't be generic",
             "Recline.Analysis",
@@ -43,7 +43,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor CmdMustBeOrdinary
         = new(
-            "CLI012",
+            "CLI102",
             "{1} method '{0}' cannot be a command",
             "{1}s can't be commands",
             "Recline.Analysis",
@@ -53,7 +53,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor CmdMustBeVoidOrInt
         = new(
-            "CLI013",
+            "CLI103",
             "Method '{0}' returns '{1}', which is invalid for a command",
             "Commands must return either void or int",
             "Recline.Analysis",
@@ -63,7 +63,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor CouldntFindRootCmd
         = new(
-            "CLI014",
+            "CLI104",
             "Couldn't find entry point method '{0}'",
             "Couldn't find entry point method '{0}'",
             "Recline.Analysis",
@@ -73,7 +73,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor CouldntFindParentCmd
         = new(
-            "CLI015",
+            "CLI105",
             "Couldn't find parent method '{1}' for sub-command '{0}'",
             "'{1}' must be the name of a method marked with [Command] or [SubCommand]",
             "Recline.Analysis",
@@ -83,7 +83,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor TooManyRootCmd
         = new(
-            "CLI016",
+            "CLI106",
             "Ambiguity between methods '{1}' and '{2}'",
             "More than one method with name '{0}' for entry point",
             "Recline.Analysis",
@@ -93,7 +93,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyCmdName
         = new(
-            "CLI017",
+            "CLI107",
             "Null/empty/whitespace-only command names are disallowed",
             "Command names cannot be null, empty or only contain whitespace",
             "Recline.Analysis",
@@ -103,7 +103,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptMethodCantBeGeneric
         = new(
-            "CLI020",
+            "CLI200",
             "Method '{0}' can't be generic to be an option",
             "Options can't be generic",
             "Recline.Analysis",
@@ -113,7 +113,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptMethodWrongReturnType
         = new(
-            "CLI021",
+            "CLI201",
             "Method '{0}' returns type '{1}', which is invalid for options",
             "Options must return either void, bool, int, string or Exception",
             "Recline.Analysis",
@@ -123,7 +123,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptMethodTooManyArguments
         = new(
-            "CLI022",
+            "CLI202",
             "Method '{0}' has {1} parameters, where one was expected maximum",
             "Option-methods can only have 0 or 1 parameters",
             "Recline.Analysis",
@@ -133,7 +133,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptMethodWrongParamType
         = new(
-            "CLI023",
+            "CLI203",
             "Parameter '{0}' should have type 'string', not {1}",
             "The parameter of an option-method should always be a string",
             "Recline.Analysis",
@@ -143,7 +143,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptMustBeStatic
         = new(
-            "CLI024",
+            "CLI204",
             "Member '{0}' has to be static to be an option",
             "Options must be marked static",
             "Recline.Analysis",
@@ -153,7 +153,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptMustNotBeReadonly
         = new(
-            "CLI025",
+            "CLI205",
             "Member '{0}' can't be readonly to be an option",
             "Options can't be marked readonly",
             "Recline.Analysis",
@@ -163,7 +163,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptsInEntryMethod
         = new(
-            "CLI026",
+            "CLI206",
             "Entry-point methods '{0}' can't have parameters with [Option]",
             "Entry-point methods currently don't allow [Options] parameters, use fields and properties instead",
             "Recline.Analysis",
@@ -173,7 +173,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptShortName
         = new(
-            "CLI026",
+            "CLI207",
             "Whitespace characters can't be used for option's aliases",
             "Whitespace characters can't be used for option's aliases",
             "Recline.Analysis",
@@ -183,7 +183,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptLongName
         = new(
-            "CLI027",
+            "CLI208",
             "Null/empty/whitespace-only option names are disallowed",
             "Option names cannot be null, empty or only contain whitespace",
             "Recline.Analysis",
@@ -193,7 +193,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NonWritableOptField
         = new(
-            "CLI028",
+            "CLI209",
             "Can't use 'readonly' on option fields",
             "Fields marked with [Option] must be writable",
             "Recline.Analysis",
@@ -203,7 +203,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NonWritableOptProp
         = new(
-            "CLI029",
+            "CLI209",
             "An option's property must have a public set accessor",
             "Properties marked with [Option] must have a public set accessor",
             "Recline.Analysis",
@@ -213,7 +213,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor DescCantBeNull
         = new(
-            "CLI030",
+            "CLI300",
             "Description for '{0}' can't be null",
             "Description texts can't be null",
             "Recline.Analysis",
@@ -223,7 +223,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor BothCmdAndSubCmd
         = new(
-            "CLI100",
+            "CLI002",
             "Member '{0}' can't have both [Command] and [SubCommand] attributes",
             "A member can't be both an command and a sub-command",
             "Recline.Analysis",
@@ -233,7 +233,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor BothOptAndCmd
         = new(
-            "CLI101",
+            "CLI003",
             "Member '{0}' can't have both [Option] and [Command/SubCommand] attributes",
             "A member can't be both an option and a command",
             "Recline.Analysis",
