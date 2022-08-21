@@ -9,5 +9,5 @@ public record MethodOption(OptDesc Desc, bool NeedsAutoHandling) : Option(Utils.
         }
     }
 
-    public override bool IsSwitch { get; init; }
+    public override bool IsFlag { get; init; }
 }

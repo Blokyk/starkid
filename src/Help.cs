@@ -90,7 +90,7 @@ public record CmdHelp(
             .AppendLine()
             .AppendLine();
 
-        AppendDescs(sb, "Options", CmdOpts.Concat(new[] { new SwitchDesc("help", 'h', "Print this help message") } ).Cast<Desc>().ToArray())
+        AppendDescs(sb, "Options", CmdOpts.Concat(new[] { new FlagDesc("help", 'h', "Print this help message") } ).Cast<Desc>().ToArray())
             .AppendLine();
         AppendDescs(sb, "Arguments", PosArgs)
             .AppendLine();
@@ -191,7 +191,7 @@ public record CmdHelp(
             }
 
             if (desc is WithArgsDesc { ArgNames.Length: > 0 } withArgs) {
-                if (withArgs is not SwitchDesc) {
+                if (withArgs is not FlagDesc) {
                     str += " <" + String.Join("> <", withArgs.ArgNames) + ">";
                 }
             }

@@ -51,8 +51,8 @@ internal static partial class {ProgClassName} {{
             var value = parts.ElementAtOrDefault(1);
 
             if (!onlyArgs) {{
-                if (currCmdDesc.Switches.TryGetValue(arg, out var actSwitch)) {{
-                    if (!TryDoAction(actSwitch, arg, value!, rawArg, currCmdDesc))
+                if (currCmdDesc.flags.TryGetValue(arg, out var actFlag)) {{
+                    if (!TryDoAction(actFlag, arg, value!, rawArg, currCmdDesc))
                         return 1;
                     continue;
                 }}
@@ -184,9 +184,9 @@ internal static partial class {ProgClassName} {{
 
     internal static T Parse<T>(string? str) => default(T)!;
 
-    internal static bool AsBool(string? val, bool defaultSwitch) {{
+    internal static bool AsBool(string? val, bool defaultFlag) {{
         if (val is null)
-            return defaultSwitch;
+            return defaultFlag;
 
         if (val is ""true"")
             return true;
@@ -228,7 +228,7 @@ internal static partial class {ProgClassName} {{
 
         protected virtual Action<string>[] _posArgs {{ get; }} = Array.Empty<Action<string>>();
 
-        internal Dictionary<string, Action<string?>> Switches => _switches;
+        internal Dictionary<string, Action<string?>> flags => _flags;
         internal Dictionary<string, Action<string>> Options => _options;
         internal virtual Dictionary<string, Func<CmdDesc>> SubCmds => _subs;
         internal virtual Func<int> Invoke => _func;
@@ -239,10 +239,10 @@ internal static partial class {ProgClassName} {{
 
         protected CmdDesc(
 #nullable restore
-            Dictionary<string, Action<string?>> switches,
+            Dictionary<string, Action<string?>> flags,
             Dictionary<string, Action<string>> options
         ) {{
-            _switches.UpdateWith(switches);
+            _flags.UpdateWith(flags);
             _options.UpdateWith(options);
         }}
 

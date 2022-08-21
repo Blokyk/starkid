@@ -104,7 +104,7 @@ internal class CmdDescBuilder
 
 ");
 
-        AddOptsAndSwitches(RootOptsAndSws, isRoot: true);
+        AddOptsAndFlags(RootOptsAndSws, isRoot: true);
 
         sb.AppendLine($@"
     }}");
@@ -114,8 +114,8 @@ internal class CmdDescBuilder
 
     }
 
-    //TODO: change "switch" vocab to "flag"
-    void AddOptsAndSwitches(Option[] optsAndSws, bool isRoot = false) {
+    //TODO: change "flag" vocab to "flag"
+    void AddOptsAndFlags(Option[] optsAndSws, bool isRoot = false) {
         var opts = new List<Option>(optsAndSws.Length);
         var sws = new List<Option>(optsAndSws.Length);
 
@@ -126,9 +126,9 @@ internal class CmdDescBuilder
                 opts.Add(thing);
         }
 
-        #region Switches
+        #region Flags
 
-        sb.AppendLine($@"private static Dictionary<string, Action<string?>> _switches = new() {{");
+        sb.AppendLine($@"private static Dictionary<string, Action<string?>> _flags = new() {{");
 
         sb.AppendLine($@"
             {{ ""--help"", DisplayHelp }},
@@ -205,7 +205,7 @@ internal class CmdDescBuilder
             if (opt is MethodOption methodOpt) {
                 string argExpr = "";
 
-                if (!methodOpt.IsSwitch) {
+                if (!methodOpt.IsFlag) {
                     argExpr = "__arg";
 
                     if (!methodOpt.BackingSymbol.Parameters[0].IsNullable) {
@@ -403,17 +403,17 @@ internal class CmdDescBuilder
 {GetClassDeclarationLine(cmd, isRoot)}
         {(cmd.HasParams ? "protected override bool HasParams => true;" : "")}
 
-        internal {cmd.Name}CmdDesc() : base(_switches, _options) {{}}
+        internal {cmd.Name}CmdDesc() : base(_flags, _options) {{}}
 
         protected {cmd.Name}CmdDesc(
-            Dictionary<string, Action<string?>> switches,
+            Dictionary<string, Action<string?>> flags,
             Dictionary<string, Action<string>> options
         )
-            : base(_switches.UpdatedWith(switches), _options.UpdatedWith(options))
+            : base(_flags.UpdatedWith(flags), _options.UpdatedWith(options))
         {{}}
 ");
 
-        AddOptsAndSwitches(optsAndSws, isRoot);
+        AddOptsAndFlags(optsAndSws, isRoot);
         AddArgs(posArgs, isRoot);
         if (cmd.BackingSymbol is not null) // if this is not root
             AddFuncAndInvoke(cmd.BackingSymbol, optsAndSws, posArgs, isRoot);

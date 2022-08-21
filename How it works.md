@@ -32,9 +32,9 @@
 
 ## Generation & command descriptors
 
-The generated parser uses **command descriptors** (`CmdDesc`), which contains info about a command's switches, options and subs, to understand the app's interfaces and set the right values. The base `CmdDesc` class is abstract and defines the "interface" for getting gathering info about a command from the outside; it is also responsible for managing positional arguments based on the definitions of derived cmd descriptions via the `TryAddPosArg()` method. The base `CmdDesc` also contains the global switches and options for the app, which every other command then inherits.
+The generated parser uses **command descriptors** (`CmdDesc`), which contains info about a command's flags, options and subs, to understand the app's interfaces and set the right values. The base `CmdDesc` class is abstract and defines the "interface" for getting gathering info about a command from the outside; it is also responsible for managing positional arguments based on the definitions of derived cmd descriptions via the `TryAddPosArg()` method. The base `CmdDesc` also contains the global flags and options for the app, which every other command then inherits.
 
-> **Note**: Options (and switches) are stored in a `Dictionary<string, Action<string?>>`, which maps raw option names (e.g. `--version`, or `-v`) to special thunks, which are responsible for setting/storing the value of each option. Descriptors fake a sort of "inheritance" between those by basically updated its base's dictionary to add its own options. This is a terrible idea only barely excused by the fact I wrote the initial prototype in about an hour and am now too afraid to break it.
+> **Note**: Options (and flags) are stored in a `Dictionary<string, Action<string?>>`, which maps raw option names (e.g. `--version`, or `-v`) to special thunks, which are responsible for setting/storing the value of each option. Descriptors fake a sort of "inheritance" between those by basically updated its base's dictionary to add its own options. This is a terrible idea only barely excused by the fact I wrote the initial prototype in about an hour and am now too afraid to break it.
 > 
 > While most thunks are pretty simple, there's two special cases we have to handle here :
 > 

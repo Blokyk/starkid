@@ -363,7 +363,6 @@ internal class ModelBuilder
         bool isValidOpt = true;
 
         foreach (var attr in attributes) {
-
             switch (attr.AttributeClass?.Name) {
                 case Resources.CmdAttribName:
                 case Resources.SubCmdAttribName:
@@ -608,12 +607,12 @@ internal class ModelBuilder
                     needsAutoHandling
                 ) {
                     BackingSymbol = MinimalMethodInfo.FromSymbol(methodSymbol),
-                    IsSwitch = rawArgParam is null,
+                    IsFlag = rawArgParam is null,
                 };
 
-                if (opt.IsSwitch) {
+                if (opt.IsFlag) {
                     opt = opt with {
-                        Desc = new SwitchDesc(longName, shortName, desc)
+                        Desc = new FlagDesc(longName, shortName, desc)
                     };
                 }
 
@@ -639,9 +638,9 @@ internal class ModelBuilder
                     : MinimalMemberInfo.FromSymbol(symbol)
         };
 
-        if (opt.IsSwitch) {
+        if (opt.IsFlag) {
             opt = opt with {
-                Desc = new SwitchDesc(longName, shortName, desc)
+                Desc = new FlagDesc(longName, shortName, desc)
             };
         }
 

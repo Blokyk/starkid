@@ -22,7 +22,7 @@ I don't actually plan on maintaining this any further than I need to for lotus, 
 
 - Use `[CLI]` on a static class to mark it as the descriptor, set the `EntryPoint` property to the name of the method you want to invoke by default; if not set, the app will just error out when no command is supplied
 
-- Use `[Option(longName, alias)]` on a static field or property (with a set accessor) to declare a global new command-line option. If it's a bool, it will be parsed as a switch; otherwise the argument will first be auto-parsed from a string into the desired type
+- Use `[Option(longName, alias)]` on a static field or property (with a set accessor) to declare a global new command-line option. If it's a bool, it will be parsed as a flag; otherwise the argument will first be auto-parsed from a string into the desired type
 
 - You can use `[Option]` on method parameters to declare command-specific options.
 
