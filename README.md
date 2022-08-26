@@ -49,3 +49,5 @@ I don't actually plan on maintaining this any further than I need to for lotus, 
 - We don't emit any error when someone defines an arg or option of an unsupported type
 
 - Options declared in the "Entry Point" method parameter list are currently not supported, even they could be implemented just like for normal commands. The bug is that I'm lazy
+
+- Method-backed options are called immediately called, even if there's still other stuff (like options) to parse. This could be changed by adding a "processing queue" which could be dequeued on `CmdDesc.Invoke()`. However, the semantics of this, however, are a bit weird, since which options might be set/processed will depend on a) whether they were method-backed or not, b) if they were, did they come before or after, and c) if they came after, what shoudle we do ? In my opinion, this could be resolved by transitioning method-backed options to instead use the future [ParseWith] attribute, and having void-method-backed flags be put in a processing queue, or potentially preventing a user from specifying two different void-backed flags (although that might considerably reduce their usefulness)
