@@ -7,17 +7,20 @@ namespace Recline.Generator;
 internal class CmdDescBuilder
 {
     public string CliClassName { get; }
-    public string[] RequiredUsings { get; }
+    public ImmutableArray<string> RequiredUsings { get; }
     public string AppName { get; }
     public string? Description { get; }
 
-    Dictionary<Command, List<Command>> domToSubTable;
+    Dictionary<Command, ImmutableArray<Command>.Builder> domToSubTable;
 
     Command RootCmd { get; }
-    Argument[] RootArgs { get; }
-    Option[] RootOptsAndSws { get; }
+    ImmutableArray<Argument> RootArgs { get; }
+    ImmutableArray<Option> RootOptsAndSws { get; }
 
-    List<(Command cmd, Option[] opts, Argument[] posArgs)> _allCmdInfo = new();
+    private record CmdInfo(Command cmd, ImmutableArray<Option> opts, ImmutableArray<Argument> posArgs);
+
+    ImmutableArray<CmdInfo>.Builder _allCmdInfo
+        = ImmutableArray.CreateBuilder<CmdInfo>();
 
     bool HasRealRootCmd { get; }
 
@@ -28,9 +31,9 @@ internal class CmdDescBuilder
     public CmdDescBuilder(
         string appName,
         string cliClassName,
-        string[] usings,
-        (Command cmd, Argument[] args)? cmdAndArgs,
-        Option[] optsAndSws,
+        ImmutableArray<string> usings,
+        (Command cmd, ImmutableArray<Argument> args)? cmdAndArgs,
+        ImmutableArray<Option> optsAndSws,
         string? description
     ) {
         AppName = appName;
@@ -45,14 +48,14 @@ internal class CmdDescBuilder
             RootArgs = cmdAndArgs.Value.args;
             RootCmd = cmdAndArgs.Value.cmd;
         } else {
-            RootArgs = Array.Empty<Argument>();
-            RootCmd = new Command(true, appName, Description, Array.Empty<Option>(), RootArgs);
+            RootArgs = ImmutableArray<Argument>.Empty;
+            RootCmd = new Command(true, appName, Description, ImmutableArray<Option>.Empty, RootArgs);
         }
 
         RootOptsAndSws = optsAndSws;
 
         domToSubTable = new() {
-            { RootCmd, new List<Command>() }
+            { RootCmd, ImmutableArray.CreateBuilder<Command>() }
         };
 
         AddRoot();
@@ -61,21 +64,21 @@ internal class CmdDescBuilder
     void AddRootHelpText() {
         AddHelpText(
             RootCmd,
-            domToSubTable[RootCmd].ToArray(),
+            domToSubTable[RootCmd].ToImmutable(),
             RootOptsAndSws,
             RootArgs,
             true
         );
     }
 
-    public void AddHelpText(Command cmd, Command[] subs, Option[] opts, Argument[] posArgs, bool isRoot = false) {
+    public void AddHelpText(Command cmd, ImmutableArray<Command> subs, ImmutableArray<Option> opts, ImmutableArray<Argument> posArgs, bool isRoot = false) {
         var help = new CmdHelp(
             cmd.ParentCmd?.GetNameWithParent() ?? (isRoot ? null : RootCmd.Name),
             cmd.Name,
             cmd.Description,
-            opts.Select(o => o.Desc).ToArray(),
-            posArgs.Select(a => a.Desc).ToArray(),
-            subs.Select(s => s.WithArgsDesc).ToArray(),
+            ImmutableArray.CreateRange(opts, o => o.Desc),
+            ImmutableArray.CreateRange(posArgs, a => a.Desc),
+            ImmutableArray.CreateRange(subs, s => s.WithArgsDesc),
             IsDirectCmd: !isRoot,
             HasParams: cmd.HasParams
         );
@@ -115,13 +118,13 @@ internal class CmdDescBuilder
     }
 
     //TODO: change "flag" vocab to "flag"
-    void AddOptsAndFlags(Option[] optsAndSws, bool isRoot = false) {
-        var opts = new List<Option>(optsAndSws.Length);
-        var sws = new List<Option>(optsAndSws.Length);
+    void AddOptsAndFlags(ImmutableArray<Option> optsAndFlags, bool isRoot = false) {
+        var opts = ImmutableArray.CreateBuilder<Option>(optsAndFlags.Length / 2);
+        var flags = ImmutableArray.CreateBuilder<Option>(optsAndFlags.Length / 2);
 
-        foreach (var thing in optsAndSws) {
+        foreach (var thing in optsAndFlags) {
             if (thing.Type == Utils.BOOLMinInfo)
-                sws.Add(thing);
+                flags.Add(thing);
             else
                 opts.Add(thing);
         }
@@ -135,40 +138,40 @@ internal class CmdDescBuilder
             {{ ""-h"", DisplayHelp }},
 ");
 
-        foreach (var sw in sws) {
+        foreach (var sw in flags) {
             sb.AppendLine(GetOptDictLine(sw.Desc.LongName, sw.Desc.Alias, "set_" + sw.BackingSymbol.Name));
         }
 
         sb.AppendLine("};");
 
-        foreach (var sw in sws) {
+        foreach (var flag in flags) {
             string expr = "";
 
             if (isRoot)
                 expr = CliClassName + ".";
 
-            var argExpr = GetParsingExpression(sw.Type, sw.DefaultValueExpr);
+            var argExpr = GetParsingExpression(flag.Parser, flag.DefaultValueExpr);
 
-            if (sw is MethodOption methodOpt) {
+            if (flag is MethodOption methodOpt) {
                 expr = methodOpt.BackingSymbol.ToString() + '(' + argExpr + " ?? \"\")";
 
                 if (methodOpt.NeedsAutoHandling) {
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr += Utils.GetSafeName(sw.BackingSymbol.Name) + " = " + argExpr;
+                expr += Utils.GetSafeName(flag.BackingSymbol.Name) + " = " + argExpr;
             }
 
             sb.AppendLine(
                 GetOptFuncLine(
-                    "set_" + sw.BackingSymbol.Name,
+                    "set_" + flag.BackingSymbol.Name,
                     expr
                 )
             );
         }
 
         if (!isRoot) {
-            foreach (var sw in sws) {
+            foreach (var sw in flags) {
                 if (sw is MethodOption)
                     continue;
 
@@ -219,7 +222,7 @@ internal class CmdDescBuilder
                     expr = "ThrowIfNotValid(" + expr + ")";
                 }
             } else {
-                expr = (isRoot ? CliClassName  + "." : "") + Utils.GetSafeName(opt.BackingSymbol.Name) + " = " + GetParsingExpression(opt.Type, opt.DefaultValueExpr);
+                expr = (isRoot ? CliClassName  + "." : "") + Utils.GetSafeName(opt.BackingSymbol.Name) + " = " + GetParsingExpression(opt.Parser, opt.DefaultValueExpr);
             }
 
             sb.AppendLine(
@@ -256,15 +259,30 @@ internal class CmdDescBuilder
         #endregion
     }
 
-    string GetParsingExpression(MinimalTypeInfo type, string? defaultValExpr) {
-        if (type == Utils.BOOLMinInfo) {
-            return "AsBool(__arg, " + (defaultValExpr is not null ? "!" + defaultValExpr : "true") + ")";
-        } else {
-            return "Parse<" + type.FullName + ">(__arg ?? \"\")" + (defaultValExpr is not null ? "??" + defaultValExpr : "");
+    static string GetParsingExpression(ParserInfo parser, string? defaultValueExpr) {
+        if (parser == ParserInfo.AsBool) {
+            var name = ParserInfo.AsBool.FullName;
+            if (defaultValueExpr is null)
+                return name + "(__arg)";
+            else
+                return name + "(__arg, " + defaultValueExpr + ")";
         }
+
+        var expr = parser switch {
+            ParserInfo.Identity => "__arg",
+            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + parser.TargetType.FullName + "?>(" + dm.FullName + ", __arg ?? \"\")",
+            ParserInfo.Constructor ctor => "new " + ctor.TargetType.FullName + "(__arg ?? \"\")",
+            ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + parser.TargetType.FullName + ">(" + bom.FullName + ", __arg ?? \"\")",
+            _ => throw new Exception(parser.GetType().Name + " is not a supported ParserInfo type."),
+        };
+
+        if (parser.TargetType.IsNullable && defaultValueExpr is not null)
+            expr = '(' + expr + " ?? " + defaultValueExpr + ')';
+
+        return expr;
     }
 
-    void AddArgs(Argument[] posArgs, bool isRoot = true) {
+    void AddArgs(ImmutableArray<Argument> posArgs, bool isRoot = true) {
         sb.Append($@"protected override Action<string>[] _posArgs => ");
 
         if (posArgs.Length == 0) {
@@ -282,7 +300,7 @@ internal class CmdDescBuilder
                 .Append("static __arg => ")
                 .Append(arg.BackingSymbol.Name)
                 .Append(" = ")
-                .Append(GetParsingExpression(arg.Type, arg.DefaultValueExpr))
+                .Append(GetParsingExpression(arg.Parser, arg.DefaultValueExpr))
                 .Append(",");
         }
 
@@ -314,7 +332,7 @@ internal class CmdDescBuilder
     void AppendFunc(MinimalMethodInfo method, bool isRoot = false) {
         sb.Append("private static ");
 
-        var isVoid = method.ReturnVoid;
+        var isVoid = method.ReturnsVoid;
         var methodParams = method.Parameters;
 
         if (isVoid) {
@@ -345,8 +363,8 @@ internal class CmdDescBuilder
             .AppendLine(";");
     }
 
-    void AddFuncAndInvoke(MinimalMethodInfo method, Option[] optsAndSws, Argument[] posArgs, bool isRoot = false) {
-        var isVoid = method.ReturnVoid;
+    void AddFuncAndInvoke(MinimalMethodInfo method, ImmutableArray<Option> optsAndSws, ImmutableArray<Argument> posArgs, bool isRoot = false) {
+        var isVoid = method.ReturnsVoid;
         var methodParams = method.Parameters;
 
         AppendFunc(method, isRoot);
@@ -386,15 +404,17 @@ internal class CmdDescBuilder
 
     // NOTE: We keep isRoot because we want to be able to force that behavior from AddRoot()
     // even when the rootCmd isn't synthetic
-    public void AddCmd(Command cmd, Option[] optsAndSws, Argument[] posArgs, bool isRoot = false) {
+    public void AddCmd(Command cmd, ImmutableArray<Option> optsAndSws, ImmutableArray<Argument> posArgs, bool isRoot = false) {
         if (!isRoot)
-            _allCmdInfo.Add((cmd, optsAndSws, posArgs));
+            _allCmdInfo.Add(new(cmd, optsAndSws, posArgs));
 
         if (cmd.ParentSymbolName is not null) {
-            if (!domToSubTable.TryGetValue(cmd.ParentCmd!, out var list))
-                domToSubTable[cmd.ParentCmd!] = new() { cmd };
-            else
-                list.Add(cmd);
+            if (!domToSubTable.TryGetValue(cmd.ParentCmd!, out var list)) {
+                list = ImmutableArray.CreateBuilder<Command>();
+                domToSubTable.Add(cmd.ParentCmd!, list);
+            }
+
+            list.Add(cmd);
         } else if (!isRoot) {
             domToSubTable[RootCmd].Add(cmd);
         }
@@ -409,7 +429,7 @@ internal class CmdDescBuilder
             Dictionary<string, Action<string?>> flags,
             Dictionary<string, Action<string>> options
         )
-            : base(_flags.UpdatedWith(flags), _options.UpdatedWith(options))
+            : base(UpdateWith(_flags, flags), UpdateWith(_options, options))
         {{}}
 ");
 
@@ -447,11 +467,12 @@ internal class CmdDescBuilder
 
         foreach (var info in _allCmdInfo) {
             if (!domToSubTable.TryGetValue(info.cmd, out var subList)) {
-                subList = new();
+                subList = ImmutableArray.CreateBuilder<Command>();
+                domToSubTable.Add(info.cmd, subList);
             }
 
             if (info.cmd != RootCmd)
-                AddHelpText(info.cmd, subList.ToArray(), info.opts, info.posArgs);
+                AddHelpText(info.cmd, subList.ToImmutable(), info.opts, info.posArgs);
         }
 
         AddRootHelpText();

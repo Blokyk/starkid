@@ -4,10 +4,12 @@ using Recline.Generator;
 var sampleDir = "../sample/";
 var testDir = "../raw-sample/";
 
+string parsexName = "Parsex.cs", parsex2Name = "Parsex-2.cs.old", dotnetName = "Dotnet.cs.old";
+
 //var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText("/home/blokyk/csharp/sample-cli/Program.cs"));
-var parsexTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + "Parsex.cs"));
-var parsex2Tree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + "Parsex-2.cs"));
-var dotnetTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + "Dotnet.cs"));
+var parsexTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsexName));
+var parsex2Tree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsex2Name));
+var dotnetTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + dotnetName));
 
 var attribAssemblyLoc = typeof(Recline.CLIAttribute).Assembly.Location;
 
@@ -46,17 +48,23 @@ Console.WriteLine("\x1b[33m  init -- parsex\x1b[0m"); {
     } else {
         Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
 
-        foreach (var src in results.GeneratedSources) {
-            using var writer = new StreamWriter(testDir + src.HintName);
+        if (parsexName[^4..] != ".old") {
+            File.Copy(sampleDir + parsexName, testDir + "Main.cs", true);
 
-            src.SourceText.Write(writer);
+            foreach (var src in results.GeneratedSources) {
+                using var writer = new StreamWriter(testDir + src.HintName);
+
+                src.SourceText.Write(writer);
+            }
         }
     }
 
     Console.WriteLine($"Total: {genRun.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
 }
 
-Console.WriteLine("\x1b[33m  mod -- parsex-2\x1b[0m"); {
+//Console.ReadKey();
+
+Console.WriteLine("\x1b[33m  edit -- parsex-2\x1b[0m"); {
     var newUnit = unit.ReplaceSyntaxTree(parsexTree, parsex2Tree);
 
     var genRun = driver.RunGenerators(newUnit);
@@ -73,17 +81,23 @@ Console.WriteLine("\x1b[33m  mod -- parsex-2\x1b[0m"); {
     } else {
         Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
 
-        foreach (var src in results.GeneratedSources) {
-            using var writer = new StreamWriter(testDir + src.HintName);
+        if (parsex2Name[^4..] != ".old") {
+            File.Copy(sampleDir + parsex2Name, testDir + "Main.cs", true);
 
-            src.SourceText.Write(writer);
+            foreach (var src in results.GeneratedSources) {
+                using var writer = new StreamWriter(testDir + src.HintName);
+
+                src.SourceText.Write(writer);
+            }
         }
     }
 
     Console.WriteLine($"Total: {genRun.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
 }
 
-Console.WriteLine("\x1b[33m  change -- dotnet\x1b[0m"); {
+//System.Environment.Exit(0);
+
+Console.WriteLine("\x1b[33m  paste -- dotnet\x1b[0m"); {
     var newUnit = unit.ReplaceSyntaxTree(parsexTree, dotnetTree);
 
     var genRun = driver.RunGenerators(newUnit);
@@ -100,10 +114,14 @@ Console.WriteLine("\x1b[33m  change -- dotnet\x1b[0m"); {
     } else {
         Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
 
-        foreach (var src in results.GeneratedSources) {
-            using var writer = new StreamWriter(testDir + src.HintName);
+        if (dotnetName[^4..] != ".old") {
+            File.Copy(sampleDir + dotnetName, testDir + "Main.cs", true);
 
-            src.SourceText.Write(writer);
+            foreach (var src in results.GeneratedSources) {
+                using var writer = new StreamWriter(testDir + src.HintName);
+
+                src.SourceText.Write(writer);
+            }
         }
     }
 

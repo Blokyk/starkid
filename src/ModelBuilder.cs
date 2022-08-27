@@ -2,21 +2,185 @@ using Recline.Generator.Model;
 
 namespace Recline.Generator;
 
-internal class ModelBuilder
+internal partial class ModelBuilder
 {
     private ImmutableArray<Diagnostic>.Builder _diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
+    private HashSet<string> _topLevelOptLongNames = new();
+    private HashSet<char> _topLevelOptAliases = new();
+    private HashSet<string> _cmdNames = new();
+
     public ImmutableArray<Diagnostic> GetDiagnostics() => _diagnostics.ToImmutable();
 
-    private AttributeParser _attribParser;
+    private AttributeParser _attrParser;
+    private ParserFinder _parserFinder;
+    private ImmutableArray<IMethodSymbol>.Builder _nonCmdCandidateMethods = ImmutableArray.CreateBuilder<IMethodSymbol>();
 
-    public ModelBuilder(AttributeParser parser) => this._attribParser = parser;
+    private ModelBuilder(AttributeParser parser, SemanticModel model) {
+        _attrParser = parser;
+        _parserFinder = new(ref _diagnostics, model);
+    }
 
-    public bool TryGetEntryPoint(string entryPointName, Command[] cmds, IEnumerable<IMethodSymbol> classMethods, Location attributeLocation, out Command rootCmd) {
-        rootCmd = cmds.FirstOrDefault(
-            cmd => cmd.BackingSymbol.Name == entryPointName
+    public static bool TryCreateFromSymbol(INamedTypeSymbol classSymbol, AttributeParser parser, SemanticModel model, out ModelBuilder modelBuilder) {
+        modelBuilder = new(parser, model);
+
+        if (!parser.TryGetAttributeList(classSymbol, ref modelBuilder._diagnostics, out var attrList))
+            return false;
+
+        if (attrList.CLI is null)
+            return false;
+
+        if (!modelBuilder.TryGetCLI(classSymbol, attrList, out modelBuilder._cliData))
+            return false;
+
+        return true;
+    }
+
+    private CLITempData? _cliData;
+
+    private record CLITempData(
+        string AppName,
+        string FullClassName,
+        ImmutableArray<string> Usings,
+        string? Description,
+        int HelpExitCode,
+        string? EntryPointName,
+        Location ClassLocation
+    );
+
+    private ImmutableArray<Option>.Builder _opts = ImmutableArray.CreateBuilder<Option>();
+    private ImmutableArray<Command>.Builder _cmds = ImmutableArray.CreateBuilder<Command>();
+
+    public CLIData? MakeCLIData(out ImmutableArray<Diagnostic> diagnostics) {
+        if (_cliData is null)
+            throw new InvalidOperationException("Trying to get data from uninitialized ModelBuilder");
+
+        Command? rootCmd = null;
+        var posArgs = ImmutableArray<Argument>.Empty;
+
+        if (!TryBindEntryPoint(out rootCmd)) {
+            diagnostics = _diagnostics.ToImmutable();
+            return null;
+        }
+
+        if (rootCmd is not null) {
+            rootCmd = rootCmd with {
+                Name = _cliData.AppName,
+                Description = _cliData.Description ?? rootCmd.Description,
+                ParentSymbolName = null
+            };
+
+            posArgs = rootCmd.Args;
+        }
+
+        for (int i = 0; i < _cmds.Count; i++) {
+            if (_cmds[i].ParentSymbolName is not null) {
+                if (!TryBindParentCmd(_cmds[i], out var newCmd)) {
+                    // Are you sure you marked '${_cmds[i].ParentCmdName}' with [Command] ?
+                    _diagnostics.Add(
+                        Diagnostic.Create(
+                            Diagnostics.CouldntFindParentCmd,
+                            Location.None, // FIXME: should be _cmds[i].BackingSymbol.Location when possible
+                            _cmds[i].ParentSymbolName
+                        )
+                    );
+
+                    diagnostics = _diagnostics.ToImmutable();
+
+                    return null;
+                }
+
+                _cmds[i] = newCmd;
+            } else if (rootCmd is not null) {
+                _cmds[i].ParentCmd = rootCmd;
+            }
+        }
+
+        diagnostics = _diagnostics.ToImmutable();
+
+        return new CLIData(
+            _cliData.AppName,
+            _cliData.FullClassName,
+            _cliData.Usings,
+            rootCmd is null ? null : (rootCmd, posArgs),
+            _opts.ToImmutable(),
+            _cliData.Description,
+            _cmds.ToImmutable(),
+            _cliData.HelpExitCode
+        );
+    }
+
+    public bool TryAdd(ISymbol symbol) {
+        if (!_attrParser.TryGetAttributeList(symbol, ref _diagnostics, out var attrList))
+            return false;
+
+        switch (attrList.Kind) {
+            case MemberKind.None:
+            case MemberKind.Useless:
+                if (symbol is IMethodSymbol methodSymbol && methodSymbol.Name == _cliData?.EntryPointName)
+                    _nonCmdCandidateMethods.Add(methodSymbol);
+                return true;
+            case MemberKind.Option:
+                if (!TryGetOption(symbol, attrList, _topLevelOptLongNames, _topLevelOptAliases, out var opt))
+                    return false;
+                _opts.Add(opt);
+                return true;
+            case MemberKind.Command:
+                if (symbol is not IMethodSymbol method || !TryGetCommand(method, attrList, out var cmd, false))
+                    return false;
+                _cmds.Add(cmd);
+                return true;
+            case MemberKind.CLI:
+            case MemberKind.Invalid:
+            default:
+                return false;
+        }
+    }
+
+    bool TryGetCLI(INamedTypeSymbol classSymbol, AttributeListInfo attrList, [NotNullWhen(true)] out CLITempData? cliData) {
+        cliData = null;
+
+        var fullClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        var (appName, entryPointName, helpExitCode) = attrList.CLI!;
+
+        if (entryPointName is not null)
+            entryPointName = Utils.GetLastNamePart(entryPointName);
+
+        if (!TryGetAllUniqueUsings(classSymbol, out var usings))
+            return false;
+
+        string? appDesc = attrList.Description?.Description;
+
+        cliData = new(
+            appName,
+            fullClassName,
+            usings,
+            appDesc,
+            helpExitCode,
+            entryPointName,
+            classSymbol.GetDefaultLocation()
         );
 
+        return true;
+    }
+
+    bool TryBindEntryPoint(out Command? rootCmd) {
+        rootCmd = null;
+
+        if (_cliData is null)
+            throw new InvalidOperationException("Tried to bind entry point before processing CLI data");
+
+        var entryPoint = _cliData.EntryPointName;
+
+        if (entryPoint is null)
+            return true;
+
+        rootCmd = _cmds.FirstOrDefault(
+            cmd => cmd.BackingSymbol.Name == entryPoint
+        );
+
+        // if we didn't find a command with the right name
         if (rootCmd is null) {
             // technically, we could use classSymbol.GetMembers(entryPointName),
             // but that'd probably be slower
@@ -25,46 +189,42 @@ internal class ModelBuilder
             // and error if we can't call MoveNext() exactly once. But that would be
             // an incredibly small optimisation
 
-            var candidates = classMethods.Where(
-                m => m.Name == entryPointName
-            ).ToArray();
-
-            if (candidates.Length < 1) {
+            if (_nonCmdCandidateMethods.Count < 1) {
                 _diagnostics.Add(
                     Diagnostic.Create(
                         Diagnostics.CouldntFindRootCmd,
-                        attributeLocation,
-                        entryPointName
+                        _cliData.ClassLocation,
+                        entryPoint
                     )
                 );
 
                 return false;
-            } else if (candidates.Length > 1) {
+            } else if (_nonCmdCandidateMethods.Count > 1) {
                 _diagnostics.Add(
                     Diagnostic.Create(
                         Diagnostics.TooManyRootCmd,
-                        attributeLocation,
-                        entryPointName, candidates[0].ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat), candidates[1].ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)
+                        _cliData.ClassLocation,
+                        entryPoint, _nonCmdCandidateMethods[0].ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat), _nonCmdCandidateMethods[1].ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)
                     )
                 );
 
                 return false;
             }
 
-            var method = candidates[0];
+            var method = _nonCmdCandidateMethods[0];
 
-            if (!TryGetCommand(method, out rootCmd!, isEntryPoint: true))
+            if (!_attrParser.TryGetAttributeList(method, ref _diagnostics, out var attrList))
+                return false;
+
+            if (!TryGetCommand(method, attrList, out rootCmd, isEntryPoint: true))
                 return false;
         }
-
-        if (rootCmd is null)
-            throw new Exception("wtf??");
 
         if (rootCmd.Options.Length != 0) {
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.OptsInEntryMethod,
-                    attributeLocation, // FIXME: should be rootCmd.BackingSymbol.Location
+                    _cliData.ClassLocation, // FIXME: should be rootCmd.BackingSymbol.Location when possible
                     rootCmd.BackingSymbol.Name
                 )
             );
@@ -75,125 +235,8 @@ internal class ModelBuilder
         return true;
     }
 
-    public bool TryGetCommand(IMethodSymbol method, out Command? cmd, bool isEntryPoint = false) {
+    bool TryGetCommand(IMethodSymbol method, AttributeListInfo attrList, [NotNullWhen(true)] out Command? cmd, bool isEntryPoint = false) {
         cmd = null;
-        var attributes = method.GetAttributes();
-
-        bool hasExitCode = !method.ReturnsVoid;
-
-        if (attributes.IsDefaultOrEmpty) {
-            return true;
-        }
-
-        string cmdName = "";
-        string? parentCmdName = null;
-        string? desc = null;
-        bool inheritOptions = false;
-
-        bool hadCmdAttr = false;
-        bool hadOptAttr = false;
-        bool isValidCmd = true;
-
-        foreach (var attr in attributes) {
-            switch (attr.AttributeClass?.Name) {
-                case Resources.OptAttribName: // in case this is an option method, abort
-                    hadOptAttr = true;
-                    break;
-                case Resources.DescAttribName: {
-                    if (!_attribParser.TryParseDescAttrib(attr, out var descAttr))
-                        return false;
-
-                    desc = descAttr.Desc;
-                    break;
-                }
-                case Resources.CmdAttribName: {
-                    if (hadCmdAttr) {
-                        _diagnostics.Add(
-                            Diagnostic.Create(
-                                Diagnostics.BothCmdAndSubCmd,
-                                method.Locations[0],
-                                method.GetErrorName()
-                            )
-                        );
-
-                        isValidCmd = false;
-                    }
-
-                    hadCmdAttr = true;
-
-                    if (!_attribParser.TryParseCmdAttrib(attr, out var cmdAttr))
-                        return false;
-
-                    cmdName = cmdAttr.CmdName;
-
-                    if (string.IsNullOrWhiteSpace(cmdName)) {
-                        _diagnostics.Add(
-                            Diagnostic.Create(
-                                Diagnostics.EmptyCmdName,
-                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
-                            )
-                        );
-
-                        isValidCmd = false;
-                    }
-
-                    break;
-                }
-                case Resources.SubCmdAttribName: {
-                    if (hadCmdAttr) {
-                        _diagnostics.Add(
-                            Diagnostic.Create(
-                                Diagnostics.BothCmdAndSubCmd,
-                                method.Locations[0],
-                                method.GetErrorName()
-                            )
-                        );
-
-                        isValidCmd = false;
-                    }
-
-                    hadCmdAttr = true;
-
-                    if (!_attribParser.TryParseSubCmdAttrib(attr, out var subCmdAttr))
-                        return false;
-
-                    (cmdName, parentCmdName) = subCmdAttr;
-
-                    if (string.IsNullOrWhiteSpace(cmdName)) {
-                        _diagnostics.Add(
-                            Diagnostic.Create(
-                                Diagnostics.EmptyCmdName,
-                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
-                            )
-                        );
-
-                        isValidCmd = false;
-                    }
-
-                    if (parentCmdName is not null) // the other case will be handled by BindParentCmd()
-                        parentCmdName = Utils.GetLastNamePart(parentCmdName.AsSpan());
-
-                    break;
-                }
-            }
-        }
-
-        if (!hadCmdAttr && !isEntryPoint)
-                return true;
-
-        if (hadOptAttr) {
-            _diagnostics.Add(
-                Diagnostic.Create(
-                    Diagnostics.BothOptAndCmd,
-                    method.Locations[0],
-                    method.GetErrorName()
-                )
-            );
-
-            isValidCmd = false;
-        }
-
-        // Once we know we're dealing with a command, we can validate
 
         if (method.MethodKind != MethodKind.Ordinary) {
             _diagnostics.Add(
@@ -204,7 +247,42 @@ internal class ModelBuilder
                 )
             );
 
-            isValidCmd = false;
+            return false;
+        }
+
+        bool hasExitCode = !method.ReturnsVoid;
+
+        string cmdName;
+        string? parentCmdName = null;
+        bool inheritOptions = false;
+
+        if (attrList.Command is not null) {
+            cmdName = attrList.Command.CmdName;
+        } else if (attrList.SubCommand is not null) {
+            cmdName = attrList.SubCommand.CmdName;
+            parentCmdName = attrList.SubCommand.ParentCmd;
+        } else {
+            if (!isEntryPoint) {
+                throw new InvalidOperationException("Trying to create a non-entrypoint command with neither a [Command] nor a [SubCommand] attribute");
+            }
+
+            cmdName = "";
+        }
+
+        string? desc = attrList.Description?.Description;
+
+        bool isValid = true;
+
+        if (!_cmdNames.Add(cmdName)) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.CmdNameAlreadyExists,
+                    method.GetDefaultLocation(),
+                    cmdName, method.GetErrorName()
+                )
+            );
+
+            isValid = false;
         }
 
         if (hasExitCode && !Utils.Equals(method.ReturnType, Utils.INT32)) {
@@ -216,7 +294,7 @@ internal class ModelBuilder
                 )
             );
 
-            isValidCmd = false;
+            isValid = false;
         }
 
         if (!method.IsStatic) {
@@ -228,7 +306,7 @@ internal class ModelBuilder
                 )
             );
 
-            isValidCmd = false;
+            isValid = false;
         }
 
         if (method.IsGenericMethod) {
@@ -240,41 +318,43 @@ internal class ModelBuilder
                 )
             );
 
-            isValidCmd = false;
+            isValid = false;
         }
 
-        if (!isValidCmd)
-            return false;
+        var opts = ImmutableArray.CreateBuilder<Option>(method.Parameters.Length);
+        var args = ImmutableArray.CreateBuilder<Argument>(method.Parameters.Length);
 
-        var opts = new List<Option>(method.Parameters.Length);
-        var args = new List<Argument>(method.Parameters.Length);
+        var optNames = new HashSet<string>();
+        var optAliases = new HashSet<char>();
 
         bool hasParams = false;
 
         foreach (var param in method.Parameters) {
-            if (!TryGetOptions(param, out var opt))
+            if (!_attrParser.TryGetAttributeList(param, ref _diagnostics, out var paramAttrList))
                 return false;
 
-            if (opt is not null) {
+            if (paramAttrList.Kind == MemberKind.Option) {
+                if (!TryGetOption(param, paramAttrList, optNames, optAliases, out var opt))
+                    return false;
                 opts.Add(opt);
             } else {
-                if (!TryGetArg(param, out var arg))
+                if (!TryGetArg(param, paramAttrList, out var arg))
                     return false;
-
-                if (arg is null)
-                    throw new Exception("Parameter " + param.ToDisplayString() + " is neither an option nor an argument...");
 
                 args.Add(arg);
                 hasParams |= arg.IsParams;
             }
         }
 
+        if (!isValid)
+            return false;
+
         cmd = new Command(
             hasExitCode,
             cmdName,
             desc,
-            opts.ToArray(),
-            args.ToArray()
+            opts.ToImmutable(),
+            args.ToImmutable()
         ) {
             InheritOptions = inheritOptions,
             BackingSymbol = MinimalMethodInfo.FromSymbol(method),
@@ -285,42 +365,14 @@ internal class ModelBuilder
         return opts.Count + args.Count == method.Parameters.Length;
     }
 
-    public bool TryGetArg(IParameterSymbol param, out Argument? arg) {
+    bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
         arg = null;
 
         string? defaultVal = null;
-        string? argDesc = null;
+        string? argDesc = attrList.Description?.Description;
 
-        var attributes = param.GetAttributes();
-
-        foreach (var attr in attributes) {
-            if (attr.AttributeClass?.Name == Resources.OptAttribName)
-                return true;
-
-            if ((attr.AttributeClass?.Name) == Resources.DescAttribName) {
-                if (attr.ConstructorArguments.Length < 1)
-                    return false;
-
-                argDesc = (string?)attr.ConstructorArguments[0].Value;
-
-                if (argDesc is null) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.DescCantBeNull,
-                            param.Locations[0],
-                            param.Name
-                        )
-                    );
-
-                    return false;
-                }
-
-                break;
-            }
-        }
-
-        foreach (var syntax in param.DeclaringSyntaxReferences.Select(r => r.GetSyntax())) {
-            if (syntax is not ParameterSyntax paramDec)
+        foreach (var synRef in param.DeclaringSyntaxReferences) {
+            if (synRef.GetSyntax() is not ParameterSyntax paramDec)
                 return false;
 
             if (paramDec.Default is not null) {
@@ -329,107 +381,178 @@ internal class ModelBuilder
             }
         }
 
+        bool isParams = param.IsParams;
+
+        if (isParams && (param.Type is not IArrayTypeSymbol paramArrayType || !Utils.Equals(paramArrayType.ElementType, Utils.STR))) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.ParamsHasToBeString,
+                    param.GetDefaultLocation(),
+                    param.Type.GetErrorName()
+                )
+            );
+        }
+
+        ParserInfo? parser = ParserInfo.StringIdentity;
+
+        if (!isParams && !_parserFinder.TryGetParser(attrList.ParseWith, param.Type, out parser))
+            return false;
+
         arg = new Argument(
             MinimalTypeInfo.FromSymbol(param.Type),
             new Desc(
                 param.Name,
                 argDesc
             ),
+            parser, // FIXME: !!!!!!!!!!!!!!!!!!!
             defaultVal
         ) {
             BackingSymbol = MinimalParameterInfo.FromSymbol(param),
-            IsParams = param.IsParams
+            IsParams = isParams
         };
 
         return true;
     }
 
-    public bool TryGetOptions(ISymbol symbol, out Option? opt) {
+    bool TryGetMethodOption(IMethodSymbol method, AttributeListInfo attrInfo, HashSet<string> optNames, HashSet<char> optAliases, [NotNullWhen(true)] out Option? opt) {
         opt = null;
-        var attributes = symbol.GetAttributes();
 
-        if (attributes.IsDefaultOrEmpty) {
-            return true;
-        }
+        string longName = attrInfo.Option!.LongName;
+        char shortName = attrInfo.Option!.Alias;
+        string? descStr = attrInfo.Description?.Description;
+        string? argName = attrInfo.Option!.ArgName;
 
-        string longName = "";
-        char shortName = '\0';
-        string? argName = null;
-        string? desc = null;
+        bool isValid = true;
 
-        bool hadOptAttrib = false;
-        bool hadCmdAttr = false;
-
-        bool isValidOpt = true;
-
-        foreach (var attr in attributes) {
-            switch (attr.AttributeClass?.Name) {
-                case Resources.CmdAttribName:
-                case Resources.SubCmdAttribName:
-                    hadCmdAttr = true;
-                    break;
-                case Resources.OptAttribName:
-                    if (hadOptAttrib)
-                        return false;
-
-                    hadOptAttrib = true;
-
-                    if (!_attribParser.TryParseOptAttrib(attr, out var optAttr))
-                        return false;
-
-                    (longName, shortName, _) = optAttr;
-
-                    if (string.IsNullOrWhiteSpace(longName)) {
-                        _diagnostics.Add(
-                            Diagnostic.Create(
-                                Diagnostics.EmptyOptLongName,
-                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
-                            )
-                        );
-
-                        isValidOpt = false;
-                    }
-
-                    if (char.IsWhiteSpace(shortName)) { // '\0' is not whitespace :P
-                        _diagnostics.Add(
-                            Diagnostic.Create(
-                                Diagnostics.EmptyOptShortName,
-                                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
-                            )
-                        );
-
-                        isValidOpt = false;
-                    }
-
-                    if (optAttr.ArgName is not null)
-                        argName = optAttr.ArgName;
-
-                    break;
-                case Resources.DescAttribName:
-                    if (!_attribParser.TryParseDescAttrib(attr, out var descAttr))
-                        return false;
-
-                    desc = descAttr.Desc;
-                    break;
-                default: // TODO: warn if cli attribute
-                    continue;
-            }
-        }
-
-        if (!hadOptAttrib)
-            return true;
-
-        if (hadCmdAttr) {
+        if (!optNames.Add(longName)) {
             _diagnostics.Add(
                 Diagnostic.Create(
-                    Diagnostics.BothOptAndCmd,
-                    symbol.Locations[0],
-                    symbol.GetErrorName()
+                    Diagnostics.OptNameAlreadyExists,
+                    method.GetDefaultLocation(),
+                    longName, method.GetErrorName()
                 )
             );
 
-            return false; // no point in trying to parse this lol
+            isValid = false;
         }
+
+        if (!optAliases.Add(shortName)) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OptAliasAlreadyExists,
+                    method.GetDefaultLocation(),
+                    shortName, method.GetErrorName()
+                )
+            );
+
+            isValid = false;
+        }
+
+        bool needsAutoHandling = !method.ReturnsVoid;
+        var returnType = method.ReturnType;
+
+
+        if (needsAutoHandling
+            && !Utils.Equals(returnType, Utils.BOOL)
+            && !Utils.Equals(returnType, Utils.INT32)
+            && !Utils.Equals(returnType, Utils.STR)
+            && !Utils.Equals(returnType, Utils.EXCEPT)
+        ) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OptMethodWrongReturnType,
+                    method.Locations[0],
+                    method.GetErrorName(), method.ReturnType.GetErrorName()
+                )
+            );
+
+            isValid = false;
+        }
+
+        if (method.IsGenericMethod) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OptMethodCantBeGeneric,
+                    method.Locations[0],
+                    method.GetErrorName()
+                )
+            );
+
+            isValid = false;
+        }
+
+        if (method.Parameters.Length > 1) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OptMethodTooManyArguments,
+                    method.Locations[0],
+                    method.GetErrorName(), method.Parameters.Length
+                )
+            );
+
+            isValid = false;
+        }
+
+        var rawArgParam = method.Parameters.FirstOrDefault();
+        bool isFlag = rawArgParam is null;
+
+        if (rawArgParam is not null && !Utils.Equals(rawArgParam.Type, Utils.STR)) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OptMethodWrongParamType,
+                    rawArgParam.Locations[0],
+                    rawArgParam.GetErrorName(), rawArgParam.Type.GetErrorName()
+                )
+            );
+
+            isValid = false;
+        }
+
+        if (!isValid)
+            return false;
+
+        OptDesc desc;
+
+        // rawArgParam == IsFlag
+        if (isFlag)
+            desc = new FlagDesc(longName, shortName, descStr);
+        else
+            desc = new OptDesc(longName, shortName, argName ?? rawArgParam!.Name, descStr);
+
+        opt = new MethodOption(
+            desc,
+            new ParserInfo.Identity(Utils.STRMinInfo), // FIXME !!!!!!!!!!!!!!!
+            MinimalMethodInfo.FromSymbol(method),
+            needsAutoHandling
+        ) {
+            IsFlag = isFlag,
+        };
+
+        return true;
+    }
+
+    bool TryGetOption(ISymbol symbol, AttributeListInfo attrInfo, HashSet<string> optNames, HashSet<char> optAliases, [NotNullWhen(true)] out Option? opt) {
+        opt = null;
+
+        if (symbol is IMethodSymbol method)
+            return TryGetMethodOption(method, attrInfo, optNames, optAliases, out opt);
+
+        static ITypeSymbol GetTypeForSymbol(ISymbol symbol)
+            => symbol switch {
+                IFieldSymbol field => field.Type,
+                IPropertySymbol prop => prop.Type,
+                IParameterSymbol param => param.Type,
+                _ => throw new ArgumentException("Can't get .Type for " + symbol.GetType().Name + "s", nameof(symbol))
+            };
+
+        string longName = attrInfo.Option!.LongName;
+        char shortName = attrInfo.Option!.Alias;
+        string? descStr = attrInfo.Description?.Description;
+        string? argName = attrInfo.Option!.ArgName;
+
+        ParserInfo? parser = null;
+
+        bool isValid = true;
 
         if (!symbol.IsStatic && symbol is not IParameterSymbol) {
             _diagnostics.Add(
@@ -440,10 +563,9 @@ internal class ModelBuilder
                 )
             );
 
-            isValidOpt = false;
+            isValid = false;
         }
 
-        ITypeSymbol type;
         string? defaultVal = null;
 
         switch (symbol) {
@@ -457,10 +579,8 @@ internal class ModelBuilder
                         )
                     );
 
-                    isValidOpt = false;
+                    isValid = false;
                 }
-
-                type = field.Type;
 
                 var varDec = (VariableDeclaratorSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
 
@@ -478,10 +598,8 @@ internal class ModelBuilder
                         )
                     );
 
-                    isValidOpt = false;
+                    isValid = false;
                 }
-
-                type = prop.Type;
 
                 var propDec = (PropertyDeclarationSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
 
@@ -496,8 +614,6 @@ internal class ModelBuilder
                 break;
             }
             case IParameterSymbol parameterSymbol: {
-                type = parameterSymbol.Type;
-
                 var paramDec = (ParameterSyntax)parameterSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
                 if (paramDec.Default is not null)
@@ -505,152 +621,66 @@ internal class ModelBuilder
 
                 break;
             }
-            case IMethodSymbol methodSymbol: {
-                type = methodSymbol.ReturnType;
-
-                bool needsAutoHandling = !methodSymbol.ReturnsVoid;
-
-                isValidOpt = true;
-
-                if (needsAutoHandling
-                    && !Utils.Equals(type, Utils.BOOL)
-                    && !Utils.Equals(type, Utils.INT32)
-                    && !Utils.Equals(type, Utils.STR)
-                    && !Utils.Equals(type, Utils.EXCEPT)
-                ) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.OptMethodWrongReturnType,
-                            methodSymbol.Locations[0],
-                            methodSymbol.GetErrorName(), methodSymbol.ReturnType.GetErrorName()
-                        )
-                    );
-
-                    isValidOpt = false;
-                }
-
-                if (methodSymbol.IsGenericMethod) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.OptMethodCantBeGeneric,
-                            methodSymbol.Locations[0],
-                            methodSymbol.GetErrorName()
-                        )
-                    );
-
-                    isValidOpt = false;
-                }
-
-                if (methodSymbol.Parameters.Length > 1) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.OptMethodTooManyArguments,
-                            methodSymbol.Locations[0],
-                            methodSymbol.GetErrorName(), methodSymbol.Parameters.Length
-                        )
-                    );
-
-                    isValidOpt = false;
-                }
-
-                var rawArgParam = methodSymbol.Parameters.FirstOrDefault();
-
-                if (rawArgParam is not null && !Utils.Equals(rawArgParam.Type, Utils.STR)) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.OptMethodWrongParamType,
-                            rawArgParam.Locations[0],
-                            rawArgParam.GetErrorName(), rawArgParam.Type.GetErrorName()
-                        )
-                    );
-
-                    isValidOpt = false;
-                }
-
-                if (!isValidOpt)
-                    return false;
-
-                if (argName is null)
-                    argName = rawArgParam?.Name ?? "";
-
-                opt = new MethodOption(
-                    new OptDesc(
-                        longName,
-                        shortName,
-                        argName,
-                        desc
-                    ),
-                    needsAutoHandling
-                ) {
-                    BackingSymbol = MinimalMethodInfo.FromSymbol(methodSymbol),
-                    IsFlag = rawArgParam is null,
-                };
-
-                if (opt.IsFlag) {
-                    opt = opt with {
-                        Desc = new FlagDesc(longName, shortName, desc)
-                    };
-                }
-
-                return true;
-            }
             default:
-                throw new ArgumentException("Symbol must an IFieldSymbol, IPropertySymbol, IParameterSymbol or IMethodSymbol, but it was " + symbol.GetType().Name, nameof(symbol));
+                throw new ArgumentException("Symbol must an IFieldSymbol, IPropertySymbol, IParameterSymbol, but it was " + symbol.GetType().Name, nameof(symbol));
         }
 
-        if (!isValidOpt)
+        if (!isValid)
+            return false;
+
+        MinimalSymbolInfo backingSymbol
+                = symbol is IParameterSymbol paramSymbol
+                    ? MinimalParameterInfo.FromSymbol(paramSymbol)
+                    : MinimalMemberInfo.FromSymbol(symbol);
+
+        var type = GetTypeForSymbol(symbol);
+
+        // if it's a flag
+        if (Utils.Equals(type, Utils.BOOL)) {
+            opt = new Flag(
+                new FlagDesc(longName, shortName, descStr),
+                parser ?? ParserInfo.AsBool,
+                backingSymbol,
+                defaultVal
+            );
+
+            return true;
+        }
+
+        if (parser is null && !_parserFinder.TryGetParser(attrInfo.ParseWith, type, out parser))
             return false;
 
         opt = new Option(
             MinimalTypeInfo.FromSymbol(type),
             new OptDesc(
-                longName, shortName, argName ?? symbol.Name, desc
+                longName, shortName, argName ?? symbol.Name, descStr
             ),
+            parser,
+            backingSymbol,
             defaultVal
-        ) {
-            BackingSymbol
-                = symbol is IParameterSymbol paramSymbol
-                    ? MinimalParameterInfo.FromSymbol(paramSymbol)
-                    : MinimalMemberInfo.FromSymbol(symbol)
-        };
-
-        if (opt.IsFlag) {
-            opt = opt with {
-                Desc = new FlagDesc(longName, shortName, desc)
-            };
-        }
+        );
 
         return true;
     }
 
-    public bool TryBindParentCmd(Command sub, Command[] cmds, out Command newCmd) {
-        newCmd = null!;
+    public bool TryBindParentCmd(Command sub, out Command newCmd) {
+        newCmd = sub;
 
-        for (int i = 0; i < cmds.Length; i++) {
-            var cmd = cmds[i];
+        for (int i = 0; i < _cmds.Count; i++) {
+            var cmd = _cmds[i];
 
             if (sub.ParentSymbolName == cmd.BackingSymbol.Name) {
                 newCmd = sub with { ParentCmd = cmd, ParentSymbolName = cmd.Name };
-                break;
+                return true;
             }
         }
-
-        if (newCmd is not null)
-            return true;
-
-        _diagnostics.Add(
-            Diagnostic.Create(
-                Diagnostics.CouldntFindParentCmd,
-                Location.None, // find right location
-                sub.Name, sub.ParentSymbolName
-            )
-        );
 
         return false;
     }
 
-    public bool TryGetAllUniqueUsings(INamedTypeSymbol classSymbol, out string[] usings) {
-        usings = Array.Empty<string>();
+    public bool TryGetAllUniqueUsings(INamedTypeSymbol classSymbol, out ImmutableArray<string> usings) {
+        usings = ImmutableArray<string>.Empty;
+
         var nodes = classSymbol.DeclaringSyntaxReferences.Select(r => r.GetSyntax()).Cast<ClassDeclarationSyntax>();
 
         var usingList = new List<string>();
@@ -662,7 +692,7 @@ internal class ModelBuilder
             usingList.AddRange(newUsings);
         }
 
-        usings = usingList.Distinct().ToArray();
+        usings = usingList.Distinct().ToImmutableArray();
         return true;
     }
 

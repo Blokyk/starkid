@@ -4,14 +4,9 @@ namespace Recline.Generator;
 
 public partial class MainGenerator : IIncrementalGenerator
 {
-    internal static string lastHintName = null!;
-    internal static SourceText lastGeneratedText = null!;
-    internal static INamedTypeSymbol currClass = null!;
-    internal static Compilation currCompilation = null!;
-
     private static TimeSpan analysisTime, parserGenerationTime;
 
-    static void GenerateFromData(ImmutableArray<(CLIData? data, ImmutableArray<Diagnostic> diags)> tuples, SourceProductionContext spc) {
+    static void GenerateFromData(ImmutableArray<(CLIData? data, ImmutableArray<Diagnostic> diags)> tuples, int columnLength, SourceProductionContext spc) {
         spc.ReportDiagnostic(
             Diagnostic.Create(
                 Diagnostics.TimingInfo,
@@ -31,37 +26,51 @@ public partial class MainGenerator : IIncrementalGenerator
         var watch = new System.Diagnostics.Stopwatch();
         watch.Start();
 
-        var allDiags = tuples.SelectMany(t => t.diags).Where(d => d is not null).ToArray();
+        bool hasError = false;
 
-        if (allDiags.Length > 0) {
-            foreach (var diag in allDiags) {
+        foreach (var t in tuples) {
+            foreach (var diag in t.diags) {
                 spc.ReportDiagnostic(diag);
-            }
 
-            return;
+                if (diag.Severity == DiagnosticSeverity.Error)
+                    hasError = true;
+            }
         }
 
-        var allDatas = tuples.Select(t => t.data).Where(d => d is not null)!.ToImmutableArray<CLIData>();
+        if (hasError)
+            return;
 
-        if (allDatas.Length < 1)
-            return; // it's already been reported
+        if (tuples.Length < 1)
+            return;
 
-        if (allDatas.Length > 1) {
+        if (tuples.Length > 1) {
             spc.ReportDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.TooManyCLIClasses,
                     Location.None,
-                    allDatas[0].FullClassName, allDatas[1].FullClassName
+                    tuples[0].data!.FullClassName, tuples[1].data!.FullClassName
                 )
             );
 
             return;
         }
 
-        GenerateFromDataCore(allDatas, spc);
+        if (columnLength <= 0) {
+            spc.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.InvalidColumnLength,
+                    Location.None
+                )
+            );
+
+            columnLength = 80;
+        }
+
+        Resources.MAX_LINE_LENGTH = columnLength;
+        GenerateFromDataCore(tuples[0].data!, spc);
 
         watch.Stop();
-        codegenMS = watch.ElapsedMilliseconds;
+        codegenMS = watch.Elapsed.TotalMilliseconds;
 
         spc.ReportDiagnostic(
             Diagnostic.Create(
@@ -72,11 +81,11 @@ public partial class MainGenerator : IIncrementalGenerator
         );
     }
 
-    static void GenerateFromDataCore(ImmutableArray<CLIData> datas, SourceProductionContext context) {
+    static void GenerateFromDataCore(CLIData data, SourceProductionContext context) {
         var sw = new Stopwatch();
         sw.Start();
 
-        var (appName, fullClassName, usings, cmdAndArgs, opts, appDesc, cmds, helpExitCode) = datas[0]!;
+        var (appName, fullClassName, usings, cmdAndArgs, opts, appDesc, cmds, helpExitCode) = data!;
 
         var descBuilder = new CmdDescBuilder(
             appName,

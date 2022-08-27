@@ -16,6 +16,8 @@ internal static partial class Utils
     internal static MinimalTypeInfo EXCEPTMinInfo = null!;
     internal static INamedTypeSymbol NULLABLE = null!;
     internal static MinimalTypeInfo NULLABLEMinInfo = null!;
+    internal static INamedTypeSymbol TYPE = null!;
+    internal static MinimalTypeInfo TYPEMinInfo = null!;
 
     internal static SymbolDisplayFormat memberMinimalDisplayFormat = new(
         parameterOptions: SymbolDisplayParameterOptions.IncludeName,
@@ -26,20 +28,22 @@ internal static partial class Utils
     );
 
     internal static void UpdatePredefTypes(Compilation compilation) {
-        Utils.BOOL = compilation.GetSpecialType(SpecialType.System_Boolean);
-        Utils.INT32 = compilation.GetSpecialType(SpecialType.System_Int32);
-        Utils.CHAR = compilation.GetSpecialType(SpecialType.System_Char);
-        Utils.STR = compilation.GetSpecialType(SpecialType.System_String);
-        Utils.VOID = compilation.GetSpecialType(SpecialType.System_Void);
-        Utils.NULLABLE = compilation.GetSpecialType(SpecialType.System_Nullable_T);
+        Utils.BOOL ??= compilation.GetSpecialType(SpecialType.System_Boolean);
+        Utils.INT32 ??= compilation.GetSpecialType(SpecialType.System_Int32);
+        Utils.CHAR ??= compilation.GetSpecialType(SpecialType.System_Char);
+        Utils.STR ??= compilation.GetSpecialType(SpecialType.System_String);
+        Utils.VOID ??= compilation.GetSpecialType(SpecialType.System_Void);
+        Utils.NULLABLE ??= compilation.GetSpecialType(SpecialType.System_Nullable_T);
+
+        Utils.BOOLMinInfo ??= MinimalTypeInfo.FromSymbol(BOOL);
+        Utils.INT32MinInfo ??= MinimalTypeInfo.FromSymbol(INT32);
+        Utils.CHARMinInfo ??= MinimalTypeInfo.FromSymbol(CHAR);
+        Utils.STRMinInfo ??= MinimalTypeInfo.FromSymbol(STR);
+        Utils.VOIDMinInfo ??= MinimalTypeInfo.FromSymbol(VOID);
+        Utils.NULLABLEMinInfo ??= MinimalTypeInfo.FromSymbol(NULLABLE);
+
         Utils.EXCEPT = compilation.GetTypeByMetadataName("System.Exception")!;
-        Utils.BOOLMinInfo = MinimalTypeInfo.FromSymbol(BOOL);
-        Utils.INT32MinInfo = MinimalTypeInfo.FromSymbol(INT32);
-        Utils.CHARMinInfo = MinimalTypeInfo.FromSymbol(CHAR);
-        Utils.STRMinInfo = MinimalTypeInfo.FromSymbol(STR);
-        Utils.VOIDMinInfo = MinimalTypeInfo.FromSymbol(VOID);
         Utils.EXCEPTMinInfo = MinimalTypeInfo.FromSymbol(EXCEPT);
-        Utils.NULLABLEMinInfo = MinimalTypeInfo.FromSymbol(NULLABLE);
     }
 
     public static bool TryGetAttribute(this INamedTypeSymbol type, string name, out AttributeData attr) {
@@ -60,133 +64,7 @@ internal static partial class Utils
         return true;
     }
 
-    public static string GetFullName(this IMethodSymbol method) {
-        return method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + "." + method.Name;
-    }
-
-    public static string GetErrorName(this ISymbol symbol)
-        => symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
-
-    // determine the namespace the class/enum/struct is declared in, if any
-    public static string? GetNamespace(BaseTypeDeclarationSyntax syntax) {
-        // If we don't have a namespace at all we'll return an empty string
-        // This accounts for the "default namespace" case
-        string? nameSpace = null;
-
-        // Get the containing syntax node for the type declaration
-        // (could be a nested type, for example)
-        SyntaxNode? potentialNamespaceParent = syntax.Parent;
-
-        // Keep moving "out" of nested classes etc until we get to a namespace
-        // or until we run out of parents
-        while (potentialNamespaceParent != null &&
-                potentialNamespaceParent is not NamespaceDeclarationSyntax
-                && potentialNamespaceParent is not FileScopedNamespaceDeclarationSyntax) {
-            potentialNamespaceParent = potentialNamespaceParent.Parent;
-        }
-
-        // Build up the final namespace by looping until we no longer have a namespace declaration
-        if (potentialNamespaceParent is BaseNamespaceDeclarationSyntax namespaceParent) {
-            // We have a namespace. Use that as the type
-            nameSpace = namespaceParent.Name.ToString();
-
-            // Keep moving "out" of the namespace declarations until we 
-            // run out of nested namespace declarations
-            while (true) {
-                if (namespaceParent.Parent is not NamespaceDeclarationSyntax parent) {
-                    break;
-                }
-
-                // Add the outer namespace as a prefix to the final namespace
-                nameSpace = $"{namespaceParent.Name}.{nameSpace}";
-                namespaceParent = parent;
-            }
-        }
-
-        // return the final namespace
-        return nameSpace;
-    }
-
-    public static bool TryGetCLIClassDecNode(INamedTypeSymbol symbol, out ClassDeclarationSyntax node) {
-        var decNodeRefs = symbol.DeclaringSyntaxReferences;
-
-        node = null!;
-
-        if (decNodeRefs.Length == 0) {
-            return false;
-        } else if (decNodeRefs.Length == 1) {
-            var syntax = decNodeRefs[0].GetSyntax();
-
-            if (syntax is not ClassDeclarationSyntax classDecNode)
-                return false;
-
-            node = classDecNode;
-        } else {
-            foreach (var synRef in decNodeRefs) {
-                var syn = synRef.GetSyntax();
-
-                if (syn is not ClassDeclarationSyntax classDecNode)
-                    continue;
-
-                foreach (var attrib in classDecNode.AttributeLists.SelectMany(l => l.Attributes)) {
-                    if (attrib.Name.ToString() is "CLI" or "CLIAttribute") {
-                        node = classDecNode;
-                        break;
-                    }
-                }
-
-                if (node is not null)
-                    break;
-            }
-        }
-
-        return node is not null;
-    }
-
-    public static bool TryGetDescription(AttributeData descAttrib, out string? desc)
-        => TryGetCtorArg<string?>(descAttrib, 0, STR, out desc);
-
-    public static bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, out T val) {
-        val = default!;
-
-        var ctorArgs = attrib.ConstructorArguments;
-
-        if (ctorArgs.Length < ctorIdx + 1) {
-            return false;
-        }
-
-        if (!Utils.Equals(ctorArgs[ctorIdx].Type, type) || ctorArgs[ctorIdx].Value is not T)
-            return false;
-
-        val = (T)ctorArgs[ctorIdx].Value!;
-
-        return true;
-    }
-
-    public static bool TryGetProp<T>(AttributeData attrib, string propName, INamedTypeSymbol type, T defaultVal, out T val) {
-        val = defaultVal;
-
-        var namedArgs = attrib.NamedArguments;
-
-        if (namedArgs.IsDefaultOrEmpty)
-            return true;
-
-        var arg = namedArgs.FirstOrDefault(
-            kv => kv.Key == propName
-        ).Value;
-
-        if (arg.Equals(default))
-            return true;
-
-        if (!Utils.Equals(arg.Type, type) || arg.Value is not T)
-            return false;
-
-        val = (T)arg.Value!;
-
-        return true;
-    }
-
-    public static string GetLastNamePart(ReadOnlySpan<char> fullStr) {
+    public static string GetLastNamePart(string fullStr) {
         int lastDotIdx = 0;
 
         for (int i = 0; i < fullStr.Length; i++) {
@@ -194,27 +72,33 @@ internal static partial class Utils
                 lastDotIdx = i + 1;
         }
 
-        return fullStr.Slice(lastDotIdx).ToString();
+        return fullStr.Substring(lastDotIdx).ToString();
+    }
+
+    static string GetRawName(ISymbol symbol) {
+        if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
+            return GetNameWithNull(arrayTypeSymbol.ElementType) + "[]";
+        }
+
+        if (symbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType) {
+            return symbol.Name + "<" + String.Join(",", namedTypeSymbol.TypeArguments.Select(a => GetNameWithNull(a))) + ">";
+        }
+
+        return symbol.Name;
     }
 
     public static string GetNameWithNull(this ITypeSymbol symbol) {
-        string GetRawName(ITypeSymbol symbol) {
-            if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
-                return GetNameWithNull(arrayTypeSymbol.ElementType) + "[]";
-            }
-
-            if (symbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType) {
-                return symbol.Name + "<" + String.Join(",", namedTypeSymbol.TypeArguments.Select(a => GetNameWithNull(a))) + ">";
-            }
-
-            return symbol.Name;
-        }
-
         if (symbol.Name == "Nullable")
             return GetRawName(symbol);
 
         return GetRawName(symbol) + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
     }
+
+    /*public static string GetFullNameWithNull(this MinimalTypeInfo symbol) {
+        if (symbol.Name == "Nullable")
+
+        return GetRawName(symbol) + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
+    }*/
 
     public static string GetSafeName(string name) {
         if (SyntaxFacts.IsKeywordKind(SyntaxFacts.GetKeywordKind(name)))
@@ -224,4 +108,63 @@ internal static partial class Utils
     }
 
     public static bool Equals(this ISymbol? s1, ISymbol? s2) => SymbolEqualityComparer.Default.Equals(s1, s2);
+
+    public static bool CanBeImplicitlyCastTo(this ITypeSymbol source, ITypeSymbol target, SemanticModel model)
+        => model.Compilation.ClassifyCommonConversion(source, target).IsImplicit;
+
+    public static Location GetDefaultLocation(this ISymbol symbol) {
+        if (symbol.Locations.IsDefaultOrEmpty)
+            return Location.None;
+        else
+            return symbol.Locations[0];
+    }
+
+    public static string GetFullNameBad(ISymbol symbol) {
+        static string getFullNameRecursive(ISymbol symbol)
+            => symbol.ContainingType is null
+                    ? GetRawName(symbol)
+                    : getFullNameRecursive(symbol.ContainingType) + "." + GetRawName(symbol);
+
+        static string getNamespaceRecursive(INamespaceSymbol ns)
+            => ns.ContainingNamespace is null || ns.ContainingNamespace.IsGlobalNamespace
+                    ? ns.Name
+                    : getNamespaceRecursive(ns.ContainingNamespace) + "." + ns.Name;
+
+        var symbolName = getFullNameRecursive(symbol);
+
+        if (symbol.ContainingNamespace is null || symbol.ContainingNamespace.IsGlobalNamespace)
+            return symbolName;
+
+        return getNamespaceRecursive(symbol.ContainingNamespace) + "." + symbolName;
+    }
+
+    public static string GetErrorName(this ISymbol symbol)
+        => symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
+
+    public static Location GetApplicationLocation(AttributeData attr)
+            => Location.Create(attr.ApplicationSyntaxReference!.SyntaxTree, attr.ApplicationSyntaxReference!.Span);
+
+    //CURSED
+    /*public static ITypeSymbol? GetMetadataName(this Type type, SemanticModel model) {
+        if (!type.IsConstructedGenericType)
+            return model.Compilation.GetTypeByMetadataName(type.FullName);
+
+        var baseSymbol = model.Compilation.GetTypeByMetadataName(type.GetGenericTypeDefinition().FullName);
+
+        if (baseSymbol is null)
+            return null;
+
+        var typeArgs = type.GenericTypeArguments;
+        var typeArgSymbols = ImmutableArray.CreateBuilder<ITypeSymbol>();
+
+        foreach (var arg in typeArgs) {
+            var argSymbol = arg.GetMetadataName(model);
+
+            if (argSymbol is null)
+                return null;
+            typeArgSymbols.Add(argSymbol);
+        }
+
+        return baseSymbol.Construct(typeArgSymbols.ToArray());
+    }*/
 }

@@ -1,9 +1,9 @@
 namespace Recline.Generator.Model;
 
-public record Option(MinimalTypeInfo Type, OptDesc Desc, string? DefaultValueExpr) {
-    public MinimalSymbolInfo BackingSymbol { get; set; } = null!;
-
-
-    private Lazy<bool> _isFlag = new Lazy<bool>(() => Type == Utils.BOOLMinInfo);
-    public virtual bool IsFlag { get => _isFlag.Value; init => _isFlag = new Lazy<bool>(value); }
+public record Option(MinimalTypeInfo Type, OptDesc Desc, ParserInfo Parser, MinimalSymbolInfo BackingSymbol, string? DefaultValueExpr) : IParsable {
+    private bool? _isFlag;
+    public virtual bool IsFlag {
+        get => _isFlag ?? (_isFlag = Type == Utils.BOOLMinInfo).Value;
+        init => _isFlag = value;
+    }
 }

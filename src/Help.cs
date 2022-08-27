@@ -4,9 +4,9 @@ public record CmdHelp(
     string? ParentCmd,
     string CmdName,
     string? Description,
-    OptDesc[] CmdOpts,
-    Desc[] PosArgs,
-    WithArgsDesc[] SubCmds,
+    ImmutableArray<OptDesc> CmdOpts,
+    ImmutableArray<Desc> PosArgs,
+    ImmutableArray<WithArgsDesc> SubCmds,
     bool IsDirectCmd = true,
     bool HasParams = false
 ) {
@@ -90,18 +90,43 @@ public record CmdHelp(
             .AppendLine()
             .AppendLine();
 
-        AppendDescs(sb, "Options", CmdOpts.Concat(new[] { new FlagDesc("help", 'h', "Print this help message") } ).Cast<Desc>().ToArray())
+        var cmdOptsBuilder = ImmutableArray.CreateBuilder<Desc>();
+        cmdOptsBuilder.AddRange(CmdOpts);
+
+        bool hasCustomHelp = false;
+        bool hasHAlias = false;
+
+        foreach (var opt in CmdOpts) {
+            if (opt.Alias == 'h')
+                hasHAlias = true;
+
+            if (opt.LongName == "help") {
+                hasCustomHelp = true;
+                break;
+            }
+        }
+
+        if (!hasCustomHelp) {
+            if (hasHAlias)
+                cmdOptsBuilder.Add(_helpFlagNoAlias);
+            else
+                cmdOptsBuilder.Add(_fullHelpFlag);
+        }
+
+        AppendDescs(sb, "Options", cmdOptsBuilder.ToImmutable())
             .AppendLine();
         AppendDescs(sb, "Arguments", PosArgs)
             .AppendLine();
-        AppendDescs(sb, "Commands", SubCmds.Cast<Desc>().ToArray());
+        AppendDescs(sb, "Commands", ImmutableArray<Desc>.CastUp<WithArgsDesc>(SubCmds));
 
         return sb.ToString();
     }
 
+    private static readonly FlagDesc _fullHelpFlag = new FlagDesc("help", 'h', "Print this help message");
+    private static readonly FlagDesc _helpFlagNoAlias = new FlagDesc("help", '\0', "Print this help message");
     private static readonly char[] splitWithSpaceArray = new[] { ' ' };
 
-    private static StringBuilder AppendDescs(StringBuilder sb, string sectionName, Desc[] descArr) {
+    private static StringBuilder AppendDescs(StringBuilder sb, string sectionName, ImmutableArray<Desc> descArr) {
         if (descArr.Length == 0)
             return sb;
 
@@ -113,8 +138,8 @@ public record CmdHelp(
         var maxPrefixLength = prefixStrings.Max(s => s.Length);
 
         for (int i = 0; i < descArr.Length; i++) {
-            ref var opt = ref descArr[i];
-            ref var pre = ref prefixStrings[i];
+            var opt = descArr[i];
+            var pre = prefixStrings[i];
 
             sb.Append(pre);
 
@@ -170,22 +195,20 @@ public record CmdHelp(
         return sb;
     }
 
-    private static string[] GetPrefixStrings(Desc[] opts) {
-        var prefixStrings = new string[opts.Length];
+    private static ImmutableArray<string> GetPrefixStrings(ImmutableArray<Desc> opts) {
+        var prefixStrings = ImmutableArray.CreateBuilder<string>(opts.Length);
 
-        for (int i = 0; i < opts.Length; i++) {
-            ref var desc = ref opts[i];
-
+        foreach (var desc in opts) {
             var str = "  ";
 
-            if (desc is OptDesc opt1) {
-                if (opt1.Alias == '\0') {
+            if (desc is OptDesc opt) {
+                if (opt.Alias == '\0') {
                     str += "   ";
                 } else {
-                    str += "-" + opt1.Alias + ",";
+                    str += "-" + opt.Alias + ",";
                 }
 
-                str += " --" + opt1.LongName;
+                str += " --" + opt.LongName;
             } else {
                 str += desc.Name;
             }
@@ -196,9 +219,9 @@ public record CmdHelp(
                 }
             }
 
-            prefixStrings[i] = str;
+            prefixStrings.Add(str);
         }
 
-        return prefixStrings;
+        return prefixStrings.MoveToImmutable();
     }
 }

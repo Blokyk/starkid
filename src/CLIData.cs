@@ -5,10 +5,10 @@ namespace Recline.Generator;
 public record CLIData(
     string AppName,
     string FullClassName,
-    string[] Usings,
-    (Command cmd, Argument[] args)? CmdAndArgs,
-    Option[] OptsAndSws,
+    ImmutableArray<string> Usings,
+    (Command cmd, ImmutableArray<Argument> args)? CmdAndArgs,
+    ImmutableArray<Option> OptsAndSws,
     string? Description,
-    Command[] Cmds,
+    ImmutableArray<Command> Cmds,
     int HelpExitCode
 );

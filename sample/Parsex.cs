@@ -8,6 +8,8 @@ namespace SomeStuff;
 
 using System.IO;
 
+public record Stuff(int i);
+
 [CLI("lotus", EntryPoint = nameof(Silent), HelpExitCode = 0)]
 [Description("A parser/typechecker for lotus")]
 public static partial class Lotus
@@ -15,6 +17,21 @@ public static partial class Lotus
     [Option("force", shortName: 'f')]
     [Description("Ignore parsing/compilation errors before executing commands")]
     public static bool forceOption = false;
+
+    internal static Stuff? ParseStuff(string? str) {
+        if (str is null)
+            return null;
+        else if (Int32.TryParse(str, out var i))
+            return new Stuff(i);
+        else
+            return new Stuff(0);
+    }
+
+    internal static int? ParseInt(string? arg) => arg is null ? 0 : Int32.Parse(arg);
+
+    [Option("log-level")]
+    [ParseWith("ParseStuff")]
+    public static Stuff? logLevel = new(5);
 
     private static FileInfo? _outputFile;
     [Option("output", ArgName = "file")]

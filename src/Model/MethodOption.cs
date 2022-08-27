@@ -1,13 +1,25 @@
 namespace Recline.Generator.Model;
 
-public record MethodOption(OptDesc Desc, bool NeedsAutoHandling) : Option(Utils.VOIDMinInfo, Desc, null) {
-    private MinimalMethodInfo _symbol = null!;
+public record MethodOption : Option {
+    public bool NeedsAutoHandling { get; init; }
+
+    //public override bool IsFlag { get; init; }
+
+    private MinimalMethodInfo _symbol;
     public new MinimalMethodInfo BackingSymbol {
         get => _symbol;
-        set {
+        init {
             base.BackingSymbol = _symbol = value;
         }
     }
 
-    public override bool IsFlag { get; init; }
+    public MethodOption(
+        OptDesc desc,
+        ParserInfo parser,
+        MinimalMethodInfo backingSymbol,
+        bool needsAutoHandling
+    ) : base(Utils.VOIDMinInfo, desc, parser, backingSymbol, null) {
+        _symbol = backingSymbol;
+        NeedsAutoHandling = needsAutoHandling;
+    }
 }

@@ -1,6 +1,6 @@
 namespace Recline.Generator.Model;
 
-public record Command(bool HasExitCode, string Name, string? Description, Option[] Options, Argument[] Args) {
+public record Command(bool HasExitCode, string Name, string? Description, ImmutableArray<Option> Options, ImmutableArray<Argument> Args) {
     public WithArgsDesc WithArgsDesc => new WithArgsDesc(
         Name,
         Args.Select(a => a.Desc.Name).ToArray(),

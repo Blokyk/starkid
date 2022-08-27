@@ -24,6 +24,7 @@
     <Using Remove="System.IO"/>
     <Using Include="System.Text"/>
     <Using Include="System.Collections.Immutable"/>
+    <Using Include="System.Diagnostics.CodeAnalysis"/>
     <Using Include="Microsoft.CodeAnalysis"/>
     <Using Include="Microsoft.CodeAnalysis.Text"/>
     <Using Include="Microsoft.CodeAnalysis.CSharp"/>

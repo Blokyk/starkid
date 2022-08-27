@@ -1,8 +1,236 @@
 namespace Recline.Generator;
 
+internal enum MemberKind {
+    None,
+    CLI,
+    Option,
+    Command,
+    Invalid,
+    Useless,
+}
+
 internal class AttributeParser
 {
-    public bool TryParseCmdAttrib(AttributeData attr, out CommandAttribute cmdAttr) {
+    private Cache<ISymbol, ImmutableArray<Diagnostic>.Builder, (bool, AttributeListInfo)> _attrListCache;
+
+    public AttributeParser() {
+        _attrListCache = new(TryGetAttributeList);
+    }
+
+    static MemberKind ValidateAttributeList(AttributeListInfo attrList, ISymbol symbol, ref ImmutableArray<Diagnostic>.Builder diagnostics) {
+        var kind = CategorizeAttributeList(attrList);
+
+        if (kind is MemberKind.Useless && symbol is not IParameterSymbol) {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OnlyDescAttr,
+                    symbol.GetDefaultLocation()
+                )
+            );
+            return MemberKind.Useless;
+        }
+
+        if (kind is not MemberKind.Invalid)
+            return kind;
+
+        // we don't care about cli because it will never be with the other attributes for a valid symbol
+        var (cli, cmd, desc, opt, parseWith, subCmd, validateWith) = attrList;
+
+        switch (cmd, opt, subCmd) {
+            case (not null, not null, null):
+            case (null, not null, not null):
+            case (not null, not null, not null):
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        Diagnostics.BothOptAndCmd,
+                        symbol.GetDefaultLocation(),
+                        symbol.GetErrorName()
+                    )
+                );
+                break;
+            case (not null, null, not null):
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        Diagnostics.BothCmdAndSubCmd,
+                        symbol.GetDefaultLocation(),
+                        symbol.GetErrorName()
+                    )
+                );
+                break;
+            default:
+                if (parseWith is not null) {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            Diagnostics.ParseOnNonOptOrArg,
+                            symbol.GetDefaultLocation(),
+                            symbol.GetErrorName()
+                        )
+                    );
+                }
+
+                if (validateWith is not null) {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            Diagnostics.ValidateOnNonOptOrArg,
+                            symbol.GetDefaultLocation(),
+                            symbol.GetErrorName()
+                        )
+                    );
+                }
+
+                break;
+        }
+
+        return MemberKind.Invalid;
+    }
+
+    public static MemberKind CategorizeAttributeList(AttributeListInfo attrList) {
+        var (cli, cmd, desc, opt, parse, subCmd, valid) = attrList;
+
+        return (cli, cmd, subCmd, opt, parse, valid, desc) switch {
+            (    null,     null,     null,     null,     null,     null,     null) => MemberKind.None,
+            (not null,     null,     null,     null,     null,     null,        _) => MemberKind.CLI,
+            (    null, not null,     null,     null,     null,     null,        _) or
+            (    null,     null, not null,     null,     null,     null,        _) => MemberKind.Command,
+            (    null,     null,     null, not null,        _,        _,        _) => MemberKind.Option,
+            (    null,     null,     null,     null,     null,     null, not null) => MemberKind.Useless,
+            _ => MemberKind.Invalid,
+        };
+    }
+
+    public bool TryGetAttributeList(ISymbol symbol, ref ImmutableArray<Diagnostic>.Builder diagnostics, out AttributeListInfo attrList) {
+        (var isValid, attrList) = _attrListCache.GetValue(symbol, diagnostics);
+
+        ValidateAttributeList(attrList, symbol, ref diagnostics);
+
+        return isValid;
+    }
+
+    (bool, AttributeListInfo) TryGetAttributeList(ISymbol symbol, ImmutableArray<Diagnostic>.Builder diagnostics) {
+        var attribList = new AttributeListInfo();
+        var attrs = symbol.GetAttributes();
+
+        CLIAttribute? cli = null;
+        CommandAttribute? cmd = null;
+        DescriptionAttribute? desc = null;
+        OptionAttribute? opt = null;
+        ParseWithAttribute? parseWith = null;
+        SubCommandAttribute? subCmd = null;
+        ValidateWithAttribute? validateWith = null;
+
+        bool isValid = true;
+
+        (bool, AttributeListInfo) error() => (false, attribList);
+
+        foreach (var attr in attrs) {
+            switch (attr.AttributeClass?.Name) {
+                case Resources.CLIAttribName:
+                    if (!TryParseCLIAttrib(attr, out cli))
+                        return error();
+                    break;
+                case Resources.CmdAttribName:
+                    if (!TryParseCmdAttrib(attr, out cmd))
+                        return error();
+
+                    if (string.IsNullOrWhiteSpace(cmd.CmdName)) {
+                        diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyCmdName,
+                                Utils.GetApplicationLocation(attr)
+                            )
+                        );
+
+                        isValid = false;
+                    }
+
+                    break;
+                case Resources.DescAttribName:
+                    if (!TryParseDescAttrib(attr, out desc))
+                        return error();
+
+                    if (string.IsNullOrWhiteSpace(desc.Description))
+                        diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.DescCantBeNull,
+                                symbol.Locations[0],
+                                symbol.GetErrorName()
+                            )
+                        );
+
+                    break;
+                case Resources.OptAttribName:
+                    if (!TryParseOptAttrib(attr, out opt))
+                        return error();
+
+                    if (string.IsNullOrWhiteSpace(opt.LongName)) {
+                        diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyOptLongName,
+                                Utils.GetApplicationLocation(attr)
+                            )
+                        );
+
+                        isValid = false;
+                    }
+
+                    if (char.IsWhiteSpace(opt.Alias)) { // '\0' is not whitespace :P
+                        diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyOptShortName,
+                                Utils.GetApplicationLocation(attr)
+                            )
+                        );
+
+                        isValid = false;
+                    }
+
+                    break;
+                case Resources.ParseWithAttribName:
+                    if (!TryParseParseAttrib(attr, symbol.ContainingType, out parseWith))
+                        return error();
+                    break;
+                case Resources.SubCmdAttribName:
+                    if (!TryParseSubCmdAttrib(attr, out subCmd))
+                        return error();
+
+                    if (string.IsNullOrWhiteSpace(subCmd.CmdName)) {
+                        diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyCmdName,
+                                Utils.GetApplicationLocation(attr)
+                            )
+                        );
+
+                        isValid = false;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(subCmd.ParentCmd)) {
+                        diagnostics.Add(
+                            Diagnostic.Create(
+                                Diagnostics.EmptyCmdName,
+                                Utils.GetApplicationLocation(attr)
+                            )
+                        );
+
+                        isValid = false;
+                    }
+
+                    break;
+                case Resources.ValidateWithAttribName:
+                    if (!TryParseValidateAttrib(attr, symbol.ContainingType, out validateWith))
+                        return error();
+                    break;
+                default:
+                    continue;
+            }
+        }
+
+        attribList = new(cli, cmd, desc, opt, parseWith, subCmd, validateWith);
+
+        return (isValid, attribList);
+    }
+
+    public bool TryParseCmdAttrib(AttributeData attr, [NotNullWhen(true)] out CommandAttribute? cmdAttr) {
         cmdAttr = null!;
 
         if (attr.ConstructorArguments.Length < 1)
@@ -15,7 +243,7 @@ internal class AttributeParser
         return true;
     }
 
-    public bool TryParseSubCmdAttrib(AttributeData attr, out SubCommandAttribute subCmdAttr) {
+    public bool TryParseSubCmdAttrib(AttributeData attr, [NotNullWhen(true)] out SubCommandAttribute? subCmdAttr) {
         subCmdAttr = null!;
 
         if (attr.ConstructorArguments.Length < 2)
@@ -49,7 +277,7 @@ internal class AttributeParser
         return true;
     }
 
-    public bool TryParseOptAttrib(AttributeData attr, out OptionAttribute optAttr) {
+    public bool TryParseOptAttrib(AttributeData attr, [NotNullWhen(true)] out OptionAttribute? optAttr) {
         optAttr = null!;
 
         string longName;
@@ -87,7 +315,7 @@ internal class AttributeParser
         return true;
     }
 
-    public bool TryParseDescAttrib(AttributeData attr, out DescriptionAttribute descAttr) {
+    public bool TryParseDescAttrib(AttributeData attr, [NotNullWhen(true)] out DescriptionAttribute? descAttr) {
         descAttr = null!;
 
         if (attr.ConstructorArguments.Length < 1)
@@ -101,7 +329,7 @@ internal class AttributeParser
         return true;
     }
 
-    public bool TryParseCLIAttrib(AttributeData attr, out CLIAttribute cliAttr) {
+    public bool TryParseCLIAttrib(AttributeData attr, [NotNullWhen(true)] out CLIAttribute? cliAttr) {
         cliAttr = null!;
 
         // appName
@@ -119,6 +347,62 @@ internal class AttributeParser
             EntryPoint = entryPoint,
             HelpExitCode = helpIsError
         };
+
+        return true;
+    }
+
+    public bool TryParseParseAttrib(AttributeData attr, ITypeSymbol applicationType,  [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
+        parseWithAttr = null;
+
+        var ctorArgs = attr.ConstructorArguments;
+
+        if (ctorArgs.Length < 1)
+            return false;
+
+        int nameCtorIdx = 0;
+
+        ITypeSymbol containingType = applicationType;
+
+        if (ctorArgs.Length == 2) {
+            if (ctorArgs[0].Value is not ITypeSymbol type)
+                return false;
+
+            containingType = type;
+            nameCtorIdx++;
+        }
+
+        if (!TryGetCtorArg<string>(attr, nameCtorIdx, Utils.STR, out var parserName))
+            return false;
+
+        parseWithAttr = new ParseWithAttribute(containingType, parserName);
+
+        return true;
+    }
+
+    public bool TryParseValidateAttrib(AttributeData attr, ITypeSymbol applicationType, [NotNullWhen(true)] out ValidateWithAttribute? parseWithAttr) {
+        parseWithAttr = null;
+
+        var ctorArgs = attr.ConstructorArguments;
+
+        if (ctorArgs.Length < 1)
+            return false;
+
+        int nameCtorIdx = 0;
+
+        ITypeSymbol containingType = applicationType;
+
+        if (ctorArgs.Length == 2) {
+            if (ctorArgs[0].Value is not ITypeSymbol type)
+                return false;
+
+            containingType = type;
+            nameCtorIdx++;
+        }
+
+        if (!TryGetCtorArg<string>(attr, nameCtorIdx, Utils.STR, out var parserName))
+            return false;
+
+        parseWithAttr = new ValidateWithAttribute(containingType, parserName);
 
         return true;
     }
@@ -163,4 +447,6 @@ internal class AttributeParser
         return true;
     }
 
+    public bool TryGetDescription(AttributeData descAttrib, out string? desc)
+        => TryGetCtorArg<string?>(descAttrib, 0, Utils.STR, out desc);
 }

@@ -20,15 +20,14 @@ public abstract record MinimalSymbolInfo(
         }
 
         private static void ResetIfNeeded<T, U>(Dictionary<T, U> dic) {
-            if (dic.Count > 100)
+            if (dic.Count > 100) {
                 dic.Clear();
+            }
         }
 
         internal static string GetFullTypeName(ITypeSymbol type) {
-            ResetIfNeeded(_typeFullNameMap);
-
             if (!_typeFullNameMap.TryGetValue(type, out var name)) {
-                name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                name = Utils.GetFullNameBad(type);
                 _typeFullNameMap.Add(type, name);
             }
 
@@ -36,8 +35,6 @@ public abstract record MinimalSymbolInfo(
         }
 
         internal static string GetShortTypeName(ITypeSymbol type) {
-            ResetIfNeeded(_typeShortNameMap);
-
             if (!_typeShortNameMap.TryGetValue(type, out var name)) {
                 name = type.GetNameWithNull();
                 _typeShortNameMap.Add(type, name);
@@ -47,8 +44,6 @@ public abstract record MinimalSymbolInfo(
         }
 
         internal static MinimalTypeInfo GetTypeInfo(ITypeSymbol type) {
-            ResetIfNeeded(_typeInfoMap);
-
             if (!_typeInfoMap.TryGetValue(type, out var info)) {
                 info = MinimalTypeInfo.FromSymbol(type);
                 _typeInfoMap.Add(type, info);
@@ -62,7 +57,8 @@ public abstract record MinimalSymbolInfo(
 public record MinimalTypeInfo(
     string Name,
     MinimalTypeInfo? ContainingType,
-    string FullName
+    string FullName,
+    bool IsNullable
 ) : MinimalSymbolInfo(Name, ContainingType) {
     public override string ToString() => FullName;
 
@@ -72,7 +68,12 @@ public record MinimalTypeInfo(
         if (type.ContainingType is not null)
             containingType = Cache.GetTypeInfo(type.ContainingType);
 
-        return new MinimalTypeInfo(Cache.GetShortTypeName(type), containingType, Cache.GetFullTypeName(type));
+        bool isNullable
+            = type.IsReferenceType
+            ? type.NullableAnnotation == NullableAnnotation.Annotated
+            : type.Name == "Nullable";
+
+        return new MinimalTypeInfo(Cache.GetShortTypeName(type), containingType, Cache.GetFullTypeName(type), isNullable);
     }
 }
 
@@ -108,10 +109,10 @@ public record MinimalMethodInfo(
             symbol.Name,
             Cache.GetTypeInfo(symbol.ContainingType),
             Cache.GetTypeInfo(symbol.ReturnType),
-            symbol.Parameters.Select(p => MinimalParameterInfo.FromSymbol(p)).ToImmutableArray()
+            ImmutableArray.CreateRange(symbol.Parameters, p => MinimalParameterInfo.FromSymbol(p))
         );
 
-    public bool ReturnVoid => Type.FullName == "void";
+    public bool ReturnsVoid => Type.Name == "Void";
 }
 
 public record MinimalParameterInfo(

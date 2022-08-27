@@ -1,7 +1,7 @@
 namespace Recline.Generator;
 
 internal static class Resources {
-    public const int MAX_LINE_LENGTH = 80;
+    public static int MAX_LINE_LENGTH = 80;
 
     //TODO: add list of parsable types for options
 
@@ -10,6 +10,8 @@ internal static class Resources {
     public const string DescAttribName = nameof(Recline.DescriptionAttribute);
     public const string OptAttribName = nameof(Recline.OptionAttribute);
     public const string SubCmdAttribName = nameof(Recline.SubCommandAttribute);
+    public const string ParseWithAttribName = nameof(Recline.ParseWithAttribute);
+    public const string ValidateWithAttribName = nameof(Recline.ValidateWithAttribute);
 
     public const string UsingsList = $@"
 #nullable enable
@@ -34,6 +36,7 @@ namespace {GenNamespace};
 
     public const string ProgClassName = ClassPrefix + "Program";
     public const string ProgClassStr = $@"{GenFileHeader}
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 internal static partial class {ProgClassName} {{
     private static CmdDesc currCmdDesc = CmdDesc.root;
     private static string prevCmdName = CmdDesc.root.Name;
@@ -157,7 +160,7 @@ internal static partial class {ProgClassName} {{
         => GetHelpString(reason, argName, currCmdDesc);
 
     internal static void UpdateWith<TKey, TValue>(
-        this Dictionary<TKey, TValue> dic1,
+        ref Dictionary<TKey, TValue> dic1,
         Dictionary<TKey, TValue> dic2
     ) where TKey : notnull
     {{
@@ -168,8 +171,8 @@ internal static partial class {ProgClassName} {{
         }}
     }}
 
-    internal static Dictionary<TKey, TValue> UpdatedWith<TKey, TValue>(
-        this Dictionary<TKey, TValue> dic1,
+    internal static Dictionary<TKey, TValue> UpdateWith<TKey, TValue>(
+        Dictionary<TKey, TValue> dic1,
         Dictionary<TKey, TValue> dic2
     ) where TKey : notnull
     {{
@@ -184,37 +187,56 @@ internal static partial class {ProgClassName} {{
 
     internal static T Parse<T>(string? str) => default(T)!;
 
-    internal static bool AsBool(string? val, bool defaultFlag) {{
-        if (val is null)
-            return defaultFlag;
+    private delegate bool BoolOut<T>(string? arg, out T t);
 
-        if (val is ""true"")
+    private static bool AsBool(string? val) => AsBool(val, true);
+
+    private static bool AsBool(string? val, bool defaultVal) {{
+        if (val is null)
+            return defaultVal;
+
+        if (val is ""true"" or ""True"")
             return true;
 
-        if (val is ""false"")
+        if (val is ""false"" or ""False"")
             return false;
 
-        throw new FormatException(""Couldn't understand '"" + val + ""' as a boolean value"");
+        throw new FormatException(""Couldn't understand '"" + val + ""' as a boolean value."");
     }}
 
-    internal static void ThrowIfNotValid(bool val, [CallerArgumentExpression(""val"")] string expr = """") {{
+    private static void ThrowIfNotValid(bool val, [CallerArgumentExpression(""val"")] string expr = """") {{
         if (!val)
-            throw new Exception(""Expression '"" + expr + ""' returned false"");
+            throw new Exception(""Expression '"" + expr + ""' returned false."");
     }}
 
-    internal static void ThrowIfNotValid(int val, [CallerArgumentExpression(""val"")] string expr = """") {{
+    private static void ThrowIfNotValid(int val, [CallerArgumentExpression(""val"")] string expr = """") {{
         if (val != 0)
-            throw new Exception(""Expression '"" + expr + ""' returned a non-zero value"");
+            throw new Exception(""Expression '"" + expr + ""' returned a non-zero value."");
     }}
 
-    internal static void ThrowIfNotValid(string? val) {{
+    private static void ThrowIfNotValid(string? val) {{
         if (String.IsNullOrEmpty(val))
             throw new Exception(val);
     }}
 
-    internal static void ThrowIfNotValid(Exception? e) {{
+    private static void ThrowIfNotValid(Exception? e) {{
         if (e is not null)
             throw e;
+    }}
+
+    private static T ThrowIfTryParseNotTrue<T>(BoolOut<T> tryParse, string? arg) {{
+        if (!tryParse(arg, out var val))
+            throw new FormatException(""Couldn't parse '"" + (arg ?? """") + ""' as an argument of type '"" + typeof(T).Name + ""'."");
+
+        return val;
+    }}
+
+    private static T ThrowIfParseError<T>(Func<string?, T> parse, string? arg) {{
+        try {{
+            return parse(arg);
+        }} catch {{
+            throw new FormatException(""Couldn't parse '"" + (arg ?? """") + ""' as an argument of type '"" + typeof(T).Name + ""'."");
+        }}
     }}
 
     private abstract partial class CmdDesc {{
@@ -242,8 +264,8 @@ internal static partial class {ProgClassName} {{
             Dictionary<string, Action<string?>> flags,
             Dictionary<string, Action<string>> options
         ) {{
-            _flags.UpdateWith(flags);
-            _options.UpdateWith(options);
+            UpdateWith(ref _flags, flags);
+            UpdateWith(ref _options, options);
         }}
 
         private int posArgIdx = 0;
