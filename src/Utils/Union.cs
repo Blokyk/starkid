@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Recline.Generator;
 
-public sealed class Union<T, U>
+internal sealed class Union<T, U>
 {
     private readonly T? t;
     private readonly U? u;
@@ -29,15 +29,13 @@ public sealed class Union<T, U>
 
     public bool Is<V>() {
         switch (tag) {
-            case 0: return t! is V;
-            case 1: return u! is V;
+            case 0: return t is V;
+            case 1: return u is V;
             default: throw new Exception("Unrecognized tag value: " + tag);
         }
     }
 
-    public bool IsNull() {
-        return (t is null) || (u is null);
-    }
+    public bool IsNull() => (t is null) && (u is null);
 
     public static implicit operator Union<T, U>(T t) => new(t);
     public static implicit operator Union<T, U>(U u) => new(u);
@@ -45,13 +43,11 @@ public sealed class Union<T, U>
     public static explicit operator T(Union<T, U> union) => union.t!;
     public static explicit operator U(Union<T, U> union) => union.u!;
 
-
-
     public override string ToString()
         => Match(t => t!.ToString(), u => u!.ToString())!;
 }
 
-public class Union<T, U, V>
+internal class Union<T, U, V>
 {
     private readonly T? t;
     private readonly U? u;
@@ -71,7 +67,7 @@ public class Union<T, U, V>
         }
     }
 
-    public void Match<TResult>(Action<T> f, Action<U> g, Action<V> h) {
+    public void Match(Action<T> f, Action<U> g, Action<V> h) {
         switch (tag) {
             case 0:
                 f(t!);
@@ -95,18 +91,18 @@ public class Union<T, U, V>
         => Match(t => t!.ToString(), u => u!.ToString(), v => v!.ToString())!;
 }
 
-public sealed class None
+internal sealed class None
 {
     public static readonly None Instance = new();
 }
 
-public sealed class Result<T>
+internal sealed class Result<T>
 {
     private readonly T? t;
 
     public ref readonly T? Value => ref t;
 
-    private bool isOk = false;
+    private readonly bool isOk = false;
 
     private Result() { }
 
@@ -140,11 +136,10 @@ public sealed class Result<T>
             g();
     }
 
-    public TResult Match<TResult>(Func<T, TResult> f, Func<TResult> g) {
-        return isOk ? f(t!) : g();
-    }
+    public TResult Match<TResult>(Func<T, TResult> f, Func<TResult> g)
+        => isOk ? f(t!) : g();
 
-    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, nameof(Value))]
+    [MemberNotNullWhen(true, nameof(Value))]
     public ref readonly bool IsOk() => ref isOk;
 
     public Union<T, None> AsUnion() => (Union<T, None>)this;

@@ -19,12 +19,6 @@ public abstract record MinimalSymbolInfo(
             _typeInfoMap.Clear();
         }
 
-        private static void ResetIfNeeded<T, U>(Dictionary<T, U> dic) {
-            if (dic.Count > 100) {
-                dic.Clear();
-            }
-        }
-
         internal static string GetFullTypeName(ITypeSymbol type) {
             if (!_typeFullNameMap.TryGetValue(type, out var name)) {
                 name = SymbolUtils.GetFullNameBad(type);

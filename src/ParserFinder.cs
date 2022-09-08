@@ -4,13 +4,13 @@ namespace Recline.Generator;
 
 public class ParserFinder
 {
-    private ImmutableArray<Diagnostic>.Builder _diagnostics;
+    private readonly ImmutableArray<Diagnostic>.Builder _diagnostics;
 
-    private Cache<(ITypeSymbol source, ITypeSymbol target), bool> _implicitConversionsCache;
-    private Cache<ITypeSymbol, ParserInfo> _typeParserCache;
-    private Cache<ParseWithAttribute, ITypeSymbol, ParserInfo> _attrParserCache;
+    private readonly Cache<(ITypeSymbol source, ITypeSymbol target), bool> _implicitConversionsCache;
+    private readonly Cache<ITypeSymbol, ParserInfo> _typeParserCache;
+    private readonly Cache<ParseWithAttribute, ITypeSymbol, ParserInfo> _attrParserCache;
 
-    private SemanticModel _model;
+    private readonly SemanticModel _model;
 
     public ParserFinder(ref ImmutableArray<Diagnostic>.Builder diags, SemanticModel model) {
         _diagnostics = diags;
@@ -30,9 +30,9 @@ public class ParserFinder
         parser = _attrParserCache.GetValue(attr, targetType);
 
         if (parser is ParserInfo.Invalid invalidParser) {
-            if (invalidParser.Diagnostic is not null)
+            if (invalidParser.Diagnostic is not null) {
                 _diagnostics.Add(invalidParser.Diagnostic); // TODO: change location when attached
-            else
+            } else {
                 _diagnostics.Add(
                     Diagnostic.Create(
                         Diagnostics.CouldntFindNamedParser,
@@ -40,6 +40,7 @@ public class ParserFinder
                         attr.ParserName, attr.TypeSymbol.GetErrorName()
                     )
                 );
+            }
 
             return false;
         }
@@ -97,7 +98,7 @@ public class ParserFinder
         //return true;
         parser = _typeParserCache.GetValue(sourceType);
 
-        if (parser is ParserInfo.Invalid)
+        if (parser is ParserInfo.Invalid) {
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.CouldntFindAutoParser,
@@ -105,6 +106,7 @@ public class ParserFinder
                     sourceType.GetErrorName()
                 )
             );
+        }
 
         return parser is not null;
     }
@@ -116,13 +118,11 @@ public class ParserFinder
         if (_model.Compilation.HasImplicitConversion(sourceType, CommonTypes.STR))
             return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
 
-        ParserInfo parser = ParserInfo.Error;
-
         if (sourceType is not INamedTypeSymbol type)
             return ParserInfo.Error;
 
         if (SymbolUtils.Equals(type.ConstructedFrom, CommonTypes.NULLABLE))
-            return TryFindParserForType(type.TypeArguments[0], out parser) ? parser : ParserInfo.Error;
+            return TryFindParserForType(type.TypeArguments[0], out var parser) ? parser : ParserInfo.Error;
 
         /*
         * This is way too strict. In reality, you could have type like this :
@@ -133,7 +133,7 @@ public class ParserFinder
         *
         * Which would be completely valid if it was "instantiated" as Wrapper<string>
         */
-        if (type.IsGenericType)// FIXME: could/should be lifted, cf above
+        if (type.IsGenericType) { // FIXME: could/should be lifted, cf above
             return new ParserInfo.Invalid(
                 Diagnostic.Create(
                     Diagnostics.NoGenericAutoParser,
@@ -141,6 +141,7 @@ public class ParserFinder
                     type.GetErrorName()
                 )
             );
+        }
 
         // TODO: check if enum
 

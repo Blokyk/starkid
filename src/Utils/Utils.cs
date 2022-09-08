@@ -1,6 +1,6 @@
 namespace Recline.Generator;
 
-internal static partial class Utils
+internal static class Utils
 {
     public static bool TryGetConstantValue<T>(this SemanticModel model, SyntaxNode node, out T value) {
         var opt = model.GetConstantValue(node);
@@ -22,7 +22,7 @@ internal static partial class Utils
                 lastDotIdx = i + 1;
         }
 
-        return fullStr.Substring(lastDotIdx).ToString();
+        return fullStr.Substring(lastDotIdx);
     }
 
     /*public static string GetFullNameWithNull(this MinimalTypeInfo symbol) {
@@ -34,7 +34,7 @@ internal static partial class Utils
     public static Location GetApplicationLocation(AttributeData attr)
             => Location.Create(attr.ApplicationSyntaxReference!.SyntaxTree, attr.ApplicationSyntaxReference!.Span);
 
-    internal static int CombineHashCodes(int h1, int h2) =>  (((h1 << 5) + h1) ^ h2);
+    internal static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
 
     internal static IEqualityComparer<ParseWithAttribute> ParseWithAttributeComparer = new ReclineAttributesComparer();
     internal static IEqualityComparer<ValidateWithAttribute> ValidateWithAttributeComparer = new ReclineAttributesComparer();
@@ -51,13 +51,12 @@ internal static partial class Utils
         public int GetHashCode(ValidateWithAttribute obj)
             => CombineHashCodes(obj.ValidatorName.GetHashCode(), SymbolEqualityComparer.IncludeNullability.GetHashCode(obj.TypeSymbol));
     }
-
 }
 
 internal class TupleComparer<T, U> : IEqualityComparer<Tuple<T, U>>, IEqualityComparer<ValueTuple<T, U>>
 {
-    private IEqualityComparer<T> _tComparer;
-    private IEqualityComparer<U> _uComparer;
+    private readonly IEqualityComparer<T> _tComparer;
+    private readonly IEqualityComparer<U> _uComparer;
 
     public TupleComparer() : this(EqualityComparer<T>.Default, EqualityComparer<U>.Default) {}
     public TupleComparer(IEqualityComparer<T> tComparer, IEqualityComparer<U> uComparer) {

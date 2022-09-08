@@ -71,7 +71,7 @@ namespace Recline;
                     "Recline.CLIAttribute",
                     static (node, _) => HasAnyAttributes(node),
                     static (ctx, _) => {
-                        var watch = new System.Diagnostics.Stopwatch();
+                        var watch = new Stopwatch();
                         watch.Start();
                         var res = GetCmdData(ctx);
                         watch.Stop();

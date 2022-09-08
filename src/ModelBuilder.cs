@@ -2,19 +2,19 @@ using Recline.Generator.Model;
 
 namespace Recline.Generator;
 
-internal partial class ModelBuilder
+internal sealed partial class ModelBuilder
 {
     private ImmutableArray<Diagnostic>.Builder _diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
-    private HashSet<string> _topLevelOptLongNames = new();
-    private HashSet<char> _topLevelOptAliases = new();
-    private HashSet<string> _cmdNames = new();
+    private readonly HashSet<string> _topLevelOptLongNames = new();
+    private readonly HashSet<char> _topLevelOptAliases = new();
+    private readonly HashSet<string> _cmdNames = new();
 
     public ImmutableArray<Diagnostic> GetDiagnostics() => _diagnostics.ToImmutable();
 
-    private AttributeParser _attrParser;
-    private ParserFinder _parserFinder;
-    private ImmutableArray<IMethodSymbol>.Builder _nonCmdCandidateMethods = ImmutableArray.CreateBuilder<IMethodSymbol>();
+    private readonly AttributeParser _attrParser;
+    private readonly ParserFinder _parserFinder;
+    private readonly ImmutableArray<IMethodSymbol>.Builder _nonCmdCandidateMethods = ImmutableArray.CreateBuilder<IMethodSymbol>();
 
     private ModelBuilder(AttributeParser parser, SemanticModel model) {
         _attrParser = parser;
@@ -48,17 +48,16 @@ internal partial class ModelBuilder
         Location ClassLocation
     );
 
-    private ImmutableArray<Option>.Builder _opts = ImmutableArray.CreateBuilder<Option>();
-    private ImmutableArray<Command>.Builder _cmds = ImmutableArray.CreateBuilder<Command>();
+    private readonly ImmutableArray<Option>.Builder _opts = ImmutableArray.CreateBuilder<Option>();
+    private readonly ImmutableArray<Command>.Builder _cmds = ImmutableArray.CreateBuilder<Command>();
 
     public CLIData? MakeCLIData(out ImmutableArray<Diagnostic> diagnostics) {
         if (_cliData is null)
             throw new InvalidOperationException("Trying to get data from uninitialized ModelBuilder");
 
-        Command? rootCmd = null;
         var posArgs = ImmutableArray<Argument>.Empty;
 
-        if (!TryBindEntryPoint(out rootCmd)) {
+        if (!TryBindEntryPoint(out var rootCmd)) {
             diagnostics = _diagnostics.ToImmutable();
             return null;
         }
@@ -434,6 +433,30 @@ internal partial class ModelBuilder
 
         bool isValid = true;
 
+        if (!optNames.Add(longName)) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OptNameAlreadyExists,
+                    symbol.GetDefaultLocation(),
+                    longName, symbol.GetErrorName()
+                )
+            );
+
+            isValid = false;
+        }
+
+        if (shortName != default && !optAliases.Add(shortName)) {
+            _diagnostics.Add(
+                Diagnostic.Create(
+                    Diagnostics.OptAliasAlreadyExists,
+                    symbol.GetDefaultLocation(),
+                    shortName, symbol.GetErrorName()
+                )
+            );
+
+            isValid = false;
+        }
+
         if (!symbol.IsStatic && symbol is not IParameterSymbol) {
             _diagnostics.Add(
                 Diagnostic.Create(
@@ -485,7 +508,6 @@ internal partial class ModelBuilder
 
                 if (propDec.Initializer is not null)
                     defaultVal = propDec.Initializer.Value.ToString();
-
 
                 // TODO: check that defaultVal is valid outside of the containing class
                 // and maybe transform it (when possible) if not (e.g. qualifying names) ?
@@ -582,10 +604,11 @@ internal partial class ModelBuilder
         var parent = classDec.Parent;
 
         // keep moving out of nested classes
-        while (parent != null &&
-                parent is not NamespaceDeclarationSyntax
-                && parent is not FileScopedNamespaceDeclarationSyntax
-                && parent is not CompilationUnitSyntax) { }
+        while (parent is
+                not null
+                and not NamespaceDeclarationSyntax
+                and not FileScopedNamespaceDeclarationSyntax
+                and not CompilationUnitSyntax) { }
 
         var usingsSyntaxList = new SyntaxList<UsingDirectiveSyntax>();
 

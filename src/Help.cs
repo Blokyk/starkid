@@ -77,7 +77,6 @@ public record CmdHelp(
                 sb.Append(allCmdsStr);
             }
 
-
             if (!IsDirectCmd) {
                 sb.Append('>');
             } else {
@@ -117,13 +116,13 @@ public record CmdHelp(
             .AppendLine();
         AppendDescs(sb, "Arguments", PosArgs)
             .AppendLine();
-        AppendDescs(sb, "Commands", ImmutableArray<Desc>.CastUp<WithArgsDesc>(SubCmds));
+        AppendDescs(sb, "Commands", ImmutableArray<Desc>.CastUp(SubCmds));
 
         return sb.ToString();
     }
 
-    private static readonly FlagDesc _fullHelpFlag = new FlagDesc("help", 'h', "Print this help message");
-    private static readonly FlagDesc _helpFlagNoAlias = new FlagDesc("help", '\0', "Print this help message");
+    private static readonly FlagDesc _fullHelpFlag = new("help", 'h', "Print this help message");
+    private static readonly FlagDesc _helpFlagNoAlias = new("help", '\0', "Print this help message");
     private static readonly char[] splitWithSpaceArray = new[] { ' ' };
 
     private static StringBuilder AppendDescs(StringBuilder sb, string sectionName, ImmutableArray<Desc> descArr) {
@@ -131,7 +130,7 @@ public record CmdHelp(
             return sb;
 
         sb
-            .AppendLine(sectionName + ':');
+            .Append(sectionName).Append(':').AppendLine();
 
         var prefixStrings = GetPrefixStrings(descArr);
 
@@ -143,7 +142,7 @@ public record CmdHelp(
 
             sb.Append(pre);
 
-            if (opt.Description is null || opt.Description.Length == 0) {
+            if (String.IsNullOrEmpty(opt.Description)) {
                 sb.AppendLine();
                 continue;
             }
@@ -155,9 +154,8 @@ public record CmdHelp(
 
             // if there's not enough space for the description, skip a line
             // and indent before inserting it
-            if (pre.Length + opt.Description.Length > Resources.MAX_LINE_LENGTH) {
+            if (pre.Length + opt.Description!.Length > Resources.MAX_LINE_LENGTH) {
                 sb
-                    //.AppendLine()
                     .Append(indentStr);
             } else {
                 sb.Append(indentStr);

@@ -5,7 +5,7 @@ internal static class SymbolUtils
     public static bool Equals(ISymbol? s1, ISymbol? s2) => SymbolEqualityComparer.Default.Equals(s1, s2);
 
     [Obsolete("Wrong one, buddy")]
-    public new static bool Equals(object a, object b) => false;
+    public new static bool Equals(object _, object __) => false;
 
     static string GetRawName(ISymbol symbol) {
         if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
@@ -32,7 +32,6 @@ internal static class SymbolUtils
 
         return name;
     }
-
 
     public static bool CanBeImplicitlyCastTo(this ITypeSymbol source, ITypeSymbol target, SemanticModel model)
         => model.Compilation.HasImplicitConversion(source, target); // model.Compilation.ClassifyCommonConversion(source, target).IsImplicit;

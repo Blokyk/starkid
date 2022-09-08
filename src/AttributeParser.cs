@@ -11,11 +11,9 @@ internal enum MemberKind {
 
 internal class AttributeParser
 {
-    private Cache<ISymbol, ImmutableArray<Diagnostic>.Builder, (bool, AttributeListInfo)> _attrListCache;
+    private readonly Cache<ISymbol, ImmutableArray<Diagnostic>.Builder, (bool, AttributeListInfo)> _attrListCache;
 
-    public AttributeParser() {
-        _attrListCache = new(SymbolEqualityComparer.Default, TryGetAttributeList);
-    }
+    public AttributeParser() => _attrListCache = new(SymbolEqualityComparer.Default, TryGetAttributeList);
 
     static MemberKind ValidateAttributeList(AttributeListInfo attrList, ISymbol symbol, ref ImmutableArray<Diagnostic>.Builder diagnostics) {
         var kind = CategorizeAttributeList(attrList);
@@ -34,7 +32,7 @@ internal class AttributeParser
             return kind;
 
         // we don't care about cli because it will never be with the other attributes for a valid symbol
-        var (cli, cmd, desc, opt, parseWith, subCmd, validateWith) = attrList;
+        var (_, cmd, _, opt, parseWith, subCmd, validateWith) = attrList;
 
         switch (cmd, opt, subCmd) {
             case (not null, not null, null):
@@ -132,7 +130,7 @@ internal class AttributeParser
                     if (!TryParseCmdAttrib(attr, out cmd))
                         return error();
 
-                    if (string.IsNullOrWhiteSpace(cmd.CmdName)) {
+                    if (String.IsNullOrWhiteSpace(cmd.CmdName)) {
                         diagnostics.Add(
                             Diagnostic.Create(
                                 Diagnostics.EmptyCmdName,
@@ -148,7 +146,7 @@ internal class AttributeParser
                     if (!TryParseDescAttrib(attr, out desc))
                         return error();
 
-                    if (string.IsNullOrWhiteSpace(desc.Description))
+                    if (String.IsNullOrWhiteSpace(desc.Description)) {
                         diagnostics.Add(
                             Diagnostic.Create(
                                 Diagnostics.DescCantBeNull,
@@ -156,13 +154,14 @@ internal class AttributeParser
                                 symbol.GetErrorName()
                             )
                         );
+                    }
 
                     break;
                 case Resources.OptAttribName:
                     if (!TryParseOptAttrib(attr, out opt))
                         return error();
 
-                    if (string.IsNullOrWhiteSpace(opt.LongName)) {
+                    if (String.IsNullOrWhiteSpace(opt.LongName)) {
                         diagnostics.Add(
                             Diagnostic.Create(
                                 Diagnostics.EmptyOptLongName,
@@ -173,7 +172,7 @@ internal class AttributeParser
                         isValid = false;
                     }
 
-                    if (char.IsWhiteSpace(opt.Alias)) { // '\0' is not whitespace :P
+                    if (Char.IsWhiteSpace(opt.Alias)) { // '\0' is not whitespace :P
                         diagnostics.Add(
                             Diagnostic.Create(
                                 Diagnostics.EmptyOptShortName,
@@ -193,7 +192,7 @@ internal class AttributeParser
                     if (!TryParseSubCmdAttrib(attr, out subCmd))
                         return error();
 
-                    if (string.IsNullOrWhiteSpace(subCmd.CmdName)) {
+                    if (String.IsNullOrWhiteSpace(subCmd.CmdName)) {
                         diagnostics.Add(
                             Diagnostic.Create(
                                 Diagnostics.EmptyCmdName,
@@ -204,7 +203,7 @@ internal class AttributeParser
                         isValid = false;
                     }
 
-                    if (string.IsNullOrWhiteSpace(subCmd.ParentCmd)) {
+                    if (String.IsNullOrWhiteSpace(subCmd.ParentCmd)) {
                         diagnostics.Add(
                             Diagnostic.Create(
                                 Diagnostics.EmptyCmdName,
@@ -361,7 +360,7 @@ internal class AttributeParser
 
         int nameCtorIdx = 0;
 
-        ITypeSymbol containingType = applicationType;
+        var containingType = applicationType;
 
         if (ctorArgs.Length == 2) {
             if (ctorArgs[0].Value is not ITypeSymbol type)
@@ -389,7 +388,7 @@ internal class AttributeParser
 
         int nameCtorIdx = 0;
 
-        ITypeSymbol containingType = applicationType;
+        var containingType = applicationType;
 
         if (ctorArgs.Length == 2) {
             if (ctorArgs[0].Value is not ITypeSymbol type)

@@ -2,11 +2,11 @@
 
 using System;
 using System.Linq;
+using System.IO;
+
 using Recline;
 
 namespace SomeStuff;
-
-using System.IO;
 
 public record Stuff(int i);
 

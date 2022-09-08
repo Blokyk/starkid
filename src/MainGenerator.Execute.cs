@@ -23,13 +23,13 @@ public partial class MainGenerator : IIncrementalGenerator
             )
         );
 
-        var watch = new System.Diagnostics.Stopwatch();
+        var watch = new Stopwatch();
         watch.Start();
 
         bool hasError = false;
 
-        foreach (var t in tuples) {
-            foreach (var diag in t.diags) {
+        foreach (var (_, diags) in tuples) {
+            foreach (var diag in diags) {
                 spc.ReportDiagnostic(diag);
 
                 if (diag.Severity == DiagnosticSeverity.Error)

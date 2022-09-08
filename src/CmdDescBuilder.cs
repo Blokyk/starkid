@@ -11,7 +11,7 @@ internal class CmdDescBuilder
     public string AppName { get; }
     public string? Description { get; }
 
-    Dictionary<Command, ImmutableArray<Command>.Builder> domToSubTable;
+    readonly Dictionary<Command, ImmutableArray<Command>.Builder> domToSubTable;
 
     Command RootCmd { get; }
     ImmutableArray<Argument> RootArgs { get; }
@@ -19,14 +19,14 @@ internal class CmdDescBuilder
 
     private record CmdInfo(Command cmd, ImmutableArray<Option> opts, ImmutableArray<Argument> posArgs);
 
-    ImmutableArray<CmdInfo>.Builder _allCmdInfo
+    readonly ImmutableArray<CmdInfo>.Builder _allCmdInfo
         = ImmutableArray.CreateBuilder<CmdInfo>();
 
     bool HasRealRootCmd { get; }
 
     public int HelpExitCode { get; set; } = 0;
 
-    private StringBuilder sb;
+    private readonly StringBuilder sb;
 
     public CmdDescBuilder(
         string appName,
@@ -61,15 +61,13 @@ internal class CmdDescBuilder
         AddRoot();
     }
 
-    void AddRootHelpText() {
-        AddHelpText(
+    void AddRootHelpText() => AddHelpText(
             RootCmd,
             domToSubTable[RootCmd].ToImmutable(),
             RootOptsAndSws,
             RootArgs,
             true
         );
-    }
 
     public void AddHelpText(Command cmd, ImmutableArray<Command> subs, ImmutableArray<Option> opts, ImmutableArray<Argument> posArgs, bool isRoot = false) {
         var help = new CmdHelp(
@@ -85,39 +83,36 @@ internal class CmdDescBuilder
 
         var helpStr = help.ToString();
 
-        sb.Append($@"
-{GetClassDeclarationLine(cmd, isRoot)}
-        public override string Name => ""{cmd.Name}"";
+        sb.Append('\n').Append(GetClassDeclarationLine(cmd)).Append(@"
+        public override string Name => """).Append(cmd.Name).Append(@""";
         internal override string HelpString => _helpString;
-        private static readonly string _helpString = {SyntaxFactory.Literal(helpStr).ToString()};
+        private static readonly string _helpString = ").Append(SyntaxFactory.Literal(helpStr)).Append(@";
 
-        private static void DisplayHelp(string? val) {{
+        private static void DisplayHelp(string? val) {
             Console.Error.WriteLine(_helpString);
-            System.Environment.Exit({HelpExitCode});
-        }}
-    }}
+            System.Environment.Exit(").Append(HelpExitCode).Append(@");
+        }
+    }
 ");
     }
 
     void AddRoot() {
-        sb.AppendLine($@"
-    private abstract partial class CmdDesc {{
-        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new {AppName}CmdDesc(), false);
+        sb.Append(@"
+    private abstract partial class CmdDesc {
+        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new ").Append(AppName).AppendLine(@"CmdDesc(), false);
         internal static CmdDesc root => _lazyRoot.Value;
 
 ");
 
         AddOptsAndFlags(RootOptsAndSws, isRoot: true);
 
-        sb.AppendLine($@"
-    }}");
+        sb.AppendLine(@"
+    }");
 
         if (HasRealRootCmd)
             AddCmd(RootCmd, RootOptsAndSws, RootArgs, true);
-
     }
 
-    //TODO: change "flag" vocab to "flag"
     void AddOptsAndFlags(ImmutableArray<Option> optsAndFlags, bool isRoot = false) {
         var opts = ImmutableArray.CreateBuilder<Option>(optsAndFlags.Length / 2);
         var flags = ImmutableArray.CreateBuilder<Option>(optsAndFlags.Length / 2);
@@ -131,11 +126,11 @@ internal class CmdDescBuilder
 
         #region Flags
 
-        sb.AppendLine($@"private static Dictionary<string, Action<string?>> _flags = new() {{");
+        sb.AppendLine("private static Dictionary<string, Action<string?>> _flags = new() {");
 
-        sb.AppendLine($@"
-            {{ ""--help"", DisplayHelp }},
-            {{ ""-h"", DisplayHelp }},
+        sb.AppendLine(@"
+            { ""--help"", DisplayHelp },
+            { ""-h"", DisplayHelp },
 ");
 
         foreach (var sw in flags) {
@@ -180,7 +175,7 @@ internal class CmdDescBuilder
         #endregion
         #region Options
 
-        sb.AppendLine($@"private static Dictionary<string, Action<string>> _options = new() {{");
+        sb.AppendLine("private static Dictionary<string, Action<string>> _options = new() {");
 
         foreach (var opt in opts) {
             sb.AppendLine(GetOptDictLine(opt.Desc.LongName, opt.Desc.Alias, opt.BackingSymbol.Name + "Action"));
@@ -247,8 +242,8 @@ internal class CmdDescBuilder
         return expr;
     }
 
-    void AddArgs(ImmutableArray<Argument> posArgs, bool isRoot = true) {
-        sb.Append($@"protected override Action<string>[] _posArgs => ");
+    void AddArgs(ImmutableArray<Argument> posArgs) {
+        sb.Append("protected override Action<string>[] _posArgs => ");
 
         if (posArgs.Length == 0) {
             sb.AppendLine("Array.Empty<Action<string>>();");
@@ -270,7 +265,6 @@ internal class CmdDescBuilder
         }
 
         sb.AppendLine("};");
-
 
         foreach (var arg in posArgs) {
             if (arg.IsParams)
@@ -294,7 +288,7 @@ internal class CmdDescBuilder
         }
     }
 
-    void AppendFunc(MinimalMethodInfo method, bool isRoot = false) {
+    void AppendFunc(MinimalMethodInfo method) {
         sb.Append("private static ");
 
         var isVoid = method.ReturnsVoid;
@@ -314,7 +308,6 @@ internal class CmdDescBuilder
         if (isVoid) {
             if (methodParams.Length != 0)
                 sb.Append('>');
-
         } else {
             if (methodParams.Length != 0)
                 sb.Append(", ");
@@ -328,11 +321,11 @@ internal class CmdDescBuilder
             .AppendLine(";");
     }
 
-    void AddFuncAndInvoke(MinimalMethodInfo method, ImmutableArray<Option> optsAndSws, ImmutableArray<Argument> posArgs, bool isRoot = false) {
+    void AddFuncAndInvoke(MinimalMethodInfo method ) {
         var isVoid = method.ReturnsVoid;
         var methodParams = method.Parameters;
 
-        AppendFunc(method, isRoot);
+        AppendFunc(method);
 
         sb.Append("internal override Func<int> Invoke => ");
 
@@ -350,10 +343,10 @@ internal class CmdDescBuilder
             var defArgName = new string[methodParams.Length];
 
             for (int i = 0; i < methodParams.Length; i++) {
-                if (methodParams[i].IsParams)
-                    defArgName[i] = "_params.ToArray()";
-                else
-                    defArgName[i] = SymbolUtils.GetSafeName(methodParams[i].Name);
+                defArgName[i]
+                    = methodParams[i].IsParams
+                        ? "_params.ToArray()"
+                        : SymbolUtils.GetSafeName(methodParams[i].Name);
             }
 
             sb.Append(String.Join(", ", defArgName));
@@ -384,27 +377,29 @@ internal class CmdDescBuilder
             domToSubTable[RootCmd].Add(cmd);
         }
 
-        sb.Append($@"
-{GetClassDeclarationLine(cmd, isRoot)}
-        {(cmd.HasParams ? "protected override bool HasParams => true;" : "")}
+        sb
+        .AppendLine()
+        .Append(GetClassDeclarationLine(cmd))
+        .Append(cmd.HasParams ? @"
+        protected override bool HasParams => true;" : "").Append(@"
 
-        internal {cmd.Name}CmdDesc() : base(_flags, _options) {{}}
+        internal ").Append(cmd.Name).Append(@"CmdDesc() : base(_flags, _options) {}
 
-        protected {cmd.Name}CmdDesc(
+        protected ").Append(cmd.Name).Append(@"CmdDesc(
             Dictionary<string, Action<string?>> flags,
             Dictionary<string, Action<string>> options
         )
             : base(UpdateWith(_flags, flags), UpdateWith(_options, options))
-        {{}}
+        {}
 ");
 
         AddOptsAndFlags(optsAndSws, isRoot);
-        AddArgs(posArgs, isRoot);
+        AddArgs(posArgs);
         if (cmd.BackingSymbol is not null) // if this is not root
-            AddFuncAndInvoke(cmd.BackingSymbol, optsAndSws, posArgs, isRoot);
+            AddFuncAndInvoke(cmd.BackingSymbol);
 
-        sb.AppendLine($@"
-    }}
+        sb.AppendLine(@"
+    }
 ");
     }
 
@@ -414,10 +409,10 @@ internal class CmdDescBuilder
             var subs = kv.Value;
 
                 sb
-                .AppendLine(GetClassDeclarationLine(dom, isRoot: dom == RootCmd))
-                .AppendLine($@"
+                .AppendLine(GetClassDeclarationLine(dom))
+                .AppendLine(@"
         internal override Dictionary<string, Func<CmdDesc>> SubCmds => _subs;
-        private static Dictionary<string, Func<CmdDesc>> _subs = new() {{
+        private static Dictionary<string, Func<CmdDesc>> _subs = new() {
 ")
                 ;
 
@@ -454,9 +449,8 @@ static partial class {ProgClassName} {{
 " + sb.ToString() + "}";
     }
 
-    static string GetOptFuncLine(string methodName, string expr) {
-        return $@"private static void {methodName}(string? __arg) => {expr};";
-    }
+    static string GetOptFuncLine(string methodName, string expr)
+        => $"private static void {methodName}(string? __arg) => {expr};";
 
     static string GetDictLine(string key, string value)
         => $@"{{ ""{key}"", {value} }},";
@@ -470,7 +464,7 @@ static partial class {ProgClassName} {{
         return str;
     }
 
-    public static string GetClassDeclarationLine(Command cmd, bool isRoot)
+    public static string GetClassDeclarationLine(Command cmd)
         => $@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625

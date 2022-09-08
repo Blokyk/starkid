@@ -25,7 +25,7 @@ var unit = CSharpCompilation.Create(
 );
 
 var driver = CSharpGeneratorDriver.Create(
-    new[] { GeneratorExtensions.AsSourceGenerator(generator) },
+    new[] { generator.AsSourceGenerator() },
     driverOptions: new GeneratorDriverOptions(
         disabledOutputs: IncrementalGeneratorOutputKind.None,
         trackIncrementalGeneratorSteps: true
@@ -33,7 +33,6 @@ var driver = CSharpGeneratorDriver.Create(
 );
 
 Console.WriteLine("\x1b[33m  init -- parsex\x1b[0m"); {
-
     var genRun = driver.RunGenerators(unit);
     var results = genRun.GetRunResult().Results[0];
 
@@ -41,7 +40,7 @@ Console.WriteLine("\x1b[33m  init -- parsex\x1b[0m"); {
         Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
     }
 
-    var errorCount = results.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Count() + (results.Exception is not null ? 1 : 0);
+    var errorCount = results.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error) + (results.Exception is not null ? 1 : 0);
 
     if (errorCount != 0) {
         Console.WriteLine("\x1b[31mThere were " + errorCount + " errors.\x1b[0m");
@@ -74,7 +73,7 @@ Console.WriteLine("\x1b[33m  edit -- parsex-2\x1b[0m"); {
         Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
     }
 
-    var errorCount = results.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Count() + (results.Exception is not null ? 1 : 0);
+    var errorCount = results.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error) + (results.Exception is not null ? 1 : 0);
 
     if (errorCount != 0) {
         Console.WriteLine("\x1b[31mThere were " + errorCount + " errors.\x1b[0m");
@@ -107,7 +106,7 @@ Console.WriteLine("\x1b[33m  paste -- dotnet\x1b[0m"); {
         Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
     }
 
-    var errorCount = results.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Count() + (results.Exception is not null ? 1 : 0);
+    var errorCount = results.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error) + (results.Exception is not null ? 1 : 0);
 
     if (errorCount != 0) {
         Console.WriteLine("\x1b[31mThere were " + errorCount + " errors.\x1b[0m");
