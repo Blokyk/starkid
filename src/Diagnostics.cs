@@ -98,7 +98,7 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CmdCantBeGeneric
         = new(
             "CLI101",
-            "Method '{0}' can't be generic to be a command",
+            "Generic method '{0}' cannot be a command",
             "Methods marked with [Command] can't be generic",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
@@ -300,8 +300,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor OptAliasAlreadyExists
         = new(
             "CLI209",
-            "Another option with the name '{0}' was already declared for this command",
-            "Another option with the name '{0}' was already declared for this command",
+            "Another option with the alias '{0}' was already declared for this command",
+            "Another option with the alias '{0}' was already declared for this command",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -361,8 +361,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor NotValidParserType
         = new(
             "CLI403",
-            "Parser type '{0}' can't be an array, pointer, or unbound generic type",
-            "Parser type '{0}' can't be an array, pointer, or unbound generic type",
+            "Parser's containing type '{0}' can't be an array, pointer, or unbound generic type",
+            "Parser's containing type '{0}' can't be an array, pointer, or unbound generic type",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
