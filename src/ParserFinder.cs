@@ -16,10 +16,11 @@ public class ParserFinder
         _diagnostics = diags;
         _model = model;
         _implicitConversionsCache = new(
+            new TupleComparer<ITypeSymbol, ITypeSymbol>(SymbolEqualityComparer.Default, SymbolEqualityComparer.Default),
             (t) => _model.Compilation.HasImplicitConversion(t.source, t.target)
         );
-        _typeParserCache = new(FindParserForType);
-        _attrParserCache = new(GetParserFromName);
+        _typeParserCache = new(SymbolEqualityComparer.Default, FindParserForType);
+        _attrParserCache = new(Utils.ParseWithAttributeComparer, GetParserFromName);
     }
 
     public bool TryGetParser(ParseWithAttribute? attr, ITypeSymbol targetType, [NotNullWhen(true)] out ParserInfo? parser)

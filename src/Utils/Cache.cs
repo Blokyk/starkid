@@ -10,8 +10,6 @@ public readonly struct Cache<TKey, TValue>
         _map = new(comparer);
     }
 
-    public Cache(Func<TKey, TValue> generator) : this(EqualityComparer<TKey>.Default, generator) {}
-
     public TValue GetValue(TKey key) {
         if (!_map.TryGetValue(key, out var val)) {
             val = _getter(key);
@@ -31,8 +29,6 @@ public readonly struct Cache<TKey, TArg, TValue>
         _getter = generator;
         _map = new(comparer);
     }
-
-    public Cache(Func<TKey, TArg, TValue> generator) : this(EqualityComparer<TKey>.Default, generator) { }
 
     [System.Diagnostics.DebuggerHidden]
     public TValue GetValue(TKey key, TArg arg) {
