@@ -114,12 +114,13 @@ namespace Recline;
         sw.Start();
 
         var model = ctx.SemanticModel;
-        Utils.UpdatePredefTypes(model.Compilation);
+        CommonTypes.Refresh(model.Compilation);
 
         var attribParser = new AttributeParser();
 
         static (CLIData? data, ImmutableArray<Diagnostic> diags) bail(ModelBuilder modelBuilder) {
             var data = modelBuilder.MakeCLIData(out var diags);
+            CommonTypes.Clear();
             return (data, diags);
         }
 
@@ -136,6 +137,7 @@ namespace Recline;
         }
 
         var data = modelBuilder.MakeCLIData(out var diags);
+        CommonTypes.Clear();
         return (data, diags);
     }
 }

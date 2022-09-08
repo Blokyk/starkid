@@ -285,7 +285,7 @@ internal partial class ModelBuilder
             isValid = false;
         }
 
-        if (hasExitCode && !Utils.Equals(method.ReturnType, Utils.INT32)) {
+        if (hasExitCode && !SymbolUtils.Equals(method.ReturnType, CommonTypes.INT32)) {
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.CmdMustBeVoidOrInt,
@@ -383,7 +383,7 @@ internal partial class ModelBuilder
 
         bool isParams = param.IsParams;
 
-        if (isParams && (param.Type is not IArrayTypeSymbol paramArrayType || !Utils.Equals(paramArrayType.ElementType, Utils.STR))) {
+        if (isParams && (param.Type is not IArrayTypeSymbol paramArrayType || !SymbolUtils.Equals(paramArrayType.ElementType, CommonTypes.STR))) {
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.ParamsHasToBeString,
@@ -636,7 +636,7 @@ internal partial class ModelBuilder
         var type = GetTypeForSymbol(symbol);
 
         // if it's a flag
-        if (Utils.Equals(type, Utils.BOOL)) {
+        if (SymbolUtils.Equals(type, CommonTypes.BOOL)) {
             opt = new Flag(
                 new FlagDesc(longName, shortName, descStr),
                 parser ?? ParserInfo.AsBool,

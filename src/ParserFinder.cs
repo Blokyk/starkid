@@ -104,10 +104,10 @@ public class ParserFinder
     }
 
     ParserInfo FindParserForType(ITypeSymbol sourceType) {
-        if (Utils.Equals(sourceType, Utils.STR))
-            return new ParserInfo.Identity(Utils.STRMinInfo);
+        if (SymbolUtils.Equals(sourceType, CommonTypes.STR))
+            return new ParserInfo.Identity(CommonTypes.STRMinInfo);
 
-        if (_model.Compilation.HasImplicitConversion(sourceType, Utils.STR))
+        if (_model.Compilation.HasImplicitConversion(sourceType, CommonTypes.STR))
             return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
 
         ParserInfo parser = ParserInfo.Error;
@@ -115,7 +115,7 @@ public class ParserFinder
         if (sourceType is not INamedTypeSymbol type)
             return ParserInfo.Error;
 
-        if (Utils.Equals(type.ConstructedFrom, Utils.NULLABLE))
+        if (SymbolUtils.Equals(type.ConstructedFrom, CommonTypes.NULLABLE))
             return TryFindParserForType(type.TypeArguments[0], out parser) ? parser : ParserInfo.Error;
 
         /*
@@ -188,7 +188,7 @@ public class ParserFinder
                 var param = method.Parameters[0];
 
                 var isValid = (method.MethodKind == MethodKind.Constructor || _implicitConversionsCache.GetValue((targetType, method.ReturnType)))
-                    && _implicitConversionsCache.GetValue((Utils.STR, param.Type));
+                    && _implicitConversionsCache.GetValue((CommonTypes.STR, param.Type));
 
                 if (!isValid)
                     return ParserInfo.Error;
@@ -202,7 +202,7 @@ public class ParserFinder
                 return new ParserInfo.DirectMethod(containingTypeInfo.FullName + "." + method.Name, targetTypeInfo);
             }
             case 2: {
-                if (!_implicitConversionsCache.GetValue((Utils.BOOL, method.ReturnType)))
+                if (!_implicitConversionsCache.GetValue((CommonTypes.BOOL, method.ReturnType)))
                     return ParserInfo.Error;
 
                 var outParam = method.Parameters[1];
@@ -215,7 +215,7 @@ public class ParserFinder
 
                 var inputParam = method.Parameters[0];
 
-                var isValid = _implicitConversionsCache.GetValue((Utils.STR, inputParam.Type));
+                var isValid = _implicitConversionsCache.GetValue((CommonTypes.STR, inputParam.Type));
 
                 if (!isValid)
                     return ParserInfo.Error;

@@ -236,7 +236,7 @@ internal class AttributeParser
         if (attr.ConstructorArguments.Length < 1)
             return false;
 
-        if (!Utils.Equals(attr.ConstructorArguments[0].Type, Utils.STR))
+        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
             return false;
 
         cmdAttr = new((string)attr.ConstructorArguments[0].Value!);
@@ -251,11 +251,11 @@ internal class AttributeParser
         if (attr.NamedArguments.Length > 1)
             return false;
 
-        if (!Utils.Equals(attr.ConstructorArguments[0].Type, Utils.STR))
+        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
             return false;
         var cmdName = (string)attr.ConstructorArguments[0].Value!;
 
-        if (!Utils.Equals(attr.ConstructorArguments[1].Type, Utils.STR))
+        if (!SymbolUtils.Equals(attr.ConstructorArguments[1].Type, CommonTypes.STR))
             return false;
         var parentName = (string)attr.ConstructorArguments[1].Value!;
 
@@ -286,13 +286,13 @@ internal class AttributeParser
         if (attr.ConstructorArguments.Length < 1)
             return false;
 
-        if (!Utils.Equals(attr.ConstructorArguments[0].Type, Utils.STR))
+        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
             return false;
 
         longName = (string)attr.ConstructorArguments[0].Value!;
 
         if (attr.ConstructorArguments.Length == 2) {
-            if (!Utils.Equals(attr.ConstructorArguments[1].Type, Utils.CHAR))
+            if (!SymbolUtils.Equals(attr.ConstructorArguments[1].Type, CommonTypes.CHAR))
                 return false;
 
             shortName = (char)attr.ConstructorArguments[1].Value!;
@@ -321,7 +321,7 @@ internal class AttributeParser
         if (attr.ConstructorArguments.Length < 1)
             return false;
 
-        if (!Utils.Equals(attr.ConstructorArguments[0].Type, Utils.STR))
+        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
             return false;
 
         descAttr = new((string)attr.ConstructorArguments[0].Value!);
@@ -333,14 +333,14 @@ internal class AttributeParser
         cliAttr = null!;
 
         // appName
-        if (!TryGetCtorArg<string>(attr, 0, Utils.STR, out var appName))
+        if (!TryGetCtorArg<string>(attr, 0, CommonTypes.STR, out var appName))
             return false;
 
         // EntryPoint
-        if (!TryGetProp<string?>(attr, nameof(CLIAttribute.EntryPoint), Utils.STR, null, out var entryPoint))
+        if (!TryGetProp<string?>(attr, nameof(CLIAttribute.EntryPoint), CommonTypes.STR, null, out var entryPoint))
             return false;
 
-        if (!TryGetProp<int>(attr, nameof(CLIAttribute.HelpExitCode), Utils.INT32, 0, out var helpIsError))
+        if (!TryGetProp<int>(attr, nameof(CLIAttribute.HelpExitCode), CommonTypes.INT32, 0, out var helpIsError))
             return false;
 
         cliAttr = new(appName) {
@@ -371,7 +371,7 @@ internal class AttributeParser
             nameCtorIdx++;
         }
 
-        if (!TryGetCtorArg<string>(attr, nameCtorIdx, Utils.STR, out var parserName))
+        if (!TryGetCtorArg<string>(attr, nameCtorIdx, CommonTypes.STR, out var parserName))
             return false;
 
         parseWithAttr = new ParseWithAttribute(containingType, parserName);
@@ -399,7 +399,7 @@ internal class AttributeParser
             nameCtorIdx++;
         }
 
-        if (!TryGetCtorArg<string>(attr, nameCtorIdx, Utils.STR, out var parserName))
+        if (!TryGetCtorArg<string>(attr, nameCtorIdx, CommonTypes.STR, out var parserName))
             return false;
 
         parseWithAttr = new ValidateWithAttribute(containingType, parserName);
@@ -416,7 +416,7 @@ internal class AttributeParser
             return false;
         }
 
-        if (!Utils.Equals(ctorArgs[ctorIdx].Type, type) || ctorArgs[ctorIdx].Value is not T)
+        if (!SymbolUtils.Equals(ctorArgs[ctorIdx].Type, type) || ctorArgs[ctorIdx].Value is not T)
             return false;
 
         val = (T)ctorArgs[ctorIdx].Value!;
@@ -439,7 +439,7 @@ internal class AttributeParser
         if (arg.Equals(default))
             return true;
 
-        if (!Utils.Equals(arg.Type, type) || arg.Value is not T)
+        if (!SymbolUtils.Equals(arg.Type, type) || arg.Value is not T)
             return false;
 
         val = (T)arg.Value!;
@@ -448,5 +448,5 @@ internal class AttributeParser
     }
 
     public bool TryGetDescription(AttributeData descAttrib, out string? desc)
-        => TryGetCtorArg<string?>(descAttrib, 0, Utils.STR, out desc);
+        => TryGetCtorArg<string?>(descAttrib, 0, CommonTypes.STR, out desc);
 }

@@ -27,7 +27,7 @@ public abstract record MinimalSymbolInfo(
 
         internal static string GetFullTypeName(ITypeSymbol type) {
             if (!_typeFullNameMap.TryGetValue(type, out var name)) {
-                name = Utils.GetFullNameBad(type);
+                name = SymbolUtils.GetFullNameBad(type);
                 _typeFullNameMap.Add(type, name);
             }
 
@@ -82,7 +82,7 @@ public record MinimalMemberInfo(
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo Type
 ) : MinimalSymbolInfo(Name, ContainingType) {
-    public override string ToString() => ContainingType!.ToString() + "." + Utils.GetSafeName(Name);
+    public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMemberInfo FromSymbol(ISymbol symbol) {
         if (symbol is IPropertySymbol propSymbol)
@@ -102,7 +102,7 @@ public record MinimalMethodInfo(
     MinimalTypeInfo Type,
     ImmutableArray<MinimalParameterInfo> Parameters
 ) : MinimalMemberInfo(Name, ContainingType, Type) {
-    public override string ToString() => ContainingType!.ToString() + "." + Utils.GetSafeName(Name);
+    public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
         => new(
@@ -131,7 +131,7 @@ public record MinimalParameterInfo(
             symbol.HasExplicitDefaultValue ? new Optional<object?>(symbol.ExplicitDefaultValue) : new Optional<object?>()
         );
 
-    public override string ToString() => Utils.GetSafeName(Name);
+    public override string ToString() => SymbolUtils.GetSafeName(Name);
 
     public bool HasDefaultValue => DefaultValue.HasValue;
 }

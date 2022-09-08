@@ -123,7 +123,7 @@ internal class CmdDescBuilder
         var flags = ImmutableArray.CreateBuilder<Option>(optsAndFlags.Length / 2);
 
         foreach (var thing in optsAndFlags) {
-            if (thing.Type == Utils.BOOLMinInfo)
+            if (thing.Type == CommonTypes.BOOLMinInfo)
                 flags.Add(thing);
             else
                 opts.Add(thing);
@@ -177,7 +177,7 @@ internal class CmdDescBuilder
 
                 sb
                     .Append("private static bool ")
-                    .Append(Utils.GetSafeName(sw.BackingSymbol.Name));
+                    .Append(SymbolUtils.GetSafeName(sw.BackingSymbol.Name));
 
                 if (sw.DefaultValueExpr is not null) {
                     sb
@@ -388,7 +388,7 @@ internal class CmdDescBuilder
                 if (methodParams[i].IsParams)
                     defArgName[i] = "_params.ToArray()";
                 else
-                    defArgName[i] = Utils.GetSafeName(methodParams[i].Name);
+                    defArgName[i] = SymbolUtils.GetSafeName(methodParams[i].Name);
             }
 
             sb.Append(String.Join(", ", defArgName));

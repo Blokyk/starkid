@@ -1,8 +1,8 @@
 namespace Recline.Generator.Model;
 
 public abstract record ParserInfo(MinimalTypeInfo TargetType) {
-    public static readonly DirectMethod AsBool = new DirectMethod(Resources.GenNamespace + "." + Resources.ProgClassName + ".AsBool", Utils.BOOLMinInfo);
-    public static readonly Identity StringIdentity = new(Utils.STRMinInfo);
+    public static readonly DirectMethod AsBool = new DirectMethod(Resources.GenNamespace + "." + Resources.ProgClassName + ".AsBool", CommonTypes.BOOLMinInfo);
+    public static readonly Identity StringIdentity = new(CommonTypes.STRMinInfo);
     public static readonly Invalid Error = new();
 
     public record Identity(MinimalTypeInfo TargetType) : DirectMethod("", TargetType);
