@@ -99,9 +99,9 @@ public record MinimalMemberInfo(
 public record MinimalMethodInfo(
     string Name,
     MinimalTypeInfo ContainingType,
-    MinimalTypeInfo Type,
+    MinimalTypeInfo ReturnType,
     ImmutableArray<MinimalParameterInfo> Parameters
-) : MinimalMemberInfo(Name, ContainingType, Type) {
+) : MinimalMemberInfo(Name, ContainingType, ReturnType) {
     public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
