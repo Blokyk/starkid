@@ -145,22 +145,11 @@ internal class CmdDescBuilder
         sb.AppendLine("};");
 
         foreach (var flag in flags) {
-            string expr = "";
-
-            if (isRoot)
-                expr = CliClassName + ".";
+            string expr = !isRoot ? "" : CliClassName + ".";
 
             var argExpr = GetParsingExpression(flag.Parser, flag.DefaultValueExpr);
 
-            if (flag is MethodOption methodOpt) {
-                expr = methodOpt.BackingSymbol.ToString() + '(' + argExpr + " ?? \"\")";
-
-                if (methodOpt.NeedsAutoHandling) {
-                    expr = "ThrowIfNotValid(" + expr + ")";
-                }
-            } else {
-                expr += Utils.GetSafeName(flag.BackingSymbol.Name) + " = " + argExpr;
-            }
+            expr += SymbolUtils.GetSafeName(flag.BackingSymbol.Name) + " = " + argExpr;
 
             sb.AppendLine(
                 GetOptFuncLine(
@@ -172,9 +161,6 @@ internal class CmdDescBuilder
 
         if (!isRoot) {
             foreach (var sw in flags) {
-                if (sw is MethodOption)
-                    continue;
-
                 sb
                     .Append("private static bool ")
                     .Append(SymbolUtils.GetSafeName(sw.BackingSymbol.Name));
@@ -203,27 +189,9 @@ internal class CmdDescBuilder
         sb.AppendLine("};");
 
         foreach (var opt in opts) {
-            string expr = "";
+            string expr = !isRoot ? "" : CliClassName + ".";
 
-            if (opt is MethodOption methodOpt) {
-                string argExpr = "";
-
-                if (!methodOpt.IsFlag) {
-                    argExpr = "__arg";
-
-                    if (!methodOpt.BackingSymbol.Parameters[0].IsNullable) {
-                        argExpr += "?? \"\"";
-                    }
-                }
-
-                expr = methodOpt.BackingSymbol.ToString() + '(' + argExpr + ')';
-
-                if (methodOpt.NeedsAutoHandling) {
-                    expr = "ThrowIfNotValid(" + expr + ")";
-                }
-            } else {
-                expr = (isRoot ? CliClassName  + "." : "") + Utils.GetSafeName(opt.BackingSymbol.Name) + " = " + GetParsingExpression(opt.Parser, opt.DefaultValueExpr);
-            }
+            expr += SymbolUtils.GetSafeName(opt.BackingSymbol.Name) + " = " + GetParsingExpression(opt.Parser, opt.DefaultValueExpr);
 
             sb.AppendLine(
                 GetOptFuncLine(
@@ -235,9 +203,6 @@ internal class CmdDescBuilder
 
         if (!isRoot) {
             foreach (var opt in opts) {
-                if (opt is MethodOption)
-                    continue;
-
                 sb
                     .Append("private static ")
                     .Append(opt.Type.Name)

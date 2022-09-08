@@ -2,7 +2,7 @@
 namespace Recline;
 #endif
 
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
 public sealed class OptionAttribute : System.Attribute
 {
     public string LongName { get; }

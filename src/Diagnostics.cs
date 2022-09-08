@@ -185,49 +185,9 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor OptMethodCantBeGeneric
-        = new(
-            "CLI200",
-            "Method '{0}' can't be generic to be an option",
-            "Options can't be generic",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OptMethodWrongReturnType
-        = new(
-            "CLI201",
-            "Method '{0}' returns type '{1}', which is invalid for options",
-            "Options must return either void, bool, int, string or Exception",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OptMethodTooManyArguments
-        = new(
-            "CLI202",
-            "Method '{0}' has {1} parameters, where one was expected maximum",
-            "Option-methods can only have 0 or 1 parameters",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OptMethodWrongParamType
-        = new(
-            "CLI203",
-            "Parameter '{0}' should have type 'string', not {1}",
-            "The parameter of an option-method should always be a string",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
     public static readonly DiagnosticDescriptor OptMustBeStatic
         = new(
-            "CLI204",
+            "CLI200",
             "Member '{0}' has to be static to be an option",
             "Options must be marked static",
             "Recline.Analysis",
@@ -237,7 +197,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptsInEntryMethod
         = new(
-            "CLI205",
+            "CLI201",
             "Entry-point methods '{0}' can't have parameters with [Option]",
             "Entry-point methods currently don't allow [Options] parameters, use fields and properties instead",
             "Recline.Analysis",
@@ -247,7 +207,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptShortName
         = new(
-            "CLI206",
+            "CLI202",
             "Whitespace characters can't be used for option's aliases",
             "Whitespace characters can't be used for option's aliases",
             "Recline.Analysis",
@@ -257,7 +217,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptLongName
         = new(
-            "CLI207",
+            "CLI203",
             "Null/empty/whitespace-only option names are disallowed",
             "Option names cannot be null, empty or only contain whitespace",
             "Recline.Analysis",
@@ -267,7 +227,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NonWritableOptField
         = new(
-            "CLI208",
+            "CLI204",
             "Can't use 'readonly' on option fields",
             "Fields marked with [Option] must be writable",
             "Recline.Analysis",
@@ -277,7 +237,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NonWritableOptProp
         = new(
-            "CLI208",
+            "CLI204",
             "An option's property must have a public set accessor",
             "Properties marked with [Option] must have a public set accessor",
             "Recline.Analysis",
@@ -287,7 +247,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptNameAlreadyExists
         = new(
-            "CLI209",
+            "CLI205",
             "Another option with the name '{0}' was already declared for this command",
             "Another option with the name '{0}' was already declared for this command",
             "Recline.Analysis",
@@ -297,7 +257,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor OptAliasAlreadyExists
         = new(
-            "CLI209",
+            "CLI205",
             "Another option with the alias '{0}' was already declared for this command",
             "Another option with the alias '{0}' was already declared for this command",
             "Recline.Analysis",
