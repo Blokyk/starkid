@@ -185,8 +185,6 @@ internal static partial class {ProgClassName} {{
         return newDic;
     }}
 
-    internal static T Parse<T>(string? str) => default(T)!;
-
     private delegate bool BoolOut<T>(string? arg, out T t);
 
     private static bool AsBool(string? val) => AsBool(val, true);
