@@ -175,8 +175,6 @@ internal static class Diagnostics {
             true
         );
 
-
-
     public static readonly DiagnosticDescriptor CmdNameAlreadyExists
         = new(
             "CLI108",

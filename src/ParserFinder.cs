@@ -31,7 +31,7 @@ public class ParserFinder
 
         if (parser is ParserInfo.Invalid invalidParser) {
             if (invalidParser.Diagnostic is not null)
-                _diagnostics.Add(invalidParser.Diagnostic);
+                _diagnostics.Add(invalidParser.Diagnostic); // TODO: change location when attached
             else
                 _diagnostics.Add(
                     Diagnostic.Create(
@@ -70,6 +70,9 @@ public class ParserFinder
 
             var method = (member as IMethodSymbol)!;
 
+            if (method.MethodKind != MethodKind.Ordinary)
+                continue;
+
             var parserInfo = GetParserInfo(method, targetType);
 
             if (parserInfo is not ParserInfo.Invalid)
@@ -82,6 +85,8 @@ public class ParserFinder
                 Diagnostic.Create(
                     Diagnostics.NoValidParserMethod,
                     Location.None,
+                    // can't use a member's error name since this needs to be the *name* of the method,
+                    // and error name has args and stuff in it
                     attr.TypeSymbol.GetErrorName() + "." + attr.ParserName
                 )
             );

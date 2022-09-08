@@ -9,5 +9,5 @@ public abstract record ParserInfo(MinimalTypeInfo TargetType) {
     public record Constructor(MinimalTypeInfo TargetType) : ParserInfo(TargetType);
     public record DirectMethod(string FullName, MinimalTypeInfo TargetType) : ParserInfo(TargetType);
     public record BoolOutMethod(string FullName, MinimalTypeInfo TargetType) : ParserInfo(TargetType);
-    public record Invalid(Microsoft.CodeAnalysis.Diagnostic? Diagnostic = null) : ParserInfo((null as MinimalTypeInfo)!);
+    public record Invalid(Diagnostic? Diagnostic = null) : ParserInfo((null as MinimalTypeInfo)!);
 }

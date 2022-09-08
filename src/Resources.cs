@@ -48,7 +48,7 @@ internal static partial class {ProgClassName} {{
 
         for (int i = 0; i < args.Length; i++) {{
             var rawArg = args[i];
-            var parts = rawArg.Split(new[] {{ '=' }}, 2);
+            var parts = rawArg.Split('=', 2);
 
             var arg = parts[0];
             var value = parts.ElementAtOrDefault(1);
@@ -63,7 +63,7 @@ internal static partial class {ProgClassName} {{
                 if (currCmdDesc.Options.TryGetValue(arg, out var actOpt)) {{
                     if (value is null) {{
                         if (!TryGetNext(ref i, args, out value)) {{
-                            Console.Error.WriteLine(GetHelpString(""Option {{0}} needs an argument"", arg, currCmdDesc));
+                            Console.Error.WriteLine(GetHelpString(""Option {{0}} needs an argument"", arg));
                             return 1;
                         }}
 
@@ -90,24 +90,24 @@ internal static partial class {ProgClassName} {{
                 }}
 
                 if (arg[0] == '-') {{
-                    if (arg[1] == '-') {{
+                    if (arg.Length >= 2 && arg[1] == '-') {{
                         onlyArgs = true;
                         continue;
                     }}
 
-                    Console.Error.WriteLine(GetHelpString(""Couldn't understand '{{0}}' in this context"", rawArg, currCmdDesc));
+                    Console.Error.WriteLine(GetHelpString(""Couldn't understand '{{0}}' in this context"", rawArg));
                     return 1;
                 }}
             }}
 
             if (!currCmdDesc.TryAddPosArg(arg)) {{
-                Console.Error.WriteLine(GetHelpString(""Couldn't understand '{{0}}' in this context"", rawArg, currCmdDesc));
+                Console.Error.WriteLine(GetHelpString(""Couldn't understand '{{0}}' in this context"", rawArg));
                 return 1;
             }}
         }}
 
         if (currCmdDesc.ArgSlotsLeft > 0) {{
-            Console.Error.WriteLine(GetHelpString(""Expected at least {{0}} arguments, but only got "" + argCount, (currCmdDesc.ArgSlotsLeft + argCount).ToString(), currCmdDesc));
+            Console.Error.WriteLine(GetHelpString(""Expected at least {{0}} arguments, but only got "" + argCount, (currCmdDesc.ArgSlotsLeft + argCount).ToString()));
             return 1;
         }}
 

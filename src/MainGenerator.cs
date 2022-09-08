@@ -27,12 +27,10 @@ public partial class MainGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         context.RegisterPostInitializationOutput(
             static postInitCtx => {
-                // TODO: load stuff from consts strings when everything is stable
+                // FIXME: load stuff from const strings when everything is stable
 
                 var watch = new System.Diagnostics.Stopwatch();
                 watch.Start();
-
-                // FIXME: obviously this is temp, inline all this when stable
 
                 foreach (var filename in _staticFilenames) {
                     postInitCtx.AddSource(
@@ -107,7 +105,7 @@ namespace Recline;
     }
 
     static bool HasAnyAttributes(SyntaxNode node)
-        => node is ClassDeclarationSyntax { AttributeLists.Count: > 0};
+        => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 };
 
     static (CLIData? data, ImmutableArray<Diagnostic> diags) GetCmdData(GeneratorAttributeSyntaxContext ctx) {
         var sw = new Stopwatch();
