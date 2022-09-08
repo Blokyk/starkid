@@ -14,7 +14,7 @@ internal class AttributeParser
     private Cache<ISymbol, ImmutableArray<Diagnostic>.Builder, (bool, AttributeListInfo)> _attrListCache;
 
     public AttributeParser() {
-        _attrListCache = new(TryGetAttributeList);
+        _attrListCache = new(SymbolEqualityComparer.Default, TryGetAttributeList);
     }
 
     static MemberKind ValidateAttributeList(AttributeListInfo attrList, ISymbol symbol, ref ImmutableArray<Diagnostic>.Builder diagnostics) {
@@ -231,7 +231,7 @@ internal class AttributeParser
     }
 
     public bool TryParseCmdAttrib(AttributeData attr, [NotNullWhen(true)] out CommandAttribute? cmdAttr) {
-        cmdAttr = null!;
+        cmdAttr = null;
 
         if (attr.ConstructorArguments.Length < 1)
             return false;
@@ -244,7 +244,7 @@ internal class AttributeParser
     }
 
     public bool TryParseSubCmdAttrib(AttributeData attr, [NotNullWhen(true)] out SubCommandAttribute? subCmdAttr) {
-        subCmdAttr = null!;
+        subCmdAttr = null;
 
         if (attr.ConstructorArguments.Length < 2)
             return false;
@@ -265,7 +265,7 @@ internal class AttributeParser
             var inheritOptionsArgPair = attr.NamedArguments.First();
 
             if (!inheritOptionsArgPair.Equals(default)) {
-                if (!Utils.Equals(inheritOptionsArgPair.Value.Type, Utils.BOOL))
+                if (!SymbolUtils.Equals(inheritOptionsArgPair.Value.Type, CommonTypes.BOOL))
                     return false;
 
                 inheritOptions = (bool)inheritOptionsArgPair.Value.Value!;
@@ -278,7 +278,7 @@ internal class AttributeParser
     }
 
     public bool TryParseOptAttrib(AttributeData attr, [NotNullWhen(true)] out OptionAttribute? optAttr) {
-        optAttr = null!;
+        optAttr = null;
 
         string longName;
         char shortName = '\0';
@@ -316,7 +316,7 @@ internal class AttributeParser
     }
 
     public bool TryParseDescAttrib(AttributeData attr, [NotNullWhen(true)] out DescriptionAttribute? descAttr) {
-        descAttr = null!;
+        descAttr = null;
 
         if (attr.ConstructorArguments.Length < 1)
             return false;
@@ -330,7 +330,7 @@ internal class AttributeParser
     }
 
     public bool TryParseCLIAttrib(AttributeData attr, [NotNullWhen(true)] out CLIAttribute? cliAttr) {
-        cliAttr = null!;
+        cliAttr = null;
 
         // appName
         if (!TryGetCtorArg<string>(attr, 0, CommonTypes.STR, out var appName))
@@ -407,8 +407,8 @@ internal class AttributeParser
         return true;
     }
 
-    public bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, out T val) {
-        val = default!;
+    public bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, [NotNullWhen(true)] out T? val) {
+        val = default;
 
         var ctorArgs = attrib.ConstructorArguments;
 
