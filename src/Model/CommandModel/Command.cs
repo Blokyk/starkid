@@ -1,7 +1,7 @@
 namespace Recline.Generator.Model;
 
 public record Command(bool HasExitCode, string Name, string? Description, ImmutableArray<Option> Options, ImmutableArray<Argument> Args) {
-    public WithArgsDesc WithArgsDesc => new WithArgsDesc(
+    public WithArgsDesc WithArgsDesc => new(
         Name,
         Args.Select(a => a.Desc.Name).ToArray(),
         Description

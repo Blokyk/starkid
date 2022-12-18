@@ -11,11 +11,21 @@ internal enum MemberKind {
 
 internal class AttributeParser
 {
+    private readonly SemanticModel _model;
     private readonly Cache<ISymbol, ImmutableArray<Diagnostic>.Builder, (bool, AttributeListInfo)> _attrListCache;
 
-    public AttributeParser() => _attrListCache = new(SymbolEqualityComparer.Default, TryGetAttributeList);
+    public AttributeParser(SemanticModel model) {
+        _model = model;
 
-    static MemberKind ValidateAttributeList(AttributeListInfo attrList, ISymbol symbol, ref ImmutableArray<Diagnostic>.Builder diagnostics) {
+        _attrListCache
+            = new(
+                SymbolEqualityComparer.Default,
+                EqualityComparer<ImmutableArray<Diagnostic>.Builder>.Default,
+                TryGetAttributeList
+            );
+    }
+
+    static MemberKind ValidateAttributeListAndGetKind(AttributeListInfo attrList, ISymbol symbol, ref ImmutableArray<Diagnostic>.Builder diagnostics) {
         var kind = CategorizeAttributeList(attrList);
 
         if (kind is MemberKind.Useless && symbol is not IParameterSymbol) {
@@ -99,7 +109,7 @@ internal class AttributeParser
     public bool TryGetAttributeList(ISymbol symbol, ref ImmutableArray<Diagnostic>.Builder diagnostics, out AttributeListInfo attrList) {
         (var isValid, attrList) = _attrListCache.GetValue(symbol, diagnostics);
 
-        ValidateAttributeList(attrList, symbol, ref diagnostics);
+        ValidateAttributeListAndGetKind(attrList, symbol, ref diagnostics);
 
         return isValid;
     }
@@ -185,7 +195,7 @@ internal class AttributeParser
 
                     break;
                 case Resources.ParseWithAttribName:
-                    if (!TryParseParseAttrib(attr, symbol.ContainingType, out parseWith))
+                    if (!TryParseParseAttrib(attr, diagnostics, out parseWith))
                         return error();
                     break;
                 case Resources.SubCmdAttribName:
@@ -216,7 +226,7 @@ internal class AttributeParser
 
                     break;
                 case Resources.ValidateWithAttribName:
-                    if (!TryParseValidateAttrib(attr, symbol.ContainingType, out validateWith))
+                    if (!TryParseValidateAttrib(attr, diagnostics, out validateWith))
                         return error();
                     break;
                 default:
@@ -232,31 +242,21 @@ internal class AttributeParser
     public bool TryParseCmdAttrib(AttributeData attr, [NotNullWhen(true)] out CommandAttribute? cmdAttr) {
         cmdAttr = null;
 
-        if (attr.ConstructorArguments.Length < 1)
+        if (!TryGetCtorArg<string>(attr, 0, SpecialType.System_String, out var cmdName))
             return false;
 
-        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
-            return false;
-
-        cmdAttr = new((string)attr.ConstructorArguments[0].Value!);
+        cmdAttr = new(cmdName);
         return true;
     }
 
     public bool TryParseSubCmdAttrib(AttributeData attr, [NotNullWhen(true)] out SubCommandAttribute? subCmdAttr) {
         subCmdAttr = null;
 
-        if (attr.ConstructorArguments.Length < 2)
-            return false;
-        if (attr.NamedArguments.Length > 1)
+        if (!TryGetCtorArg<string>(attr, 0, SpecialType.System_String, out var cmdName))
             return false;
 
-        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
+        if (!TryGetCtorArg<string>(attr, 1, SpecialType.System_String, out var parentName))
             return false;
-        var cmdName = (string)attr.ConstructorArguments[0].Value!;
-
-        if (!SymbolUtils.Equals(attr.ConstructorArguments[1].Type, CommonTypes.STR))
-            return false;
-        var parentName = (string)attr.ConstructorArguments[1].Value!;
 
         /*bool inheritOptions = false;
 
@@ -279,30 +279,18 @@ internal class AttributeParser
     public bool TryParseOptAttrib(AttributeData attr, [NotNullWhen(true)] out OptionAttribute? optAttr) {
         optAttr = null;
 
-        string longName;
         char shortName = '\0';
 
-        if (attr.ConstructorArguments.Length < 1)
+        if (!TryGetCtorArg<string>(attr, 0, SpecialType.System_String, out var longName))
             return false;
-
-        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
-            return false;
-
-        longName = (string)attr.ConstructorArguments[0].Value!;
 
         if (attr.ConstructorArguments.Length == 2) {
-            if (!SymbolUtils.Equals(attr.ConstructorArguments[1].Type, CommonTypes.CHAR))
+            if (!TryGetCtorArg<char>(attr, 1, SpecialType.System_Char, out shortName))
                 return false;
-
-            shortName = (char)attr.ConstructorArguments[1].Value!;
         }
 
-        string? argName = null;
-
-        var argNameArg = attr.NamedArguments.FirstOrDefault(kv => kv.Key == nameof(OptionAttribute.ArgName));
-
-        if (!argNameArg.Equals(default))
-            argName = (string)argNameArg.Value.Value!;
+        if (!TryGetProp<string?>(attr, nameof(OptionAttribute.ArgName), SpecialType.System_String, null, out var argName))
+            return false;
 
         optAttr = new OptionAttribute(
             longName,
@@ -320,7 +308,7 @@ internal class AttributeParser
         if (attr.ConstructorArguments.Length < 1)
             return false;
 
-        if (!SymbolUtils.Equals(attr.ConstructorArguments[0].Type, CommonTypes.STR))
+        if (attr.ConstructorArguments[0].Type?.SpecialType != SpecialType.System_String)
             return false;
 
         descAttr = new((string)attr.ConstructorArguments[0].Value!);
@@ -332,14 +320,14 @@ internal class AttributeParser
         cliAttr = null;
 
         // appName
-        if (!TryGetCtorArg<string>(attr, 0, CommonTypes.STR, out var appName))
+        if (!TryGetCtorArg<string>(attr, 0, SpecialType.System_String, out var appName))
             return false;
 
         // EntryPoint
-        if (!TryGetProp<string?>(attr, nameof(CLIAttribute.EntryPoint), CommonTypes.STR, null, out var entryPoint))
+        if (!TryGetProp<string?>(attr, nameof(CLIAttribute.EntryPoint), SpecialType.System_String, null, out var entryPoint))
             return false;
 
-        if (!TryGetProp<int>(attr, nameof(CLIAttribute.HelpExitCode), CommonTypes.INT32, 0, out var helpIsError))
+        if (!TryGetProp<int>(attr, nameof(CLIAttribute.HelpExitCode), SpecialType.System_Int32, 0, out var helpIsError))
             return false;
 
         cliAttr = new(appName) {
@@ -350,63 +338,102 @@ internal class AttributeParser
         return true;
     }
 
-    public bool TryParseParseAttrib(AttributeData attr, ITypeSymbol applicationType,  [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
+    private bool TryGetNameOfArg(ExpressionSyntax expr, [NotNullWhen(true)] out ExpressionSyntax? nameExpr) {
+        nameExpr = null;
+
+        if (expr is not InvocationExpressionSyntax methodCallSyntax)
+            return false;
+
+        if (methodCallSyntax.Expression is not IdentifierNameSyntax nameofSyntax)
+            return false;
+
+        // no, IsKind or IsContextualKeyword don't work. don't ask me why
+        // technically, the proper way to do this seems to be:
+        //     SyntaxFacts.GetContextualKeywordKind(nameofSyntax.Identifier.ValueText)
+        //  == SyntaxKind.NameOfKeyword
+        if (nameofSyntax.Identifier.Text != "nameof")
+            return false;
+
+        if (methodCallSyntax.ArgumentList.Arguments.Count != 1)
+            return false;
+
+        var argExpr = methodCallSyntax.ArgumentList.Arguments[0].Expression;
+
+        nameExpr = argExpr switch {
+            MemberAccessExpressionSyntax maes => maes,
+            NameSyntax name => name,
+            _ => null
+        };
+
+        return nameExpr is not null;
+    }
+
+    public bool TryParseParseAttrib(AttributeData attr, ImmutableArray<Diagnostic>.Builder diags, [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
         parseWithAttr = null;
 
-        var ctorArgs = attr.ConstructorArguments;
+        var attrSyntax = (attr.ApplicationSyntaxReference!.GetSyntax() as AttributeSyntax)!;
 
-        if (ctorArgs.Length < 1)
+        var argList = attrSyntax.ArgumentList!.Arguments;
+
+        if (argList.Count != 1)
             return false;
 
-        int nameCtorIdx = 0;
+        if (!TryGetNameOfArg(argList[0].Expression, out var parserName)) {
+            diags.Add(
+                Diagnostic.Create(
+                    Diagnostics.ParseWithMustBeNameOfExpr,
+                    Utils.GetApplicationLocation(attr),
+                    argList[0].Expression.ToString()
+                )
+            );
 
-        var containingType = applicationType;
-
-        if (ctorArgs.Length == 2) {
-            if (ctorArgs[0].Value is not ITypeSymbol type)
-                return false;
-
-            containingType = type;
-            nameCtorIdx++;
+            return false;
         }
 
-        if (!TryGetCtorArg<string>(attr, nameCtorIdx, CommonTypes.STR, out var parserName))
-            return false;
-
-        parseWithAttr = new ParseWithAttribute(containingType, parserName);
+        parseWithAttr = new ParseWithAttribute(parserName.GetReference(), parserName.ToString());
 
         return true;
     }
 
-    public bool TryParseValidateAttrib(AttributeData attr, ITypeSymbol applicationType, [NotNullWhen(true)] out ValidateWithAttribute? parseWithAttr) {
-        parseWithAttr = null;
+    public bool TryParseValidateAttrib(AttributeData attr, ImmutableArray<Diagnostic>.Builder diags, [NotNullWhen(true)] out ValidateWithAttribute? ValidateWithAttr) {
+        ValidateWithAttr = null;
 
-        var ctorArgs = attr.ConstructorArguments;
+        var attrSyntax = (attr.ApplicationSyntaxReference!.GetSyntax() as AttributeSyntax)!;
 
-        if (ctorArgs.Length < 1)
+        var argList = attrSyntax.ArgumentList!.Arguments;
+
+        if (argList.Count == 0 || argList.Count > 2)
             return false;
 
-        int nameCtorIdx = 0;
+        if (!TryGetNameOfArg(argList[0].Expression, out var validatorName)) {
+            diags.Add(
+                Diagnostic.Create(
+                    Diagnostics.ValidateWithMustBeNameOfExpr,
+                    Utils.GetApplicationLocation(attr),
+                    argList[0].Expression.ToString()
+                )
+            );
 
-        var containingType = applicationType;
-
-        if (ctorArgs.Length == 2) {
-            if (ctorArgs[0].Value is not ITypeSymbol type)
-                return false;
-
-            containingType = type;
-            nameCtorIdx++;
+            return false;
         }
 
-        if (!TryGetCtorArg<string>(attr, nameCtorIdx, CommonTypes.STR, out var parserName))
-            return false;
+        string? msg = null;
 
-        parseWithAttr = new ValidateWithAttribute(containingType, parserName);
+        if (argList.Count == 2) {
+            if (!TryGetCtorArg<string>(attr, 1, SpecialType.System_String, out msg))
+                return false;
+        }
+
+        ValidateWithAttr
+            = new ValidateWithAttribute(
+                validatorName.GetReference(),
+                validatorName.ToString()
+            ) { ErrorMessage = msg };
 
         return true;
     }
 
-    public bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, INamedTypeSymbol type, [NotNullWhen(true)] out T? val) {
+    public bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, SpecialType type, [NotNullWhen(true)] out T? val) {
         val = default;
 
         var ctorArgs = attrib.ConstructorArguments;
@@ -415,7 +442,7 @@ internal class AttributeParser
             return false;
         }
 
-        if (!SymbolUtils.Equals(ctorArgs[ctorIdx].Type, type) || ctorArgs[ctorIdx].Value is not T)
+        if (ctorArgs[ctorIdx].Type?.SpecialType != type)
             return false;
 
         val = (T)ctorArgs[ctorIdx].Value!;
@@ -423,7 +450,7 @@ internal class AttributeParser
         return true;
     }
 
-    public bool TryGetProp<T>(AttributeData attrib, string propName, INamedTypeSymbol type, T defaultVal, out T val) {
+    public bool TryGetProp<T>(AttributeData attrib, string propName, SpecialType type, T defaultVal, out T val) {
         val = defaultVal;
 
         var namedArgs = attrib.NamedArguments;
@@ -438,7 +465,7 @@ internal class AttributeParser
         if (arg.Equals(default))
             return true;
 
-        if (!SymbolUtils.Equals(arg.Type, type) || arg.Value is not T)
+        if (arg.Type?.SpecialType != type)
             return false;
 
         val = (T)arg.Value!;
@@ -447,5 +474,5 @@ internal class AttributeParser
     }
 
     public bool TryGetDescription(AttributeData descAttrib, out string? desc)
-        => TryGetCtorArg<string?>(descAttrib, 0, CommonTypes.STR, out desc);
+        => TryGetCtorArg<string?>(descAttrib, 0, SpecialType.System_String, out desc);
 }

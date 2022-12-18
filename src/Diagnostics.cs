@@ -19,7 +19,7 @@ internal static class Diagnostics {
         = new(
             "CLI001",
             "Only one class may be marked with [CLI]",
-            "Both classes '{0}' and '{1}' are marked with [CLI]",
+            "Both classes '{0}' and '{1}' are marked with [CLI], which is illegal",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -309,8 +309,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CouldntFindNamedParser
         = new(
             "CLI402",
-            "Couldn't find method '{1}.{0}' for parsing",
-            "Couldn't find method '{0}' in type '{1}' to parse this option/argument",
+            "Couldn't find suitable method '{0}' for parsing",
+            "Couldn't find method '{0}', or it wasn't suitable to parse this option/argument",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -331,6 +331,78 @@ internal static class Diagnostics {
             "CLI404",
             "No overload for '{0}' can be used as a parsing method here",
             "No overload for '{0}' can be used as a parsing method here",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParseWithMustBeNameOfExpr
+        = new(
+            "CLI405",
+            "The parameter to a ParseWith attribute must be a nameof expression",
+            "Expression '{0}' can't be used as a parameter to a ParseWith attribute; "
+            + "it must be a nameof expression",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor CouldntFindValidator
+        = new(
+            "CLI500",
+            "Couldn't find suitable method '{0}' for validation",
+            "Couldn't find method '{0}', or it wasn't suitable to validate this option/argument",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor NotValidValidatorType
+        = new(
+            "CLI501",
+            "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
+            "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor NoValidValidatorMethod
+        = new(
+            "CLI502",
+            "No overload for method '{0}' can be used as a validator for type '{1}'",
+            "No overload for method '{0}' can be used as a validator for type '{1}'",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ValidatorReturnMismatch
+        = new(
+            "CLI503",
+            "Validator method '{0}' must return bool, string? or Exception?",
+            "Validator method '{0}' must return bool, string? or Exception?",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ValidatorMustBeStatic
+        = new(
+            "CLI504",
+            "Validator method '{0}' must be static",
+            "Validator methods must be static",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ValidateWithMustBeNameOfExpr
+        = new(
+            "CLI505",
+            "The parameter to a ValidateWith attribute must be a nameof expression",
+            "Expression '{0}' can't be used as a parameter to a ValidateWith attribute; "
+            + "it must be a nameof expression",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true

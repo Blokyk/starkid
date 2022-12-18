@@ -22,19 +22,19 @@ public readonly struct Cache<TKey, TValue>
 
 public readonly struct Cache<TKey, TArg, TValue>
 {
-    private readonly Dictionary<TKey, TValue> _map;
+    private readonly Dictionary<(TKey, TArg), TValue> _map;
     private readonly Func<TKey, TArg, TValue> _getter;
 
-    public Cache(IEqualityComparer<TKey> comparer, Func<TKey, TArg, TValue> generator) {
+    public Cache(IEqualityComparer<TKey> keyComparer, IEqualityComparer<TArg> argComparer, Func<TKey, TArg, TValue> generator) {
         _getter = generator;
-        _map = new(comparer);
+        _map = new(new TupleComparer<TKey, TArg>(keyComparer, argComparer));
     }
 
     [System.Diagnostics.DebuggerHidden]
     public TValue GetValue(TKey key, TArg arg) {
-        if (!_map.TryGetValue(key, out var val)) {
+        if (!_map.TryGetValue((key, arg), out var val)) {
             val = _getter(key, arg);
-            _map.Add(key, val);
+            _map.Add((key, arg), val);
         }
 
         return val;

@@ -1,8 +1,6 @@
 using System.IO;
 using System.Diagnostics;
 
-using Recline.Generator.Model;
-
 namespace Recline.Generator;
 
 [Generator(LanguageNames.CSharp)]
@@ -18,6 +16,7 @@ public partial class MainGenerator : IIncrementalGenerator
         nameof(OptionAttribute),
         nameof(SubCommandAttribute),
         nameof(ParseWithAttribute),
+        nameof(ValidateWithAttribute)
     };
 
     public static double postInitMS = -1;
@@ -29,7 +28,7 @@ public partial class MainGenerator : IIncrementalGenerator
             static postInitCtx => {
                 // FIXME: load stuff from const strings when everything is stable
 
-                var watch = new System.Diagnostics.Stopwatch();
+                var watch = new Stopwatch();
                 watch.Start();
 
                 foreach (var filename in _staticFilenames) {
@@ -114,12 +113,12 @@ namespace Recline;
         var model = ctx.SemanticModel;
         CommonTypes.Refresh(model.Compilation);
 
-        var attribParser = new AttributeParser();
+        var attribParser = new AttributeParser(model);
 
         static (CLIData? data, ImmutableArray<Diagnostic> diags) bail(ModelBuilder modelBuilder) {
-            var data = modelBuilder.MakeCLIData(out var diags);
+            //var data = modelBuilder.MakeCLIData(out var diags);
             CommonTypes.Clear();
-            return (data, diags);
+            return (null, modelBuilder.GetDiagnostics());
         }
 
         var classSymbol = (ctx.TargetSymbol as INamedTypeSymbol)!;
@@ -127,15 +126,24 @@ namespace Recline;
         if (!ModelBuilder.TryCreateFromSymbol(classSymbol, attribParser, model, out var modelBuilder))
             return bail(modelBuilder);
 
-        var members = classSymbol.GetMembers().Where(m => m.Kind is SymbolKind.Field or SymbolKind.Property or SymbolKind.Method).ToArray();
+        var members
+            = classSymbol
+                .GetMembers()
+                .Where(
+                    m   => m.Kind
+                        is SymbolKind.Field
+                        or SymbolKind.Property
+                        or SymbolKind.Method
+                )
+                .ToArray();
 
         foreach (var member in members) {
+            Debug.WriteLine($"Adding {member.Name} from CLI class {classSymbol.Name}");
             if (!modelBuilder.TryAdd(member))
                 return bail(modelBuilder);
         }
 
         var data = modelBuilder.MakeCLIData(out var diags);
-        CommonTypes.Clear();
         return (data, diags);
     }
 }
@@ -145,7 +153,7 @@ internal class CLIDataComparer : EqualityComparer<(CLIData? data, ImmutableArray
     public override bool Equals((CLIData? data, ImmutableArray<Diagnostic> diags) x, (CLIData? data, ImmutableArray<Diagnostic> diags) y)
         => x.diags.IsDefaultOrEmpty
         && y.diags.IsDefaultOrEmpty
-        && CLIData.Equals(x.data, y.data);
+        && x.data == y.data;
 
     public override int GetHashCode((CLIData? data, ImmutableArray<Diagnostic> diags) obj)
         => obj.data?.GetHashCode() ?? 0;

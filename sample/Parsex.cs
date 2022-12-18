@@ -27,10 +27,13 @@ public static partial class Lotus
             return new Stuff(0);
     }
 
+    internal static bool CheckStuff(Stuff? s) => s?.i >= 0;
+
     internal static int? ParseInt(string? arg) => arg is null ? 0 : Int32.Parse(arg);
 
     [Option("log-level")]
-    [ParseWith("ParseStuff")]
+    [ParseWith(nameof(ParseStuff))]
+    [ValidateWith(nameof(CheckStuff))]
     public static Stuff? logLevel = new(5);
 
     private static FileInfo? _outputFile;
@@ -47,25 +50,6 @@ public static partial class Lotus
     }
 
     public static (int start, int end) rangeInfo;
-
-    [Option("range", shortName: 'r', ArgName = "rawStr")]
-    public static bool ParseRange(string? rawStr) {
-
-        // This method can return 'void' for manual error handling,
-        // or it could use one of :
-        //      - bool
-        //      - int
-        //      - string
-        //      - Exception
-
-        var parts = rawStr?.Split('-') ?? Array.Empty<string>();
-
-        if (parts.Length != 2)
-            return false;
-
-        rangeInfo = (Int32.Parse(parts[0]), Int32.Parse(parts[1]));
-        return true;
-    }
 
     [Command("silent")]
     [Description("Don't print anything to stdout (errors go to stderr)")]
@@ -128,12 +112,11 @@ public static partial class Lotus {
         return 0xf;
     }
 
-    static void Dump([System.Runtime.CompilerServices.CallerArgumentExpression("others")] string expr = "", params object[] others) {
-        Console.WriteLine($@"
+    static void Dump([System.Runtime.CompilerServices.CallerArgumentExpression("others")] string expr = "", params object[] others)
+        => Console.WriteLine($@"
             forceOption = {forceOption}
             OutputFile = {OutputFile}
             rangeInfo = {rangeInfo}
-            {expr} = {string.Join(", ", others.Select(o => o.ToString()))}
+            {expr} = {String.Join(", ", others.Select(o => o.ToString()))}
         ");
-    }
 }

@@ -2,6 +2,8 @@ namespace Recline.Generator;
 
 internal static class Utils
 {
+    public static readonly Random Random = new();
+
     public static bool TryGetConstantValue<T>(this SemanticModel model, SyntaxNode node, out T value) {
         var opt = model.GetConstantValue(node);
 
@@ -31,8 +33,11 @@ internal static class Utils
         return GetRawName(symbol) + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
     }*/
 
+    public static Location GetLocation(this SyntaxReference syntaxRef)
+        => Location.Create(syntaxRef.SyntaxTree, syntaxRef.Span);
+
     public static Location GetApplicationLocation(AttributeData attr)
-            => Location.Create(attr.ApplicationSyntaxReference!.SyntaxTree, attr.ApplicationSyntaxReference!.Span);
+        => attr.ApplicationSyntaxReference?.GetLocation() ?? Location.None;
 
     internal static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
 
@@ -42,14 +47,14 @@ internal static class Utils
     private class ReclineAttributesComparer : IEqualityComparer<ParseWithAttribute>, IEqualityComparer<ValidateWithAttribute>
     {
         public bool Equals(ParseWithAttribute x, ParseWithAttribute y)
-            => x.ParserName == y.ParserName && SymbolUtils.Equals(x.TypeSymbol, y.TypeSymbol);
+            => x.Equals(y);
         public int GetHashCode(ParseWithAttribute obj)
-            => CombineHashCodes(obj.ParserName.GetHashCode(), SymbolEqualityComparer.Default.GetHashCode(obj.TypeSymbol));
+            => obj.GetHashCode();
 
         public bool Equals(ValidateWithAttribute x, ValidateWithAttribute y)
-            => x.ValidatorName == y.ValidatorName && SymbolEqualityComparer.IncludeNullability.Equals(x.TypeSymbol, y.TypeSymbol);
+            => x.Equals(y);
         public int GetHashCode(ValidateWithAttribute obj)
-            => CombineHashCodes(obj.ValidatorName.GetHashCode(), SymbolEqualityComparer.IncludeNullability.GetHashCode(obj.TypeSymbol));
+            => obj.GetHashCode();
     }
 }
 

@@ -1,51 +1,10 @@
 namespace Recline.Generator;
 
-public abstract record MinimalSymbolInfo(
+public abstract partial record MinimalSymbolInfo(
     string Name,
     MinimalTypeInfo? ContainingType
 ) {
     public override string ToString() => ContainingType?.ToString() + (ContainingType is null ? "" : ".") + Name;
-
-    internal static class Cache
-    {
-        private static readonly SymbolEqualityComparer symbolComparer = SymbolEqualityComparer.IncludeNullability;
-        private static readonly Dictionary<ITypeSymbol, string> _typeFullNameMap = new(symbolComparer);
-        private static readonly Dictionary<ITypeSymbol, string> _typeShortNameMap = new(symbolComparer);
-        private static readonly Dictionary<ITypeSymbol, MinimalTypeInfo> _typeInfoMap = new(symbolComparer);
-
-        internal static void FullReset() {
-            _typeFullNameMap.Clear();
-            _typeShortNameMap.Clear();
-            _typeInfoMap.Clear();
-        }
-
-        internal static string GetFullTypeName(ITypeSymbol type) {
-            if (!_typeFullNameMap.TryGetValue(type, out var name)) {
-                name = SymbolUtils.GetFullNameBad(type);
-                _typeFullNameMap.Add(type, name);
-            }
-
-            return name;
-        }
-
-        internal static string GetShortTypeName(ITypeSymbol type) {
-            if (!_typeShortNameMap.TryGetValue(type, out var name)) {
-                name = type.GetNameWithNull();
-                _typeShortNameMap.Add(type, name);
-            }
-
-            return name;
-        }
-
-        internal static MinimalTypeInfo GetTypeInfo(ITypeSymbol type) {
-            if (!_typeInfoMap.TryGetValue(type, out var info)) {
-                info = MinimalTypeInfo.FromSymbol(type);
-                _typeInfoMap.Add(type, info);
-            }
-
-            return info;
-        }
-    }
 }
 
 public record MinimalTypeInfo(
@@ -60,14 +19,14 @@ public record MinimalTypeInfo(
         MinimalTypeInfo? containingType = null;
 
         if (type.ContainingType is not null)
-            containingType = Cache.GetTypeInfo(type.ContainingType);
+            containingType = SymbolInfoCache.GetTypeInfo(type.ContainingType);
 
         bool isNullable
             = type.IsReferenceType
             ? type.NullableAnnotation == NullableAnnotation.Annotated
             : type.Name == "Nullable";
 
-        return new MinimalTypeInfo(Cache.GetShortTypeName(type), containingType, Cache.GetFullTypeName(type), isNullable);
+        return new MinimalTypeInfo(SymbolInfoCache.GetShortTypeName(type), containingType, SymbolInfoCache.GetFullTypeName(type), isNullable);
     }
 }
 
@@ -80,9 +39,9 @@ public record MinimalMemberInfo(
 
     public static MinimalMemberInfo FromSymbol(ISymbol symbol) {
         if (symbol is IPropertySymbol propSymbol)
-            return new MinimalMemberInfo(propSymbol.Name, Cache.GetTypeInfo(propSymbol.ContainingType), Cache.GetTypeInfo(propSymbol.Type));
+            return new MinimalMemberInfo(propSymbol.Name, SymbolInfoCache.GetTypeInfo(propSymbol.ContainingType), SymbolInfoCache.GetTypeInfo(propSymbol.Type));
         else if (symbol is IFieldSymbol fieldSymbol)
-            return new MinimalMemberInfo(fieldSymbol.Name, Cache.GetTypeInfo(fieldSymbol.ContainingType), Cache.GetTypeInfo(fieldSymbol.Type));
+            return new MinimalMemberInfo(fieldSymbol.Name, SymbolInfoCache.GetTypeInfo(fieldSymbol.ContainingType), SymbolInfoCache.GetTypeInfo(fieldSymbol.Type));
         else if (symbol is IMethodSymbol methodSymbol)
             return MinimalMethodInfo.FromSymbol(methodSymbol);
 
@@ -94,16 +53,18 @@ public record MinimalMethodInfo(
     string Name,
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo ReturnType,
-    ImmutableArray<MinimalParameterInfo> Parameters
+    ImmutableArray<MinimalParameterInfo> Parameters,
+    ImmutableArray<MinimalTypeInfo> TypeArguments
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType) {
     public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
         => new(
             symbol.Name,
-            Cache.GetTypeInfo(symbol.ContainingType),
-            Cache.GetTypeInfo(symbol.ReturnType),
-            ImmutableArray.CreateRange(symbol.Parameters, p => MinimalParameterInfo.FromSymbol(p))
+            SymbolInfoCache.GetTypeInfo(symbol.ContainingType),
+            SymbolInfoCache.GetTypeInfo(symbol.ReturnType),
+            ImmutableArray.CreateRange(symbol.Parameters, MinimalParameterInfo.FromSymbol),
+            ImmutableArray.CreateRange(symbol.TypeArguments, MinimalTypeInfo.FromSymbol)
         );
 
     public bool ReturnsVoid => Type.Name == "Void";
@@ -119,7 +80,7 @@ public record MinimalParameterInfo(
     public static MinimalParameterInfo FromSymbol(IParameterSymbol symbol)
         => new(
             symbol.Name,
-            Cache.GetTypeInfo(symbol.Type),
+            SymbolInfoCache.GetTypeInfo(symbol.Type),
             symbol.NullableAnnotation == NullableAnnotation.Annotated,
             symbol.IsParams,
             symbol.HasExplicitDefaultValue ? new Optional<object?>(symbol.ExplicitDefaultValue) : new Optional<object?>()

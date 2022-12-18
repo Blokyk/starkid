@@ -4,7 +4,7 @@ using Recline.Generator;
 var sampleDir = "../sample/";
 var testDir = "../raw-sample/";
 
-string parsexPath = "Parsex.cs", parsex2Path = "Parsex-2.cs.old", dotnetPath = "Dotnet.cs";
+string parsexPath = "Parsex.cs", parsex2Path = "Parsex-2.cs.old", dotnetPath = "Dotnet.cs.old";
 
 var parsexTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsexPath));
 var parsex2Tree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsex2Path));

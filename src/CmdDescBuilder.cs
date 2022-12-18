@@ -118,7 +118,7 @@ internal class CmdDescBuilder
         var flags = ImmutableArray.CreateBuilder<Option>(optsAndFlags.Length / 2);
 
         foreach (var thing in optsAndFlags) {
-            if (thing.Type == CommonTypes.BOOLMinInfo)
+            if (thing.IsFlag)
                 flags.Add(thing);
             else
                 opts.Add(thing);
@@ -140,11 +140,12 @@ internal class CmdDescBuilder
         sb.AppendLine("};");
 
         foreach (var flag in flags) {
-            string expr = !isRoot ? "" : CliClassName + ".";
+            var argExpr = GetParsingExpression(flag.Parser, flag.BackingSymbol.Name, flag.DefaultValueExpr);
+            var validExpr = GetValidatingExpression(argExpr, flag.Desc.LongName, flag.Validator);
 
-            var argExpr = GetParsingExpression(flag.Parser, flag.DefaultValueExpr);
-
-            expr += SymbolUtils.GetSafeName(flag.BackingSymbol.Name) + " = " + argExpr;
+            string expr
+                = (!isRoot ? "" : CliClassName + ".")
+                + SymbolUtils.GetSafeName(flag.BackingSymbol.Name) + " = " + validExpr;
 
             sb.AppendLine(
                 GetOptFuncLine(
@@ -184,9 +185,12 @@ internal class CmdDescBuilder
         sb.AppendLine("};");
 
         foreach (var opt in opts) {
-            string expr = !isRoot ? "" : CliClassName + ".";
+            var argExpr = GetParsingExpression(opt.Parser, opt.BackingSymbol.Name, opt.DefaultValueExpr);
+            var validExpr = GetValidatingExpression(argExpr, opt.Desc.LongName, opt.Validator);
 
-            expr += SymbolUtils.GetSafeName(opt.BackingSymbol.Name) + " = " + GetParsingExpression(opt.Parser, opt.DefaultValueExpr);
+            string expr
+                = (!isRoot ? "" : CliClassName + ".")
+                + SymbolUtils.GetSafeName(opt.BackingSymbol.Name) + " = " + validExpr;
 
             sb.AppendLine(
                 GetOptFuncLine(
@@ -200,7 +204,7 @@ internal class CmdDescBuilder
             foreach (var opt in opts) {
                 sb
                     .Append("private static ")
-                    .Append(opt.Type.Name)
+                    .Append(opt.Type.FullName)
                     .Append(' ')
                     .Append(opt.BackingSymbol.Name);
 
@@ -219,7 +223,7 @@ internal class CmdDescBuilder
         #endregion
     }
 
-    static string GetParsingExpression(ParserInfo parser, string? defaultValueExpr) {
+    static string GetParsingExpression(ParserInfo parser, string? argName, string? defaultValueExpr) {
         if (parser == ParserInfo.AsBool) {
             var name = ParserInfo.AsBool.FullName;
             if (defaultValueExpr is null)
@@ -228,9 +232,15 @@ internal class CmdDescBuilder
                 return name + "(__arg, " + defaultValueExpr + ")";
         }
 
-        var expr = parser switch {
-            ParserInfo.Identity => "__arg",
-            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + parser.TargetType.FullName + "?>(" + dm.FullName + ", __arg ?? \"\")",
+        string expr = "";
+
+        if (parser.TargetType == CommonTypes.BOOLMinInfo) {
+            expr = "__arg is null ? true : ";
+        }
+
+        expr += parser switch {
+            ParserInfo.Identity => "__arg" + (argName is null ? "" : " ?? " + argName),
+            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + parser.TargetType.FullName + ">(" + dm.FullName + ", __arg ?? \"\")",
             ParserInfo.Constructor ctor => "new " + ctor.TargetType.FullName + "(__arg ?? \"\")",
             ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + parser.TargetType.FullName + ">(" + bom.FullName + ", __arg ?? \"\")",
             _ => throw new Exception(parser.GetType().Name + " is not a supported ParserInfo type."),
@@ -240,6 +250,23 @@ internal class CmdDescBuilder
             expr = '(' + expr + " ?? " + defaultValueExpr + ')';
 
         return expr;
+    }
+
+    static string GetValidatingExpression(string argExpr, string argName, ValidatorInfo? validator) {
+        if (validator is null)
+            return argExpr;
+
+        return validator switch {
+            ValidatorInfo.Method validatorMethod
+                =>  "ThrowIfNotValid(" +
+                        $"{argExpr}, " +
+                        $"{validatorMethod.FullName}, " +
+                        $"\"{argName}\", " +
+                        $"{(validator.Message is null ? "null" : SyntaxFactory.Literal(validator.Message))}, " +
+                        $"\"{validatorMethod.MethodInfo.Name}\"" +
+                    ")",
+            _ => throw new Exception(validator.GetType().Name + " is not a supported ValidatorInfo type."),
+        };
     }
 
     void AddArgs(ImmutableArray<Argument> posArgs) {
@@ -260,7 +287,13 @@ internal class CmdDescBuilder
                 .Append("static __arg => ")
                 .Append(arg.BackingSymbol.Name)
                 .Append(" = ")
-                .Append(GetParsingExpression(arg.Parser, arg.DefaultValueExpr))
+                .Append(
+                    GetValidatingExpression(
+                        GetParsingExpression(arg.Parser, null, arg.DefaultValueExpr),
+                        arg.Desc.Name,
+                        arg.Validator
+                    )
+                )
                 .Append(",");
         }
 
@@ -272,7 +305,7 @@ internal class CmdDescBuilder
 
             sb
                 .Append("private static ")
-                .Append(arg.Type.Name)
+                .Append(arg.Type.FullName)
                 .Append(' ')
                 .Append(arg.BackingSymbol.Name);
 
@@ -303,7 +336,7 @@ internal class CmdDescBuilder
             sb.Append("Func<");
         }
 
-        sb.Append(String.Join(", ", methodParams.Select(p => p.Type.Name)));
+        sb.Append(String.Join(", ", methodParams.Select(p => p.Type.FullName)));
 
         if (isVoid) {
             if (methodParams.Length != 0)
@@ -321,7 +354,7 @@ internal class CmdDescBuilder
             .AppendLine(";");
     }
 
-    void AddFuncAndInvoke(MinimalMethodInfo method ) {
+    void AddFuncAndInvoke(MinimalMethodInfo method) {
         var isVoid = method.ReturnsVoid;
         var methodParams = method.Parameters;
 

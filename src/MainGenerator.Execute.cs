@@ -4,8 +4,6 @@ namespace Recline.Generator;
 
 public partial class MainGenerator : IIncrementalGenerator
 {
-    private static TimeSpan analysisTime, parserGenerationTime;
-
     static void GenerateFromData(ImmutableArray<(CLIData? data, ImmutableArray<Diagnostic> diags)> tuples, int columnLength, SourceProductionContext spc) {
         spc.ReportDiagnostic(
             Diagnostic.Create(
@@ -28,7 +26,9 @@ public partial class MainGenerator : IIncrementalGenerator
 
         bool hasError = false;
 
-        foreach (var (_, diags) in tuples) {
+        foreach (var (data, diags) in tuples) {
+            hasError |= data is null;
+
             foreach (var diag in diags) {
                 spc.ReportDiagnostic(diag);
 
@@ -82,9 +82,6 @@ public partial class MainGenerator : IIncrementalGenerator
     }
 
     static void GenerateFromDataCore(CLIData data, SourceProductionContext context) {
-        var sw = new Stopwatch();
-        sw.Start();
-
         var (appName, fullClassName, usings, cmdAndArgs, opts, appDesc, cmds, helpExitCode) = data!;
 
         var descBuilder = new CmdDescBuilder(
@@ -103,9 +100,6 @@ public partial class MainGenerator : IIncrementalGenerator
 
         var descDynamicText = descBuilder.ToString();
 
-        sw.Stop();
-        parserGenerationTime = sw.Elapsed;
-
         context.AddSource(
             Resources.GenNamespace + "_Program.g.cs",
             SourceText.From(Resources.ProgClassStr, Encoding.UTF8)
@@ -113,16 +107,10 @@ public partial class MainGenerator : IIncrementalGenerator
 
         context.AddSource(
             Resources.GenNamespace + "_CmdDescDynamic.g.cs",
-            SourceText.From(
-                descDynamicText
-#if DEBUG
-                + "\n// Analysis took " + analysisTime.Milliseconds + "ms\n// Generation took " + parserGenerationTime.Milliseconds + "ms"
-#endif
-                ,
-                Encoding.UTF8
-            )
+            SourceText.From(descDynamicText, Encoding.UTF8)
         );
 
-        MinimalSymbolInfo.Cache.FullReset();
+        SymbolInfoCache.FullReset();
+        CommonTypes.Clear();
     }
 }

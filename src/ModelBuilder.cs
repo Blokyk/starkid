@@ -14,11 +14,13 @@ internal sealed partial class ModelBuilder
 
     private readonly AttributeParser _attrParser;
     private readonly ParserFinder _parserFinder;
+    private readonly ValidatorFinder _validatorFinder = null!;
     private readonly ImmutableArray<IMethodSymbol>.Builder _nonCmdCandidateMethods = ImmutableArray.CreateBuilder<IMethodSymbol>();
 
     private ModelBuilder(AttributeParser parser, SemanticModel model) {
         _attrParser = parser;
         _parserFinder = new(ref _diagnostics, model);
+        _validatorFinder = new(ref _diagnostics, model);
     }
 
     public static bool TryCreateFromSymbol(INamedTypeSymbol classSymbol, AttributeParser parser, SemanticModel model, out ModelBuilder modelBuilder) {
@@ -175,19 +177,14 @@ internal sealed partial class ModelBuilder
         if (entryPoint is null)
             return true;
 
+        // technically, we could use classSymbol.GetMembers(entryPointName),
+        // but that'd probably be slower
         rootCmd = _cmds.FirstOrDefault(
             cmd => cmd.BackingSymbol.Name == entryPoint
         );
 
         // if we didn't find a command with the right name
         if (rootCmd is null) {
-            // technically, we could use classSymbol.GetMembers(entryPointName),
-            // but that'd probably be slower
-
-            // we don't actually have to use .ToArray here, we could just try to iterate
-            // and error if we can't call MoveNext() exactly once. But that would be
-            // an incredibly small optimisation
-
             if (_nonCmdCandidateMethods.Count < 1) {
                 _diagnostics.Add(
                     Diagnostic.Create(
@@ -392,10 +389,27 @@ internal sealed partial class ModelBuilder
             );
         }
 
-        ParserInfo? parser = ParserInfo.StringIdentity;
+        ParserInfo? parser;
+        ValidatorInfo? validator = null;
 
-        if (!isParams && !_parserFinder.TryGetParser(attrList.ParseWith, param.Type, out parser))
-            return false;
+        if (isParams) {
+            // todo: allow custom 'params' args (e.g. params FileInfo[] files)
+            // doesn't really matter rn, but it'd be nice to be able to use any type for params,
+            // because i'd really like to just say 'params FileInfo[] files' instead of having
+            // to transform/validate it myself
+            parser = ParserInfo.StringIdentity;
+        } else {
+            if (attrList.ParseWith is null) {
+                if (!_parserFinder.TryFindParserForType(param.Type, out parser))
+                    return false;
+            } else {
+                if (!_parserFinder.TryGetParserFromName(attrList.ParseWith, param.Type, out parser))
+                    return false;
+            }
+
+            if (attrList.ValidateWith is not null && !_validatorFinder.TryGetValidator(attrList.ValidateWith, param.Type, out validator))
+                return false;
+        }
 
         arg = new Argument(
             MinimalTypeInfo.FromSymbol(param.Type),
@@ -403,10 +417,11 @@ internal sealed partial class ModelBuilder
                 param.Name,
                 argDesc
             ),
-            parser, // FIXME: !!!!!!!!!!!!!!!!!!!
+            parser,
             defaultVal
         ) {
             BackingSymbol = MinimalParameterInfo.FromSymbol(param),
+            Validator = validator,
             IsParams = isParams
         };
 
@@ -428,8 +443,6 @@ internal sealed partial class ModelBuilder
         char shortName = attrInfo.Option!.Alias;
         string? descStr = attrInfo.Description?.Description;
         string? argName = attrInfo.Option!.ArgName;
-
-        ParserInfo? parser = null;
 
         bool isValid = true;
 
@@ -537,6 +550,20 @@ internal sealed partial class ModelBuilder
 
         var type = GetTypeForSymbol(symbol);
 
+        ParserInfo? parser;
+        ValidatorInfo? validator = null;
+
+        if (attrInfo.ParseWith is null) {
+            if (!_parserFinder.TryFindParserForType(type, out parser))
+                return false;
+        } else {
+            if (!_parserFinder.TryGetParserFromName(attrInfo.ParseWith, type, out parser))
+                return false;
+        }
+
+        if (attrInfo.ValidateWith is not null && !_validatorFinder.TryGetValidator(attrInfo.ValidateWith, type, out validator))
+            return false;
+
         // if it's a flag
         if (SymbolUtils.Equals(type, CommonTypes.BOOL)) {
             opt = new Flag(
@@ -544,13 +571,12 @@ internal sealed partial class ModelBuilder
                 parser ?? ParserInfo.AsBool,
                 backingSymbol,
                 defaultVal
-            );
+            ) {
+                Validator = validator
+            };
 
             return true;
         }
-
-        if (parser is null && !_parserFinder.TryGetParser(attrInfo.ParseWith, type, out parser))
-            return false;
 
         opt = new Option(
             MinimalTypeInfo.FromSymbol(type),
@@ -560,7 +586,9 @@ internal sealed partial class ModelBuilder
             parser,
             backingSymbol,
             defaultVal
-        );
+        ) {
+            Validator = validator
+        };
 
         return true;
     }

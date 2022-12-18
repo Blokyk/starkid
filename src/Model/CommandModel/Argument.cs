@@ -4,4 +4,6 @@ public record Argument(MinimalTypeInfo Type, Desc Desc, ParserInfo Parser, strin
     public MinimalParameterInfo BackingSymbol { get; set; } = null!;
 
     public bool IsParams { get; set; }
+
+    public ValidatorInfo? Validator { get; set; }
 }

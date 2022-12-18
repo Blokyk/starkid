@@ -16,8 +16,8 @@ internal static class CommonTypes
     internal static MinimalTypeInfo EXCEPTIONMinInfo = null!;
     internal static INamedTypeSymbol NULLABLE = null!;
     internal static MinimalTypeInfo NULLABLEMinInfo = null!;
-    internal static INamedTypeSymbol TYPE = null!;
-    internal static MinimalTypeInfo TYPEMinInfo = null!;
+    internal static INamedTypeSymbol ENUM = null!;
+    internal static MinimalTypeInfo ENUMMinInfo = null!;
 
     internal static SymbolDisplayFormat memberMinimalDisplayFormat = new(
         parameterOptions: SymbolDisplayParameterOptions.IncludeName,
@@ -42,6 +42,8 @@ internal static class CommonTypes
         NULLABLEMinInfo = null!;
         EXCEPTION = null!;
         EXCEPTIONMinInfo = null!;
+        ENUM = null!;
+        ENUMMinInfo = null!;
     }
 
     [MemberNotNull(
@@ -58,7 +60,9 @@ internal static class CommonTypes
         nameof(NULLABLE),
         nameof(NULLABLEMinInfo),
         nameof(EXCEPTION),
-        nameof(EXCEPTIONMinInfo)
+        nameof(EXCEPTIONMinInfo),
+        nameof(ENUM),
+        nameof(ENUMMinInfo)
     )]
     internal static void Refresh(Compilation compilation) {
         BOOL = compilation.GetSpecialType(SpecialType.System_Boolean);
@@ -67,6 +71,7 @@ internal static class CommonTypes
         STR = compilation.GetSpecialType(SpecialType.System_String);
         VOID = compilation.GetSpecialType(SpecialType.System_Void);
         NULLABLE = compilation.GetSpecialType(SpecialType.System_Nullable_T);
+        ENUM = compilation.GetSpecialType(SpecialType.System_Enum);
 
         BOOLMinInfo = MinimalTypeInfo.FromSymbol(BOOL);
         INT32MinInfo = MinimalTypeInfo.FromSymbol(INT32);
@@ -74,6 +79,7 @@ internal static class CommonTypes
         STRMinInfo = MinimalTypeInfo.FromSymbol(STR);
         VOIDMinInfo = MinimalTypeInfo.FromSymbol(VOID);
         NULLABLEMinInfo = MinimalTypeInfo.FromSymbol(NULLABLE);
+        ENUMMinInfo = MinimalTypeInfo.FromSymbol(ENUM);
 
         EXCEPTION = compilation.GetTypeByMetadataName("System.Exception")!;
         EXCEPTIONMinInfo = MinimalTypeInfo.FromSymbol(EXCEPTION);

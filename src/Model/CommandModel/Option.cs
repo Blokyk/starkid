@@ -6,4 +6,6 @@ public record Option(MinimalTypeInfo Type, OptDesc Desc, ParserInfo Parser, Mini
         get => _isFlag ?? (_isFlag = Type == CommonTypes.BOOLMinInfo).Value;
         init => _isFlag = value;
     }
+
+    public ValidatorInfo? Validator { get; set; }
 }

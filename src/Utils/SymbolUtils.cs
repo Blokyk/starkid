@@ -7,7 +7,7 @@ internal static class SymbolUtils
     [Obsolete("Wrong one, buddy")]
     public new static bool Equals(object _, object __) => false;
 
-    static string GetRawName(ISymbol symbol) {
+    public static string GetRawName(ISymbol symbol) {
         if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
             return GetNameWithNull(arrayTypeSymbol.ElementType) + "[]";
         }
@@ -33,9 +33,6 @@ internal static class SymbolUtils
         return name;
     }
 
-    public static bool CanBeImplicitlyCastTo(this ITypeSymbol source, ITypeSymbol target, SemanticModel model)
-        => model.Compilation.HasImplicitConversion(source, target); // model.Compilation.ClassifyCommonConversion(source, target).IsImplicit;
-
     public static Location GetDefaultLocation(this ISymbol symbol) {
         if (symbol.Locations.IsDefaultOrEmpty)
             return Location.None;
@@ -50,13 +47,13 @@ internal static class SymbolUtils
                     : getFullNameRecursive(symbol.ContainingType) + "." + GetRawName(symbol);
 
         static string getNamespaceRecursive(INamespaceSymbol ns)
-            => ns.ContainingNamespace is null || ns.ContainingNamespace.IsGlobalNamespace
+            => ns.ContainingNamespace?.IsGlobalNamespace != false
                     ? ns.Name
                     : getNamespaceRecursive(ns.ContainingNamespace) + "." + ns.Name;
 
         var symbolName = getFullNameRecursive(symbol);
 
-        if (symbol.ContainingNamespace is null || symbol.ContainingNamespace.IsGlobalNamespace)
+        if (symbol.ContainingNamespace?.IsGlobalNamespace != false)
             return symbolName;
 
         return getNamespaceRecursive(symbol.ContainingNamespace) + "." + symbolName;

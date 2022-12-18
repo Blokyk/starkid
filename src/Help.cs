@@ -41,11 +41,11 @@ public record CmdHelp(
                 sb.Append(" [options]");
         }
 
-        appendNameAndOpts();
-
         // if it can be used directly, first print one without sub cmds,
         // then print a new line for the subcmds help to use
         if (IsDirectCmd) {
+            appendNameAndOpts();
+
             foreach (var arg in PosArgs) {
                 sb
                     .Append(" <")
@@ -63,10 +63,10 @@ public record CmdHelp(
             sb.AppendLine();
             appendNameAndOpts();
 
-            if (!IsDirectCmd) {
-                sb.Append(" <");
-            } else {
-                sb.Append(" [");
+            sb.Append(" ");
+
+            if (SubCmds.Length > 1) {
+                sb.Append('<');
             }
 
             var allCmdsStr = String.Join(" | ", SubCmds.Select(cmd => cmd.Name));
@@ -77,10 +77,8 @@ public record CmdHelp(
                 sb.Append(allCmdsStr);
             }
 
-            if (!IsDirectCmd) {
+            if (SubCmds.Length > 1) {
                 sb.Append('>');
-            } else {
-                sb.Append(']');
             }
         }
 #endregion

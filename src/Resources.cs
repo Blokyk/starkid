@@ -55,7 +55,7 @@ internal static partial class {ProgClassName} {{
 
             if (!onlyArgs) {{
                 if (currCmdDesc.flags.TryGetValue(arg, out var actFlag)) {{
-                    if (!TryDoAction(actFlag, arg, value!, rawArg, currCmdDesc))
+                    if (!TryDoAction(actFlag, arg, value, rawArg, currCmdDesc))
                         return 1;
                     continue;
                 }}
@@ -70,7 +70,7 @@ internal static partial class {ProgClassName} {{
                         rawArg += "" "" + value;
                     }}
 
-                    if (!TryDoAction(actOpt, arg, value, rawArg, currCmdDesc))
+                    if (!TryDoAction(actOpt!, arg, value, rawArg, currCmdDesc))
                         return 1;
                     continue;
                 }}
@@ -114,16 +114,15 @@ internal static partial class {ProgClassName} {{
         return currCmdDesc.Invoke();
     }}
 
-    static bool TryDoAction(Action<string> act, string arg1, string arg2, string rawArg, CmdDesc desc) {{
+    static bool TryDoAction(Action<string?> act, string arg1, string? arg2, string rawArg, CmdDesc desc) {{
         try {{
             act(arg2);
             return true;
         }}
-        catch (FormatException e) {{
+        catch (Exception e) {{
             Console.Error.WriteLine(
                 GetHelpString(
-                    ""Expression '{{0}}' is not valid in this context""
-                    + (String.IsNullOrEmpty(e.Message) ? """" : ("": \x1b[1m'"" + e.Message + ""'"")),
+                    ""Expression '{{0}}' is not valid in this context: \x1b[1m'"" + e.Message + ""'"",
                     rawArg,
                     desc
                 )
@@ -185,8 +184,6 @@ internal static partial class {ProgClassName} {{
         return newDic;
     }}
 
-    private delegate bool BoolOut<T>(string? arg, out T t);
-
     private static bool AsBool(string? val) => AsBool(val, true);
 
     private static bool AsBool(string? val, bool defaultVal) {{
@@ -199,32 +196,39 @@ internal static partial class {ProgClassName} {{
         if (val is ""false"" or ""False"")
             return false;
 
-        throw new FormatException(""Couldn't understand '"" + val + ""' as a boolean value."");
+        throw new FormatException(""Couldn't understand '"" + val + ""' as a boolean value"");
     }}
 
-    private static void ThrowIfNotValid(bool val, [CallerArgumentExpression(""val"")] string expr = """") {{
-        if (!val)
-            throw new Exception(""Expression '"" + expr + ""' returned false."");
+    private static T ThrowIfNotValid<T>(T val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression(""isValid"")] string funcName = """") {{
+        var errorMessage = isValid(val);
+
+        if (!String.IsNullOrEmpty(errorMessage))
+            throw new Exception(errorMessage);
+
+        return val;
     }}
 
-    private static void ThrowIfNotValid(int val, [CallerArgumentExpression(""val"")] string expr = """") {{
-        if (val != 0)
-            throw new Exception(""Expression '"" + expr + ""' returned a non-zero value."");
-    }}
+    private static T ThrowIfNotValid<T>(T val, Func<T, Exception?> isValid, string argName, string? message, [CallerArgumentExpression(""isValid"")] string funcName = """") {{
+        var e = isValid(val);
 
-    private static void ThrowIfNotValid(string? val) {{
-        if (String.IsNullOrEmpty(val))
-            throw new Exception(val);
-    }}
-
-    private static void ThrowIfNotValid(Exception? e) {{
         if (e is not null)
             throw e;
+
+        return val;
     }}
+
+    private static T ThrowIfNotValid<T>(T val, Func<T, bool> isValid, string argName, string? message, [CallerArgumentExpression(""isValid"")] string funcName = """") {{
+        if (!isValid(val))
+            throw new Exception(message ?? $""{{funcName}}({{argName}}) returned false"");
+
+        return val;
+    }}
+
+    private delegate bool BoolOut<T>(string? arg, out T t);
 
     private static T ThrowIfTryParseNotTrue<T>(BoolOut<T> tryParse, string? arg) {{
         if (!tryParse(arg, out var val))
-            throw new FormatException(""Couldn't parse '"" + (arg ?? """") + ""' as an argument of type '"" + typeof(T).Name + ""'."");
+            throw new FormatException(""Couldn't parse '"" + (arg ?? """") + ""' as an argument of type '"" + GetFriendlyNameOf(typeof(T)) + ""'"");
 
         return val;
     }}
@@ -232,9 +236,40 @@ internal static partial class {ProgClassName} {{
     private static T ThrowIfParseError<T>(Func<string?, T> parse, string? arg) {{
         try {{
             return parse(arg);
-        }} catch {{
-            throw new FormatException(""Couldn't parse '"" + (arg ?? """") + ""' as an argument of type '"" + typeof(T).Name + ""'."");
+        }} catch (Exception e) {{
+            var msg = "": "" + e.Message;
+
+            throw new FormatException(""Couldn't parse '"" + (arg ?? """") + ""' as an argument of type '"" + GetFriendlyNameOf(typeof(T)) + ""'"" + msg);
         }}
+    }}
+
+    private static string GetFriendlyNameOf(Type t) {{
+        if (!t.IsGenericType) {{
+            return t.Name switch {{
+                ""Char""   => ""char"",
+                ""Byte""   => ""byte"",
+                ""Int16""  => ""short"",
+                ""UInt16"" => ""ushort"",
+                ""Int32""  => ""int"",
+                ""UInt32"" => ""uint"",
+                ""Int64""  => ""long"",
+                ""UInt64"" => ""ulong"",
+                ""String"" => ""string"",
+                _        => t.Name
+            }};
+        }}
+
+        if (t.Name == typeof(Nullable<>).Name && t.IsConstructedGenericType) {{
+            return GetFriendlyNameOf(t.GenericTypeArguments[0]) + ""?"";
+        }}
+
+        if (t.IsArray) {{
+            return GetFriendlyNameOf(t.GetElementType()!) + ""[]"";
+        }}
+
+        var baseName = t.Name[..^(t.GenericTypeArguments.Length < 10 ? 2 : 3)];
+
+        return baseName + ""<"" + string.Join(',', t.GenericTypeArguments.Select(u => GetFriendlyNameOf(u))) + "">"";
     }}
 
     private abstract partial class CmdDesc {{
