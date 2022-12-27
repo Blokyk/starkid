@@ -18,6 +18,9 @@ public readonly struct TypeCache<TValue>
         if (_specialMap.TryGetValue(type.SpecialType, out var val))
             return val;
 
+        if (type.SpecialType == SpecialType.System_Nullable_T)
+            return GetValue(((INamedTypeSymbol)type).TypeArguments[0]);
+
         return _map.GetValue(type);
     }
 }
