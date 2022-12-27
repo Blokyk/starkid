@@ -33,15 +33,16 @@ public record MinimalTypeInfo(
 public record MinimalMemberInfo(
     string Name,
     MinimalTypeInfo ContainingType,
-    MinimalTypeInfo Type
+    MinimalTypeInfo Type,
+    Location Location
 ) : MinimalSymbolInfo(Name, ContainingType) {
     public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMemberInfo FromSymbol(ISymbol symbol) {
         if (symbol is IPropertySymbol propSymbol)
-            return new MinimalMemberInfo(propSymbol.Name, SymbolInfoCache.GetTypeInfo(propSymbol.ContainingType), SymbolInfoCache.GetTypeInfo(propSymbol.Type));
+            return new MinimalMemberInfo(propSymbol.Name, SymbolInfoCache.GetTypeInfo(propSymbol.ContainingType), SymbolInfoCache.GetTypeInfo(propSymbol.Type), symbol.GetDefaultLocation());
         else if (symbol is IFieldSymbol fieldSymbol)
-            return new MinimalMemberInfo(fieldSymbol.Name, SymbolInfoCache.GetTypeInfo(fieldSymbol.ContainingType), SymbolInfoCache.GetTypeInfo(fieldSymbol.Type));
+            return new MinimalMemberInfo(fieldSymbol.Name, SymbolInfoCache.GetTypeInfo(fieldSymbol.ContainingType), SymbolInfoCache.GetTypeInfo(fieldSymbol.Type), symbol.GetDefaultLocation());
         else if (symbol is IMethodSymbol methodSymbol)
             return MinimalMethodInfo.FromSymbol(methodSymbol);
 
@@ -54,8 +55,9 @@ public record MinimalMethodInfo(
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo ReturnType,
     ImmutableArray<MinimalParameterInfo> Parameters,
-    ImmutableArray<MinimalTypeInfo> TypeArguments
-) : MinimalMemberInfo(Name, ContainingType, ReturnType) {
+    ImmutableArray<MinimalTypeInfo> TypeArguments,
+    Location Location
+) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location) {
     public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
@@ -64,7 +66,8 @@ public record MinimalMethodInfo(
             SymbolInfoCache.GetTypeInfo(symbol.ContainingType),
             SymbolInfoCache.GetTypeInfo(symbol.ReturnType),
             ImmutableArray.CreateRange(symbol.Parameters, MinimalParameterInfo.FromSymbol),
-            ImmutableArray.CreateRange(symbol.TypeArguments, MinimalTypeInfo.FromSymbol)
+            ImmutableArray.CreateRange(symbol.TypeArguments, MinimalTypeInfo.FromSymbol),
+            symbol.GetDefaultLocation()
         );
 
     public bool ReturnsVoid => Type.Name == "Void";
@@ -75,7 +78,8 @@ public record MinimalParameterInfo(
     MinimalTypeInfo Type,
     bool IsNullable,
     bool IsParams,
-    Optional<object?> DefaultValue
+    Optional<object?> DefaultValue,
+    Location Location
 ) : MinimalSymbolInfo(Name, null) {
     public static MinimalParameterInfo FromSymbol(IParameterSymbol symbol)
         => new(
@@ -83,7 +87,8 @@ public record MinimalParameterInfo(
             SymbolInfoCache.GetTypeInfo(symbol.Type),
             symbol.NullableAnnotation == NullableAnnotation.Annotated,
             symbol.IsParams,
-            symbol.HasExplicitDefaultValue ? new Optional<object?>(symbol.ExplicitDefaultValue) : new Optional<object?>()
+            symbol.HasExplicitDefaultValue ? new Optional<object?>(symbol.ExplicitDefaultValue) : new Optional<object?>(),
+            symbol.GetDefaultLocation()
         );
 
     public override string ToString() => SymbolUtils.GetSafeName(Name);

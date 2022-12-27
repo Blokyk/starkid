@@ -1,17 +1,17 @@
 namespace Recline.Generator.Model;
 
 public record CmdHelp(
-    string? ParentCmd,
+    string? ParentCmdName,
     string CmdName,
     string? Description,
     ImmutableArray<OptDesc> CmdOpts,
     ImmutableArray<Desc> PosArgs,
     ImmutableArray<WithArgsDesc> SubCmds,
-    bool IsDirectCmd = true,
+    bool IsRootCmd = true,
     bool HasParams = false
 ) {
     public override string ToString() {
-        var isRoot = ParentCmd is null;
+        //var isRoot ;
 
         var sb = new StringBuilder();
 
@@ -31,8 +31,8 @@ public record CmdHelp(
         void appendNameAndOpts() {
             sb.Append("  ");
 
-            if (!isRoot) {
-                sb.Append(ParentCmd).Append(' ');
+            if (!IsRootCmd) {
+                sb.Append(ParentCmdName).Append(' ');
             }
 
             sb.Append(CmdName);
@@ -43,7 +43,7 @@ public record CmdHelp(
 
         // if it can be used directly, first print one without sub cmds,
         // then print a new line for the subcmds help to use
-        if (IsDirectCmd) {
+        if (!IsRootCmd) {
             appendNameAndOpts();
 
             foreach (var arg in PosArgs) {
@@ -109,6 +109,9 @@ public record CmdHelp(
             else
                 cmdOptsBuilder.Add(_fullHelpFlag);
         }
+
+        // todo: list possible values in case of an enum
+        // (but how do we even communicate that to CmdHelp and OptDescs ??)
 
         AppendDescs(sb, "Options", cmdOptsBuilder.ToImmutable())
             .AppendLine();

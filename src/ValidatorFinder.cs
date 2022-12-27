@@ -18,7 +18,7 @@ public class ValidatorFinder
         _attrValidatorCache = new(
             Utils.ValidateWithAttributeComparer,
             SymbolEqualityComparer.Default,
-            GetValidator
+            GetValidatorCore
         );
 
         _implicitConversionsCache = new(
@@ -33,7 +33,6 @@ public class ValidatorFinder
 
         if (validator is ValidatorInfo.Invalid errorInfo) {
             if (errorInfo.Diagnostic is not null) {
-                // todo: change the location
                 _diagnostics.Add(errorInfo.Diagnostic);
             } else {
                 _diagnostics.Add(
@@ -44,19 +43,18 @@ public class ValidatorFinder
                     )
                 );
             }
-
-            return false;
         }
 
-        return true;
+        return validator is not ValidatorInfo.Invalid;
     }
 
-    ValidatorInfo GetValidator(ValidateWithAttribute attr, ITypeSymbol argType) {
+    ValidatorInfo GetValidatorCore(ValidateWithAttribute attr, ITypeSymbol argType) {
         var members = _model.GetMemberGroup(attr.ValidatorNameSyntaxRef.GetSyntax());
 
         bool hasAnyMethodWithName = false; // can't use members.Length cause they're not all methods
 
         foreach (var member in members) {
+            //todo: allow properties (if they're bool obviously)
             if (member.Kind != SymbolKind.Method)
                 continue;
 
@@ -79,7 +77,7 @@ public class ValidatorFinder
                 return new ValidatorInfo.Invalid(
                     Diagnostic.Create(
                         Diagnostics.ValidatorMustBeStatic,
-                        Location.None,
+                        attr.ValidatorNameSyntaxRef.GetLocation(),
                         method.GetErrorName()
                     )
                 );

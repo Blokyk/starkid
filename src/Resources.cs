@@ -3,8 +3,6 @@ namespace Recline.Generator;
 internal static class Resources {
     public static int MAX_LINE_LENGTH = 80;
 
-    //TODO: add list of parsable types for options
-
     public const string CLIAttribName = nameof(Recline.CLIAttribute);
     public const string CmdAttribName = nameof(Recline.CommandAttribute);
     public const string DescAttribName = nameof(Recline.DescriptionAttribute);
@@ -90,7 +88,7 @@ internal static partial class {ProgClassName} {{
                 }}
 
                 if (arg[0] == '-') {{
-                    if (arg.Length >= 2 && arg[1] == '-') {{
+                    if (arg.Length == 2 && arg[1] == '-') {{
                         onlyArgs = true;
                         continue;
                     }}

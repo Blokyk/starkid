@@ -12,6 +12,7 @@ internal sealed partial class ModelBuilder
 
     public ImmutableArray<Diagnostic> GetDiagnostics() => _diagnostics.ToImmutable();
 
+    private readonly SemanticModel _model;
     private readonly AttributeParser _attrParser;
     private readonly ParserFinder _parserFinder;
     private readonly ValidatorFinder _validatorFinder = null!;
@@ -19,8 +20,9 @@ internal sealed partial class ModelBuilder
 
     private ModelBuilder(AttributeParser parser, SemanticModel model) {
         _attrParser = parser;
-        _parserFinder = new(ref _diagnostics, model);
-        _validatorFinder = new(ref _diagnostics, model);
+        _model = model;
+        _parserFinder = new(ref _diagnostics, _model);
+        _validatorFinder = new(ref _diagnostics, _model);
     }
 
     public static bool TryCreateFromSymbol(INamedTypeSymbol classSymbol, AttributeParser parser, SemanticModel model, out ModelBuilder modelBuilder) {
@@ -68,21 +70,22 @@ internal sealed partial class ModelBuilder
             rootCmd = rootCmd with {
                 Name = _cliData.AppName,
                 Description = _cliData.Description ?? rootCmd.Description,
-                ParentSymbolName = null
+                ParentCmdMethodName = null,
+                IsRoot = true
             };
 
             posArgs = rootCmd.Args;
         }
 
         for (int i = 0; i < _cmds.Count; i++) {
-            if (_cmds[i].ParentSymbolName is not null) {
+            if (!_cmds[i].IsTopLevel) {
                 if (!TryBindParentCmd(_cmds[i], out var newCmd)) {
                     // Are you sure you marked '${_cmds[i].ParentCmdName}' with [Command] ?
                     _diagnostics.Add(
                         Diagnostic.Create(
                             Diagnostics.CouldntFindParentCmd,
-                            Location.None, // FIXME: should be _cmds[i].BackingSymbol.Location when possible
-                            _cmds[i].ParentSymbolName
+                            _cmds[i].BackingSymbol.Location,
+                            _cmds[i].ParentCmdMethodName
                         )
                     );
 
@@ -220,7 +223,7 @@ internal sealed partial class ModelBuilder
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.OptsInEntryMethod,
-                    _cliData.ClassLocation, // FIXME: should be rootCmd.BackingSymbol.Location when possible
+                    rootCmd.BackingSymbol.Location, // note: could also be _cliData.ClassLocation
                     rootCmd.BackingSymbol.Name
                 )
             );
@@ -238,7 +241,7 @@ internal sealed partial class ModelBuilder
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.CmdMustBeOrdinary,
-                    method.Locations[0],
+                    method.GetDefaultLocation(),
                     method.GetErrorName(), method.MethodKind
                 )
             );
@@ -250,7 +253,7 @@ internal sealed partial class ModelBuilder
 
         string cmdName;
         string? parentCmdName = null;
-        bool inheritOptions = false;
+        bool inheritOptions = false; // todo: implement inheriting options by name-matching parameters
 
         if (attrList.Command is not null) {
             cmdName = attrList.Command.CmdName;
@@ -285,7 +288,7 @@ internal sealed partial class ModelBuilder
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.CmdMustBeVoidOrInt,
-                    method.Locations[0],
+                    method.GetDefaultLocation(),
                     method.GetErrorName(), method.ReturnType.GetNameWithNull()
                 )
             );
@@ -297,7 +300,7 @@ internal sealed partial class ModelBuilder
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.CmdMustBeStatic,
-                    method.Locations[0],
+                    method.GetDefaultLocation(),
                     method.GetErrorName()
                 )
             );
@@ -309,7 +312,7 @@ internal sealed partial class ModelBuilder
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.CmdCantBeGeneric,
-                    method.Locations[0],
+                    method.GetDefaultLocation(),
                     method.GetErrorName()
                 )
             );
@@ -354,7 +357,7 @@ internal sealed partial class ModelBuilder
         ) {
             InheritOptions = inheritOptions,
             BackingSymbol = MinimalMethodInfo.FromSymbol(method),
-            ParentSymbolName = parentCmdName,
+            ParentCmdMethodName = parentCmdName,
             HasParams = hasParams
         };
 
@@ -393,18 +396,25 @@ internal sealed partial class ModelBuilder
         ValidatorInfo? validator = null;
 
         if (isParams) {
+            // todo: if type is T[], then treat it as "OneOrMore", if it's T[]? then it's "ZeroOrMore"
+
             // todo: allow custom 'params' args (e.g. params FileInfo[] files)
             // doesn't really matter rn, but it'd be nice to be able to use any type for params,
             // because i'd really like to just say 'params FileInfo[] files' instead of having
             // to transform/validate it myself
+
             parser = ParserInfo.StringIdentity;
         } else {
             if (attrList.ParseWith is null) {
-                if (!_parserFinder.TryFindParserForType(param.Type, out parser))
+                if (!_parserFinder.TryFindParserForType(param.Type, param.GetDefaultLocation(), out parser)) {
+                    _parserFinder.AddDiagnosticsIfInvalid(parser);
                     return false;
+                }
             } else {
-                if (!_parserFinder.TryGetParserFromName(attrList.ParseWith, param.Type, out parser))
+                if (!_parserFinder.TryGetParserFromName(attrList.ParseWith, param.Type, out parser)) {
+                    _parserFinder.AddDiagnosticsIfInvalid(parser);
                     return false;
+                }
             }
 
             if (attrList.ValidateWith is not null && !_validatorFinder.TryGetValidator(attrList.ValidateWith, param.Type, out validator))
@@ -474,7 +484,7 @@ internal sealed partial class ModelBuilder
             _diagnostics.Add(
                 Diagnostic.Create(
                     Diagnostics.OptMustBeStatic,
-                    symbol.Locations[0],
+                    symbol.GetDefaultLocation(),
                     symbol.GetErrorName()
                 )
             );
@@ -482,63 +492,10 @@ internal sealed partial class ModelBuilder
             isValid = false;
         }
 
-        string? defaultVal = null;
-
-        switch (symbol) {
-            case IFieldSymbol field:
-                if (field.IsReadOnly || field.IsConst) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.NonWritableOptField,
-                            symbol.Locations[0],
-                            symbol.GetErrorName()
-                        )
-                    );
-
-                    isValid = false;
-                }
-
-                var varDec = (VariableDeclaratorSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
-
-                if (varDec.Initializer is not null)
-                    defaultVal = varDec.Initializer.Value.ToString();
-
-                break;
-            case IPropertySymbol prop: {
-                if (prop.IsReadOnly || prop.SetMethod!.DeclaredAccessibility is not Accessibility.Public or Accessibility.NotApplicable) {
-                    _diagnostics.Add(
-                        Diagnostic.Create(
-                            Diagnostics.NonWritableOptProp,
-                            symbol.Locations[0],
-                            symbol.GetErrorName()
-                        )
-                    );
-
-                    isValid = false;
-                }
-
-                var propDec = (PropertyDeclarationSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
-
-                if (propDec.Initializer is not null)
-                    defaultVal = propDec.Initializer.Value.ToString();
-
-                // TODO: check that defaultVal is valid outside of the containing class
-                // and maybe transform it (when possible) if not (e.g. qualifying names) ?
-                // we could use ISymbol.GetMinimalQualifiedName(model, position, etc)
-
-                break;
-            }
-            case IParameterSymbol parameterSymbol: {
-                var paramDec = (ParameterSyntax)parameterSymbol.DeclaringSyntaxReferences[0].GetSyntax();
-
-                if (paramDec.Default is not null)
-                    defaultVal = paramDec.Default.Value.ToString();
-
-                break;
-            }
-            default:
-                throw new ArgumentException("Symbol must an IFieldSymbol, IPropertySymbol, IParameterSymbol, but it was " + symbol.GetType().Name, nameof(symbol));
-        }
+        // todo: check that default value for fields and props is valid outside of scope
+        // and maybe transform it if it's invalid (e.g. by qualifying names) ?
+        // we could use ISymbol.GetMinimalQualifiedName(model, position, etc)
+       var defaultVal = GetDefaultValueForSymbol(symbol, ref isValid);
 
         if (!isValid)
             return false;
@@ -554,7 +511,7 @@ internal sealed partial class ModelBuilder
         ValidatorInfo? validator = null;
 
         if (attrInfo.ParseWith is null) {
-            if (!_parserFinder.TryFindParserForType(type, out parser))
+            if (!_parserFinder.TryFindParserForType(type, symbol.GetDefaultLocation(), out parser))
                 return false;
         } else {
             if (!_parserFinder.TryGetParserFromName(attrInfo.ParseWith, type, out parser))
@@ -570,7 +527,7 @@ internal sealed partial class ModelBuilder
                 new FlagDesc(longName, shortName, descStr),
                 parser ?? ParserInfo.AsBool,
                 backingSymbol,
-                defaultVal
+                defaultVal?.ToString()
             ) {
                 Validator = validator
             };
@@ -585,7 +542,7 @@ internal sealed partial class ModelBuilder
             ),
             parser,
             backingSymbol,
-            defaultVal
+            defaultVal?.ToString()
         ) {
             Validator = validator
         };
@@ -599,8 +556,8 @@ internal sealed partial class ModelBuilder
         for (int i = 0; i < _cmds.Count; i++) {
             var cmd = _cmds[i];
 
-            if (sub.ParentSymbolName == cmd.BackingSymbol.Name) {
-                newCmd = sub with { ParentCmd = cmd, ParentSymbolName = cmd.Name };
+            if (sub.ParentCmdMethodName == cmd.BackingSymbol.Name) {
+                newCmd = sub with { ParentCmd = cmd, ParentCmdMethodName = cmd.Name };
                 return true;
             }
         }
@@ -649,5 +606,73 @@ internal sealed partial class ModelBuilder
         usings = usingsSyntaxList.Select(u => u.Name.ToString()).ToArray();
 
         return true;
+    }
+
+    ExpressionSyntax? GetDefaultValueForSymbol(ISymbol symbol, ref bool isValid) {
+        switch (symbol) {
+            case IFieldSymbol field:
+                if (field.IsReadOnly || field.IsConst) {
+                    _diagnostics.Add(
+                        Diagnostic.Create(
+                            Diagnostics.NonWritableOptField,
+                            symbol.GetDefaultLocation(),
+                            symbol.GetErrorName()
+                        )
+                    );
+
+                    isValid = false;
+                }
+
+                var varDec
+                    = symbol.DeclaringSyntaxReferences
+                        .Select(refs => refs.GetSyntax())
+                        .OfType<VariableDeclaratorSyntax>()
+                        .FirstOrDefault(vds => vds.Initializer is not null);
+
+                if (varDec is not null)
+                    return varDec.Initializer!.Value;
+
+                break;
+            case IPropertySymbol prop: {
+                if (prop.IsReadOnly || prop.SetMethod!.DeclaredAccessibility is not Accessibility.Public or Accessibility.NotApplicable) {
+                    _diagnostics.Add(
+                        Diagnostic.Create(
+                            Diagnostics.NonWritableOptProp,
+                            symbol.GetDefaultLocation(),
+                            symbol.GetErrorName()
+                        )
+                    );
+
+                    isValid = false;
+                }
+
+                var propDec
+                    = symbol.DeclaringSyntaxReferences
+                        .Select(refs => refs.GetSyntax())
+                        .OfType<PropertyDeclarationSyntax>()
+                        .FirstOrDefault(pds => pds.Initializer is not null);
+
+                if (propDec is not null)
+                    return propDec.Initializer!.Value;
+
+                break;
+            }
+            case IParameterSymbol parameterSymbol: {
+                var paramDec
+                    = symbol.DeclaringSyntaxReferences
+                        .Select(refs => refs.GetSyntax())
+                        .OfType<ParameterSyntax>()
+                        .FirstOrDefault(ps => ps.Default is not null);
+
+                if (paramDec is not null)
+                    return paramDec.Default!.Value;
+
+                break;
+            }
+            default:
+                throw new ArgumentException("Symbol must an IFieldSymbol, IPropertySymbol, IParameterSymbol, but it was " + symbol.GetType().Name, nameof(symbol));
+        }
+
+        return null;
     }
 }

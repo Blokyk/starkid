@@ -6,7 +6,7 @@ namespace Recline;
 /// Indicates the function used to validate the argument/option
 /// </summary>
 /// <remarks>
-/// The validating function must take a single parameter with this member's type and return <see cref="System.Boolean"/> or <see cref="System.Exception"/> />.
+/// The validating function must take a single parameter with this member's type and return <see cref="System.Boolean"/> or <see cref="System.Exception"/>.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
 public sealed class ValidateWithAttribute : System.Attribute, IEquatable<ValidateWithAttribute> {
@@ -32,6 +32,7 @@ public sealed class ValidateWithAttribute : System.Attribute, IEquatable<Validat
     public bool Equals(ValidateWithAttribute? other)
         => ValidatorName == other?.ValidatorName
         && ErrorMessage  == other?.ErrorMessage;
+
     public override int GetHashCode() {
         var hash = 1009;
 

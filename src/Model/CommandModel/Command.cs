@@ -1,7 +1,8 @@
 namespace Recline.Generator.Model;
 
-public record Command(bool HasExitCode, string Name, string? Description, ImmutableArray<Option> Options, ImmutableArray<Argument> Args) {
-    public WithArgsDesc WithArgsDesc => new(
+[System.Diagnostics.DebuggerDisplay("<{Name,nq}>")]
+public sealed record Command(bool HasExitCode, string Name, string? Description, ImmutableArray<Option> Options, ImmutableArray<Argument> Args) : IEquatable<Command> {
+    public WithArgsDesc GetDesc() => new(
         Name,
         Args.Select(a => a.Desc.Name).ToArray(),
         Description
@@ -9,16 +10,21 @@ public record Command(bool HasExitCode, string Name, string? Description, Immuta
 
     public bool InheritOptions { get; init; }
 
+    private string? _fullName;
+    public string FullName => _fullName ??= ParentCmd?.FullName + "_" + Name;
+
     public Command? ParentCmd { get; set; }
-    public string? ParentSymbolName { get; set; }
+    public string? ParentCmdMethodName { get; set; }
+
+    [MemberNotNullWhen(false, nameof(ParentCmd))]
+    public bool IsTopLevel => ParentCmd is null;
+
+    public bool IsRoot { get; init; }
 
     public MinimalMethodInfo BackingSymbol { get; set; } = null!;
 
-    public bool IsRoot => BackingSymbol is null;
-
-    public override string ToString() => "<" + Name + ">";
-
     public bool HasParams { get; set; }
 
-    public string GetNameWithParent() => ParentCmd is null ? Name : ParentCmd.GetNameWithParent() + " " + Name;
+    public override int GetHashCode() => FullName.GetHashCode();
+    public bool Equals(Command? cmd) => cmd?.GetHashCode() == GetHashCode();
 }

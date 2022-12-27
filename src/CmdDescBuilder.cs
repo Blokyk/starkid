@@ -22,7 +22,11 @@ internal class CmdDescBuilder
     readonly ImmutableArray<CmdInfo>.Builder _allCmdInfo
         = ImmutableArray.CreateBuilder<CmdInfo>();
 
-    bool HasRealRootCmd { get; }
+    /// <summary>
+    /// Whether the root command can actually be invoked or not
+    /// </summary>
+    /// <value></value>
+    bool IsRootCmdReal { get; }
 
     public int HelpExitCode { get; set; } = 0;
 
@@ -42,7 +46,7 @@ internal class CmdDescBuilder
         sb = new StringBuilder();
         Description = description;
 
-        HasRealRootCmd = cmdAndArgs.HasValue;
+        IsRootCmdReal = cmdAndArgs.HasValue;
 
         if (cmdAndArgs.HasValue) {
             RootArgs = cmdAndArgs.Value.args;
@@ -65,19 +69,18 @@ internal class CmdDescBuilder
             RootCmd,
             domToSubTable[RootCmd].ToImmutable(),
             RootOptsAndSws,
-            RootArgs,
-            true
+            RootArgs
         );
 
-    public void AddHelpText(Command cmd, ImmutableArray<Command> subs, ImmutableArray<Option> opts, ImmutableArray<Argument> posArgs, bool isRoot = false) {
+    public void AddHelpText(Command cmd, ImmutableArray<Command> subs, ImmutableArray<Option> opts, ImmutableArray<Argument> posArgs) {
         var help = new CmdHelp(
-            cmd.ParentCmd?.GetNameWithParent() ?? (isRoot ? null : RootCmd.Name),
+            cmd.ParentCmd?.Name ?? (cmd.IsRoot ? null : RootCmd.Name),
             cmd.Name,
             cmd.Description,
             ImmutableArray.CreateRange(opts, o => o.Desc),
             ImmutableArray.CreateRange(posArgs, a => a.Desc),
-            ImmutableArray.CreateRange(subs, s => s.WithArgsDesc),
-            IsDirectCmd: !isRoot,
+            ImmutableArray.CreateRange(subs, s => s.GetDesc()),
+            IsRootCmd: cmd.IsRoot,
             HasParams: cmd.HasParams
         );
 
@@ -99,18 +102,16 @@ internal class CmdDescBuilder
     void AddRoot() {
         sb.Append(@"
     private abstract partial class CmdDesc {
-        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new ").Append(AppName).AppendLine(@"CmdDesc(), false);
-        internal static CmdDesc root => _lazyRoot.Value;
-
-");
+        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new ").Append(RootCmd.FullName).AppendLine(@"CmdDesc(), false);
+        internal static CmdDesc root => _lazyRoot.Value;");
 
         AddOptsAndFlags(RootOptsAndSws, isRoot: true);
 
-        sb.AppendLine(@"
+        sb.Append(@"
     }");
 
-        if (HasRealRootCmd)
-            AddCmd(RootCmd, RootOptsAndSws, RootArgs, true);
+        if (IsRootCmdReal)
+            AddCmd(RootCmd, RootOptsAndSws, RootArgs);
     }
 
     void AddOptsAndFlags(ImmutableArray<Option> optsAndFlags, bool isRoot = false) {
@@ -126,18 +127,28 @@ internal class CmdDescBuilder
 
         #region Flags
 
-        sb.AppendLine("private static Dictionary<string, Action<string?>> _flags = new() {");
-
-        sb.AppendLine(@"
-            { ""--help"", DisplayHelp },
-            { ""-h"", DisplayHelp },
+        sb.Append(@"
+        private static Dictionary<string, Action<string?>> _flags = new() {
+            { ""--help"", DisplayHelp }, { ""-h"", DisplayHelp },
 ");
 
         foreach (var sw in flags) {
-            sb.AppendLine(GetOptDictLine(sw.Desc.LongName, sw.Desc.Alias, "set_" + sw.BackingSymbol.Name));
+            sb
+                .Append("\t\t\t")
+                .AppendLine(
+                    GetOptDictLine(
+                        sw.Desc.LongName,
+                        sw.Desc.Alias,
+                        "set_" + sw.BackingSymbol.Name
+                    )
+                )
+                ;
         }
 
-        sb.AppendLine("};");
+        sb
+            .AppendLine("\t\t};")
+            .AppendLine()
+            ;
 
         foreach (var flag in flags) {
             var argExpr = GetParsingExpression(flag.Parser, flag.BackingSymbol.Name, flag.DefaultValueExpr);
@@ -147,24 +158,30 @@ internal class CmdDescBuilder
                 = (!isRoot ? "" : CliClassName + ".")
                 + SymbolUtils.GetSafeName(flag.BackingSymbol.Name) + " = " + validExpr;
 
-            sb.AppendLine(
-                GetOptFuncLine(
-                    "set_" + flag.BackingSymbol.Name,
-                    expr
+            sb
+                .Append("\t\t")
+                .AppendLine(
+                    GetOptFuncLine(
+                        "set_" + flag.BackingSymbol.Name,
+                        expr
+                    )
                 )
-            );
+                ;
         }
 
         if (!isRoot) {
             foreach (var sw in flags) {
                 sb
-                    .Append("private static bool ")
-                    .Append(SymbolUtils.GetSafeName(sw.BackingSymbol.Name));
+                    .Append(@"
+        private static bool ")
+                    .Append(SymbolUtils.GetSafeName(sw.BackingSymbol.Name))
+                    ;
 
                 if (sw.DefaultValueExpr is not null) {
                     sb
                         .Append(" = ")
-                        .Append(sw.DefaultValueExpr);
+                        .Append(sw.DefaultValueExpr)
+                        ;
                 }
 
                 sb
@@ -176,13 +193,26 @@ internal class CmdDescBuilder
         #endregion
         #region Options
 
-        sb.AppendLine("private static Dictionary<string, Action<string>> _options = new() {");
+        sb.AppendLine(@"
+        private static Dictionary<string, Action<string>> _options = new() {");
 
         foreach (var opt in opts) {
-            sb.AppendLine(GetOptDictLine(opt.Desc.LongName, opt.Desc.Alias, opt.BackingSymbol.Name + "Action"));
+            sb
+                .Append("\t\t\t")
+                .AppendLine(
+                    GetOptDictLine(
+                        opt.Desc.LongName,
+                        opt.Desc.Alias,
+                        opt.BackingSymbol.Name + "Action"
+                    )
+                )
+                ;
         }
 
-        sb.AppendLine("};");
+        sb
+            .AppendLine("\t\t};")
+            .AppendLine()
+            ;
 
         foreach (var opt in opts) {
             var argExpr = GetParsingExpression(opt.Parser, opt.BackingSymbol.Name, opt.DefaultValueExpr);
@@ -192,18 +222,21 @@ internal class CmdDescBuilder
                 = (!isRoot ? "" : CliClassName + ".")
                 + SymbolUtils.GetSafeName(opt.BackingSymbol.Name) + " = " + validExpr;
 
-            sb.AppendLine(
-                GetOptFuncLine(
-                    opt.BackingSymbol.Name + "Action",
-                    expr
+            sb
+                .Append("\t\t")
+                .AppendLine(
+                    GetOptFuncLine(
+                        opt.BackingSymbol.Name + "Action",
+                        expr
+                    )
                 )
-            );
+                ;
         }
 
         if (!isRoot) {
             foreach (var opt in opts) {
                 sb
-                    .Append("private static ")
+                    .Append("\t\tprivate static ")
                     .Append(opt.Type.FullName)
                     .Append(' ')
                     .Append(opt.BackingSymbol.Name);
@@ -270,7 +303,8 @@ internal class CmdDescBuilder
     }
 
     void AddArgs(ImmutableArray<Argument> posArgs) {
-        sb.Append("protected override Action<string>[] _posArgs => ");
+        sb.Append(@"
+        protected override Action<string>[] _posArgs => ");
 
         if (posArgs.Length == 0) {
             sb.AppendLine("Array.Empty<Action<string>>();");
@@ -284,7 +318,7 @@ internal class CmdDescBuilder
                 continue; // could be break since params is always the last parameter
 
             sb
-                .Append("static __arg => ")
+                .Append("\t\t\tstatic __arg => ")
                 .Append(arg.BackingSymbol.Name)
                 .Append(" = ")
                 .Append(
@@ -297,14 +331,15 @@ internal class CmdDescBuilder
                 .Append(",");
         }
 
-        sb.AppendLine("};");
+        sb.AppendLine(@"
+        };").AppendLine();
 
         foreach (var arg in posArgs) {
             if (arg.IsParams)
                 continue; // cf above
 
             sb
-                .Append("private static ")
+                .Append("\t\tprivate static ")
                 .Append(arg.Type.FullName)
                 .Append(' ')
                 .Append(arg.BackingSymbol.Name);
@@ -322,7 +357,8 @@ internal class CmdDescBuilder
     }
 
     void AppendFunc(MinimalMethodInfo method) {
-        sb.Append("private static ");
+        sb.Append(@"
+        private static ");
 
         var isVoid = method.ReturnsVoid;
         var methodParams = method.Parameters;
@@ -360,7 +396,8 @@ internal class CmdDescBuilder
 
         AppendFunc(method);
 
-        sb.Append("internal override Func<int> Invoke => ");
+        sb.Append(@"
+        internal override Func<int> Invoke => ");
 
         // if _func is already Func<int>
         if (!isVoid && methodParams.Length == 0) {
@@ -395,18 +432,18 @@ internal class CmdDescBuilder
 
     // NOTE: We keep isRoot because we want to be able to force that behavior from AddRoot()
     // even when the rootCmd isn't synthetic
-    public void AddCmd(Command cmd, ImmutableArray<Option> optsAndSws, ImmutableArray<Argument> posArgs, bool isRoot = false) {
-        if (!isRoot)
+    public void AddCmd(Command cmd, ImmutableArray<Option> optsAndSws, ImmutableArray<Argument> posArgs) {
+        if (!cmd.IsRoot)
             _allCmdInfo.Add(new(cmd, optsAndSws, posArgs));
 
-        if (cmd.ParentSymbolName is not null) {
-            if (!domToSubTable.TryGetValue(cmd.ParentCmd!, out var list)) {
+        if (!cmd.IsTopLevel) {
+            if (!domToSubTable.TryGetValue(cmd.ParentCmd, out var list)) {
                 list = ImmutableArray.CreateBuilder<Command>();
-                domToSubTable.Add(cmd.ParentCmd!, list);
+                domToSubTable.Add(cmd.ParentCmd, list);
             }
 
             list.Add(cmd);
-        } else if (!isRoot) {
+        } else if (!cmd.IsRoot) {
             domToSubTable[RootCmd].Add(cmd);
         }
 
@@ -416,9 +453,9 @@ internal class CmdDescBuilder
         .Append(cmd.HasParams ? @"
         protected override bool HasParams => true;" : "").Append(@"
 
-        internal ").Append(cmd.Name).Append(@"CmdDesc() : base(_flags, _options) {}
+        internal ").Append(cmd.FullName).Append(@"CmdDesc() : base(_flags, _options) {}
 
-        protected ").Append(cmd.Name).Append(@"CmdDesc(
+        protected ").Append(cmd.FullName).Append(@"CmdDesc(
             Dictionary<string, Action<string?>> flags,
             Dictionary<string, Action<string>> options
         )
@@ -426,7 +463,7 @@ internal class CmdDescBuilder
         {}
 ");
 
-        AddOptsAndFlags(optsAndSws, isRoot);
+        AddOptsAndFlags(optsAndSws, cmd.IsRoot);
         AddArgs(posArgs);
         if (cmd.BackingSymbol is not null) // if this is not root
             AddFuncAndInvoke(cmd.BackingSymbol);
@@ -445,17 +482,16 @@ internal class CmdDescBuilder
                 .AppendLine(GetClassDeclarationLine(dom))
                 .AppendLine(@"
         internal override Dictionary<string, Func<CmdDesc>> SubCmds => _subs;
-        private static Dictionary<string, Func<CmdDesc>> _subs = new() {
-")
+        private static Dictionary<string, Func<CmdDesc>> _subs = new() {")
                 ;
 
             foreach (var sub in subs) {
-                sb.AppendLine(GetDictLine(sub.Name, "static () => new " + sub.Name + "CmdDesc()"));
+                sb.Append("\t\t\t").AppendLine(GetDictLine(sub.Name, "static () => new " + sub.FullName + "CmdDesc()"));
             }
 
             sb
-                .AppendLine("};")
-                .AppendLine("}");
+                .AppendLine("\t\t};")
+                .AppendLine("\t}");
         }
 
         foreach (var info in _allCmdInfo) {
@@ -478,7 +514,8 @@ internal class CmdDescBuilder
         return $@"
 {GenFileHeader}
 {usingsStr}
-static partial class {ProgClassName} {{
+
+internal static partial class {ProgClassName} {{
 " + sb.ToString() + "}";
     }
 
@@ -492,7 +529,7 @@ static partial class {ProgClassName} {{
         var str = GetDictLine("--" + longName, methodName);
 
         if (shortName is not '\0')
-            str += GetDictLine("-" + shortName, methodName);
+            str += ' ' + GetDictLine("-" + shortName, methodName);
 
         return str;
     }
@@ -501,6 +538,5 @@ static partial class {ProgClassName} {{
         => $@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625
-    private partial class {cmd.Name}CmdDesc : {cmd.ParentSymbolName ?? ""}CmdDesc {{
-";
+    private partial class {cmd.FullName}CmdDesc : {cmd.ParentCmd?.FullName ?? ""}CmdDesc {{";
 }
