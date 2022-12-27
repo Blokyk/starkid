@@ -18,6 +18,9 @@ public readonly struct Cache<TKey, TValue>
 
         return val;
     }
+
+    internal void ForceAdd(TKey key, TValue value)
+        => _map.Add(key, value);
 }
 
 public readonly struct Cache<TKey, TArg, TValue>

@@ -7,16 +7,60 @@ public class ParserFinder
     private readonly ImmutableArray<Diagnostic>.Builder _diagnostics;
 
     private readonly Cache<ITypeSymbol, ITypeSymbol, bool> _implicitConversionsCache;
-    private readonly Cache<ITypeSymbol, ParserInfo> _typeParserCache;
+    private readonly TypeCache<ParserInfo> _typeParserCache;
     private readonly Cache<ParseWithAttribute, ITypeSymbol, ParserInfo> _attrParserCache;
 
     private readonly SemanticModel _model;
+
+    private static readonly Dictionary<SpecialType, ParserInfo> _specialTypesMap
+        = new() {
+            {
+                SpecialType.System_Boolean,
+                ParserInfo.AsBool
+            }, {
+                SpecialType.System_String,
+                ParserInfo.StringIdentity
+            }, {
+                SpecialType.System_Object,
+                ParserInfo.StringIdentity
+            }, {
+                SpecialType.System_Char,
+                new ParserInfo.BoolOutMethod(
+                    "System.Char.TryParse",
+                    CommonTypes.CHARMinInfo
+                )
+            }, {
+                SpecialType.System_Int32,
+                new ParserInfo.BoolOutMethod(
+                    "System.Int32.TryParse",
+                    CommonTypes.INT32MinInfo
+                )
+            }, {
+                SpecialType.System_Double,
+                new ParserInfo.BoolOutMethod(
+                    "System.Double.TryParse",
+                    CommonTypes.DOUBLEMinInfo
+                )
+            }, {
+                SpecialType.System_Single,
+                new ParserInfo.BoolOutMethod(
+                    "System.Single.TryParse",
+                    CommonTypes.SINGLEMinInfo
+                )
+            }, {
+                SpecialType.System_DateTime,
+                new ParserInfo.BoolOutMethod(
+                    "System.DateTime.TryParseExact",
+                    CommonTypes.DATE_TIMEMinInfo
+                )
+            }
+        };
 
     public ParserFinder(ref ImmutableArray<Diagnostic>.Builder diags, SemanticModel model) {
         _diagnostics = diags;
         _model = model;
 
-        _typeParserCache = new(SymbolEqualityComparer.Default, FindParserForTypeCore);
+        _typeParserCache = new(FindParserForTypeCore, _specialTypesMap);
 
         _attrParserCache = new(
             Utils.ParseWithAttributeComparer,

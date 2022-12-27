@@ -382,6 +382,12 @@ internal sealed partial class ModelBuilder
 
         bool isParams = param.IsParams;
 
+        // todo: if type is T[], then treat it as "OneOrMore", if it's T[]? then it's "ZeroOrMore"
+
+        // todo: allow custom 'params' args (e.g. params FileInfo[] files)
+        // doesn't really matter rn, but it'd be nice to be able to use any type for params,
+        // because i'd really like to just say 'params FileInfo[] files' instead of having
+        // to transform/validate it myself
         if (isParams && (param.Type is not IArrayTypeSymbol paramArrayType || !SymbolUtils.Equals(paramArrayType.ElementType, CommonTypes.STR))) {
             _diagnostics.Add(
                 Diagnostic.Create(
@@ -396,13 +402,6 @@ internal sealed partial class ModelBuilder
         ValidatorInfo? validator = null;
 
         if (isParams) {
-            // todo: if type is T[], then treat it as "OneOrMore", if it's T[]? then it's "ZeroOrMore"
-
-            // todo: allow custom 'params' args (e.g. params FileInfo[] files)
-            // doesn't really matter rn, but it'd be nice to be able to use any type for params,
-            // because i'd really like to just say 'params FileInfo[] files' instead of having
-            // to transform/validate it myself
-
             parser = ParserInfo.StringIdentity;
         } else {
             if (attrList.ParseWith is null) {
@@ -525,7 +524,7 @@ internal sealed partial class ModelBuilder
         if (SymbolUtils.Equals(type, CommonTypes.BOOL)) {
             opt = new Flag(
                 new FlagDesc(longName, shortName, descStr),
-                parser ?? ParserInfo.AsBool,
+                parser,
                 backingSymbol,
                 defaultVal?.ToString()
             ) {

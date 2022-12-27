@@ -18,6 +18,12 @@ internal static class CommonTypes
     internal static MinimalTypeInfo NULLABLEMinInfo = null!;
     internal static INamedTypeSymbol ENUM = null!;
     internal static MinimalTypeInfo ENUMMinInfo = null!;
+    internal static INamedTypeSymbol DOUBLE = null!;
+    internal static MinimalTypeInfo DOUBLEMinInfo = null!;
+    internal static INamedTypeSymbol SINGLE = null!;
+    internal static MinimalTypeInfo SINGLEMinInfo = null!;
+    internal static INamedTypeSymbol DATE_TIME = null!;
+    internal static MinimalTypeInfo DATE_TIMEMinInfo = null!;
 
     internal static SymbolDisplayFormat memberMinimalDisplayFormat = new(
         parameterOptions: SymbolDisplayParameterOptions.IncludeName,
@@ -44,6 +50,12 @@ internal static class CommonTypes
         EXCEPTIONMinInfo = null!;
         ENUM = null!;
         ENUMMinInfo = null!;
+        DOUBLE = null!;
+        DOUBLEMinInfo = null!;
+        SINGLE = null!;
+        SINGLEMinInfo = null!;
+        DATE_TIME = null!;
+        DATE_TIMEMinInfo = null!;
     }
 
     [MemberNotNull(
@@ -62,7 +74,13 @@ internal static class CommonTypes
         nameof(EXCEPTION),
         nameof(EXCEPTIONMinInfo),
         nameof(ENUM),
-        nameof(ENUMMinInfo)
+        nameof(ENUMMinInfo),
+        nameof(DOUBLE),
+        nameof(DOUBLEMinInfo),
+        nameof(SINGLE),
+        nameof(SINGLEMinInfo),
+        nameof(DATE_TIME),
+        nameof(DATE_TIMEMinInfo)
     )]
     internal static void Refresh(Compilation compilation) {
         BOOL = compilation.GetSpecialType(SpecialType.System_Boolean);
@@ -72,6 +90,9 @@ internal static class CommonTypes
         VOID = compilation.GetSpecialType(SpecialType.System_Void);
         NULLABLE = compilation.GetSpecialType(SpecialType.System_Nullable_T);
         ENUM = compilation.GetSpecialType(SpecialType.System_Enum);
+        DOUBLE = compilation.GetSpecialType(SpecialType.System_Double);
+        SINGLE = compilation.GetSpecialType(SpecialType.System_Single);
+        DATE_TIME = compilation.GetSpecialType(SpecialType.System_DateTime);
 
         BOOLMinInfo = MinimalTypeInfo.FromSymbol(BOOL);
         INT32MinInfo = MinimalTypeInfo.FromSymbol(INT32);
@@ -80,6 +101,9 @@ internal static class CommonTypes
         VOIDMinInfo = MinimalTypeInfo.FromSymbol(VOID);
         NULLABLEMinInfo = MinimalTypeInfo.FromSymbol(NULLABLE);
         ENUMMinInfo = MinimalTypeInfo.FromSymbol(ENUM);
+        DOUBLEMinInfo = MinimalTypeInfo.FromSymbol(DOUBLE);
+        SINGLEMinInfo = MinimalTypeInfo.FromSymbol(SINGLE);
+        DATE_TIMEMinInfo = MinimalTypeInfo.FromSymbol(DATE_TIME);
 
         EXCEPTION = compilation.GetTypeByMetadataName("System.Exception")!;
         EXCEPTIONMinInfo = MinimalTypeInfo.FromSymbol(EXCEPTION);

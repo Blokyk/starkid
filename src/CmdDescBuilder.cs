@@ -102,7 +102,7 @@ internal class CmdDescBuilder
     void AddRoot() {
         sb.Append(@"
     private abstract partial class CmdDesc {
-        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new ").Append(RootCmd.FullName).AppendLine(@"CmdDesc(), false);
+        private static readonly Lazy<CmdDesc> _lazyRoot = new(static () => new ").Append(RootCmd.ClassPrefix).AppendLine(@"CmdDesc(), false);
         internal static CmdDesc root => _lazyRoot.Value;");
 
         AddOptsAndFlags(RootOptsAndSws, isRoot: true);
@@ -453,9 +453,9 @@ internal class CmdDescBuilder
         .Append(cmd.HasParams ? @"
         protected override bool HasParams => true;" : "").Append(@"
 
-        internal ").Append(cmd.FullName).Append(@"CmdDesc() : base(_flags, _options) {}
+        internal ").Append(cmd.ClassPrefix).Append(@"CmdDesc() : base(_flags, _options) {}
 
-        protected ").Append(cmd.FullName).Append(@"CmdDesc(
+        protected ").Append(cmd.ClassPrefix).Append(@"CmdDesc(
             Dictionary<string, Action<string?>> flags,
             Dictionary<string, Action<string>> options
         )
@@ -465,7 +465,7 @@ internal class CmdDescBuilder
 
         AddOptsAndFlags(optsAndSws, cmd.IsRoot);
         AddArgs(posArgs);
-        if (cmd.BackingSymbol is not null) // if this is not root
+        if (!cmd.IsRoot) // if this is not root
             AddFuncAndInvoke(cmd.BackingSymbol);
 
         sb.AppendLine(@"
@@ -486,7 +486,7 @@ internal class CmdDescBuilder
                 ;
 
             foreach (var sub in subs) {
-                sb.Append("\t\t\t").AppendLine(GetDictLine(sub.Name, "static () => new " + sub.FullName + "CmdDesc()"));
+                sb.Append("\t\t\t").AppendLine(GetDictLine(sub.Name, "static () => new " + sub.ClassPrefix + "CmdDesc()"));
             }
 
             sb
@@ -538,5 +538,5 @@ internal static partial class {ProgClassName} {{
         => $@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625
-    private partial class {cmd.FullName}CmdDesc : {cmd.ParentCmd?.FullName ?? ""}CmdDesc {{";
+    private partial class {cmd.ClassPrefix}CmdDesc : {cmd.ParentCmd?.ClassPrefix ?? ""}CmdDesc {{";
 }

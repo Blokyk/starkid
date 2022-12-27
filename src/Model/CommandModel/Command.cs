@@ -10,8 +10,8 @@ public sealed record Command(bool HasExitCode, string Name, string? Description,
 
     public bool InheritOptions { get; init; }
 
-    private string? _fullName;
-    public string FullName => _fullName ??= ParentCmd?.FullName + "_" + Name;
+    private string? _classPrefix;
+    public string ClassPrefix => _classPrefix ??= ParentCmd?.ClassPrefix + "_" + Name;
 
     public Command? ParentCmd { get; set; }
     public string? ParentCmdMethodName { get; set; }
@@ -25,6 +25,6 @@ public sealed record Command(bool HasExitCode, string Name, string? Description,
 
     public bool HasParams { get; set; }
 
-    public override int GetHashCode() => FullName.GetHashCode();
+    public override int GetHashCode() => ClassPrefix.GetHashCode();
     public bool Equals(Command? cmd) => cmd?.GetHashCode() == GetHashCode();
 }
