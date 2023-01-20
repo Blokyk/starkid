@@ -1,7 +1,36 @@
+using Recline.Generator.Model;
+
 namespace Recline.Generator;
 
 internal static class CommonTypes
 {
+    [MemberNotNullWhen(
+        true,
+        nameof(BOOL),
+        nameof(BOOLMinInfo),
+        nameof(INT32),
+        nameof(INT32MinInfo),
+        nameof(CHAR),
+        nameof(CHARMinInfo),
+        nameof(STR),
+        nameof(STRMinInfo),
+        nameof(VOID),
+        nameof(VOIDMinInfo),
+        nameof(NULLABLE),
+        nameof(NULLABLEMinInfo),
+        nameof(EXCEPTION),
+        nameof(EXCEPTIONMinInfo),
+        nameof(ENUM),
+        nameof(ENUMMinInfo),
+        nameof(DOUBLE),
+        nameof(DOUBLEMinInfo),
+        nameof(SINGLE),
+        nameof(SINGLEMinInfo),
+        nameof(DATE_TIME),
+        nameof(DATE_TIMEMinInfo)
+    )]
+    private static bool IsInitialized { get; set; } = false;
+
     internal static INamedTypeSymbol BOOL = null!;
     internal static MinimalTypeInfo BOOLMinInfo = null!;
     internal static INamedTypeSymbol INT32 = null!;
@@ -33,7 +62,8 @@ internal static class CommonTypes
         miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers
     );
 
-    internal static void Clear() {
+    internal static void Reset() {
+        IsInitialized = false;
         BOOL = null!;
         BOOLMinInfo = null!;
         INT32 = null!;
@@ -82,7 +112,10 @@ internal static class CommonTypes
         nameof(DATE_TIME),
         nameof(DATE_TIMEMinInfo)
     )]
-    internal static void Refresh(Compilation compilation) {
+    internal static void Refresh(Compilation compilation, bool force = false) {
+        if (IsInitialized && !force)
+            return;
+
         BOOL = compilation.GetSpecialType(SpecialType.System_Boolean);
         INT32 = compilation.GetSpecialType(SpecialType.System_Int32);
         CHAR = compilation.GetSpecialType(SpecialType.System_Char);
@@ -107,5 +140,7 @@ internal static class CommonTypes
 
         EXCEPTION = compilation.GetTypeByMetadataName("System.Exception")!;
         EXCEPTIONMinInfo = MinimalTypeInfo.FromSymbol(EXCEPTION);
+
+        IsInitialized = true;
     }
 }

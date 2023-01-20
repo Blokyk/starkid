@@ -15,21 +15,11 @@ internal static class Diagnostics {
 #endif
         );
 
-    public static readonly DiagnosticDescriptor TooManyCLIClasses
+    public static readonly DiagnosticDescriptor TooManyRootGroups
         = new(
             "CLI001",
-            "Only one class may be marked with [CLI]",
-            "Both classes '{0}' and '{1}' are marked with [CLI], which is illegal",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor BothCmdAndSubCmd
-        = new(
-            "CLI002",
-            "Member '{0}' can't have both [Command] and [SubCommand] attributes",
-            "A member can't be both an command and a sub-command",
+            "This assembly defines multiple root groups, which is illegal",
+            "Both classes '{0}' and '{1}' declare root groups, because they are not nested in a class marked with [CommandGroup], which is illegal",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -37,7 +27,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor BothOptAndCmd
         = new(
-            "CLI003",
+            "CLI002",
             "Member '{0}' can't have both [Option] and [Command/SubCommand] attributes",
             "A member can't be both an option and a command",
             "Recline.Analysis",
@@ -47,7 +37,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor ParseOnNonOptOrArg
         = new(
-            "CLI004",
+            "CLI003",
             "[ParseWith] can only be used on options or arguments",
             "[ParseWith] can only be used on options or arguments",
             "Recline.Analysis",
@@ -57,9 +47,39 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor ValidateOnNonOptOrArg
         = new(
+            "CLI003",
+            "[ValidateWith] can only be used on options or arguments",
+            "[ValidateWith] can only be used on options or arguments",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParamsCantBeParsed
+        = new(
+            "CLI004",
+            "[ParseWith] cannot be used on params arguments",
+            "[ParseWith] cannot be used on params arguments",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParamsCantBeValidated
+        = new(
+            "CLI004",
+            "[ValidateWith] cannot be used on params arguments",
+            "[ValidateWith] cannot be used on params arguments",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParamsCantBeOption
+        = new(
             "CLI005",
-            "[ValidateWith] can only be used on options or arguments",
-            "[ValidateWith] can only be used on options or arguments",
+            "Parameter '{0}' cannot be used as options because it's a 'params' argument",
+            "Parameter '{0}' cannot be used as options because it's a 'params' argument",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -68,18 +88,18 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ParamsHasToBeString
         = new(
             "CLI006",
-            "Can't use type '{0}' for CLI's params argument",
-            "'params' arguments must be of type string[]",
+            "Can't use type '{0}' for on params argument for commands",
+            "'params' arguments for commands must be of type string[]",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
         );
 
-    public static readonly DiagnosticDescriptor InvalidColumnLength
+    public static readonly DiagnosticDescriptor InvalidValueForProjectProperty
         = new(
             "CLI007",
-            "Invalid column length in project settings",
-            "Invalid column length in project settings",
+            "Invalid value for property '{0}' in project settings",
+            "Invalid value for property '{0}' in project settings",
             "Recline.Config",
             DiagnosticSeverity.Error,
             true
@@ -125,11 +145,11 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor CouldntFindRootCmd
+    public static readonly DiagnosticDescriptor CouldntFindDefaultCmd
         = new(
             "CLI104",
-            "Couldn't find entry point method '{0}'",
-            "Couldn't find entry point method '{0}'",
+            "Couldn't find a command named '{0}' in this group",
+            "Couldn't find a command named '{0}' in this group",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -165,41 +185,32 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor EmptyParentCmdName
-        = new(
-            "CLI107",
-            "Null/empty/whitespace-only parent command names are disallowed",
-            "Parent command names cannot be null, empty or only contain whitespace",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
     public static readonly DiagnosticDescriptor CmdNameAlreadyExists
         = new(
+            "CLI107",
+            "Another command with the name '{0}' was already declared",
+            "Another command with the name '{0}' was already declared",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor InvalidCmdName
+        = new(
+            "CLI107",
+            "Command names can only contain '-', '_', or ASCII letters/digits",
+            "Command names can only contain '-', '_', or ASCII letters/digits",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor UselessSpecialCmdName
+        = new(
             "CLI108",
-            "Another command with the name '{0}' was already declared",
-            "Another command with the name '{0}' was already declared",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OptMustBeStatic
-        = new(
-            "CLI200",
-            "Member '{0}' has to be static to be an option",
-            "Options must be marked static",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OptsInEntryMethod
-        = new(
-            "CLI201",
-            "Entry-point methods '{0}' can't have parameters with [Option]",
-            "Entry-point methods currently don't allow [Options] parameters, use fields and properties instead",
+            "Special name '#' is illegal because the containing group's default command name isn't '#'",
+            "Special name '#' is illegal since the containing group's default command name isn't '#', "
+                + "therefore this command would never be invoked",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -207,7 +218,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptShortName
         = new(
-            "CLI202",
+            "CLI200",
             "Whitespace characters can't be used for option's aliases",
             "Whitespace characters can't be used for option's aliases",
             "Recline.Analysis",
@@ -217,7 +228,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor EmptyOptLongName
         = new(
-            "CLI203",
+            "CLI200",
             "Null/empty/whitespace-only option names are disallowed",
             "Option names cannot be null, empty or only contain whitespace",
             "Recline.Analysis",
@@ -225,9 +236,39 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor OptCantBeNamedHelp
+        = new(
+            "CLI200",
+            "Option can't be named \"--help\" or be aliased to '-h'.",
+            "Option can't be named \"--help\" or be aliased to '-h'.",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor OptNameAlreadyExists
+        = new(
+            "CLI201",
+            "Another option with the name '{0}' was already declared in this command, or in a parent group",
+            "Another option with the name '{0}' was already declared in this command, or in a parent group",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor OptAliasAlreadyExists
+        = new(
+            "CLI201",
+            "Another option with the alias '{0}' was already declared in this command, or in a parent group",
+            "Another option with the alias '{0}' was already declared in this command, or in a parent group",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor NonWritableOptField
         = new(
-            "CLI204",
+            "CLI202",
             "Can't use 'readonly' on option fields",
             "Fields marked with [Option] must be writable",
             "Recline.Analysis",
@@ -237,29 +278,9 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NonWritableOptProp
         = new(
-            "CLI204",
-            "An option's property must have a public set accessor",
+            "CLI202",
             "Properties marked with [Option] must have a public set accessor",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OptNameAlreadyExists
-        = new(
-            "CLI205",
-            "Another option with the name '{0}' was already declared for this command",
-            "Another option with the name '{0}' was already declared for this command",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OptAliasAlreadyExists
-        = new(
-            "CLI205",
-            "Another option with the alias '{0}' was already declared for this command",
-            "Another option with the alias '{0}' was already declared for this command",
+            "Properties marked with [Option] must have a public set accessor",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -279,7 +300,7 @@ internal static class Diagnostics {
         = new(
             "CLI301",
             "Useless [Description] attribute",
-            "The [Description] attribute is only useful on commands, options, arguments or CLI classes",
+            "The [Description] attribute is only useful on commands, options, arguments or group classes",
             "Recline.Analysis",
             DiagnosticSeverity.Warning,
             true
@@ -350,8 +371,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CouldntFindValidator
         = new(
             "CLI500",
-            "Couldn't find suitable method '{0}' for validation",
-            "Couldn't find method '{0}', or it wasn't suitable to validate this option/argument",
+            "Couldn't find suitable a method named '{0}' for validation",
+            "Couldn't find any method named '{0}' suitable to validate this option/argument",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -362,6 +383,16 @@ internal static class Diagnostics {
             "CLI501",
             "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
             "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor PropertyValidatorNotOnArgType
+        = new(
+            "CLI501",
+            "Property '{0}' must be a member of '{1}' to be used for validation",
+            "Property '{0}' must be a member of '{1}' to be used for validation",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -387,11 +418,21 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor ValidatorPropertyReturnMismatch
+        = new(
+            "CLI503",
+            "Property '{0}' must be of type bool to be used for validation",
+            "Property '{0}' must be of type bool to be used for validation",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor ValidatorMustBeStatic
         = new(
             "CLI504",
             "Validator method '{0}' must be static",
-            "Validator methods must be static",
+            "Method '{0}' must be static to be used as a validator",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true

@@ -1,30 +1,61 @@
+using System.Collections.ObjectModel;
+
 namespace Recline.Generator.Model;
 
 [System.Diagnostics.DebuggerDisplay("<{Name,nq}>")]
-public sealed record Command(bool HasExitCode, string Name, string? Description, ImmutableArray<Option> Options, ImmutableArray<Argument> Args) : IEquatable<Command> {
-    public WithArgsDesc GetDesc() => new(
-        Name,
-        Args.Select(a => a.Desc.Name).ToArray(),
-        Description
-    );
+public sealed record Command : InvokableBase, IEquatable<Command> {
+    public Command(string name, Group parentGroup, MinimalMethodInfo backingMethod) : base(name) {
+        if (name == "#") {
+            IsHiddenCommand = true;
+            Name = "";
+        } else {
+            Name = name;
+        }
 
-    public bool InheritOptions { get; init; }
+        ParentGroup = parentGroup;
+        BackingMethod = backingMethod;
+    }
 
-    private string? _classPrefix;
-    public string ClassPrefix => _classPrefix ??= ParentCmd?.ClassPrefix + "_" + Name;
+    public override Group ParentGroup {
+        get => base.ParentGroup!;
+#pragma warning disable CS8765 // nullability mismatch
+        set => base.ParentGroup = value;
+#pragma warning restore CS8765
+    }
 
-    public Command? ParentCmd { get; set; }
-    public string? ParentCmdMethodName { get; set; }
+    public bool IsHiddenCommand { get; } = false;
 
-    [MemberNotNullWhen(false, nameof(ParentCmd))]
-    public bool IsTopLevel => ParentCmd is null;
+    public MinimalMethodInfo BackingMethod { get; init; }
 
-    public bool IsRoot { get; init; }
+    public override MinimalLocation Location => BackingMethod.Location;
 
-    public MinimalMethodInfo BackingSymbol { get; set; } = null!;
+    private readonly List<Argument> _args = new();
+    public ReadOnlyCollection<Argument> Arguments => _args.AsReadOnly();
 
-    public bool HasParams { get; set; }
+    public void AddArg(Argument arg) {
+        if (arg.IsParams)
+            HasParams = true;
 
-    public override int GetHashCode() => ClassPrefix.GetHashCode();
-    public bool Equals(Command? cmd) => cmd?.GetHashCode() == GetHashCode();
+        _args.Add(arg);
+    }
+
+    public bool HasParams { get; private set; }
+
+    public override int GetHashCode()
+        => Utils.CombineHashCodes(
+            base.GetHashCode(),
+            Utils.CombineHashCodes(
+                BackingMethod.GetHashCode(),
+                Utils.CombineHashCodes(
+                    Utils.SequenceComparer<Argument>.Instance.GetHashCode(_args),
+                    Utils.CombineHashCodes(
+                        IsHiddenCommand ? 1 : 0,
+                        HasParams ? 0 : 1
+                    )
+                )
+            )
+        );
+
+    public bool Equals(Command? cmd)
+        => cmd is not null && cmd.GetHashCode() == GetHashCode();
 }

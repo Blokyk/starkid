@@ -10,7 +10,5 @@ public sealed class DescriptionAttribute : System.Attribute
 
     public void Deconstruct(
         out string desc
-    ) {
-        desc = Description;
-    }
+    ) => desc = Description;
 }

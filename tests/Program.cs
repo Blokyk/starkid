@@ -4,7 +4,11 @@ using Recline.Generator;
 var sampleDir = "../sample/";
 var testDir = "../raw-sample/";
 
-string parsexPath = "Parsex.cs.old", parsex2Path = "Parsex-2.cs.old", dotnetPath = "Dotnet.cs.old", lotusPath = "Lotus.cs";
+string  parsexPath = "Parsex.cs",
+        parsex2Path = "Parsex-2.cs",
+        dotnetPath = "Dotnet.cs",
+        lotusPath = "Lotus.cs"
+        ;
 
 var parsexTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsexPath));
 var parsex2Tree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsex2Path));
@@ -19,9 +23,7 @@ var unit = CSharpCompilation.Create(
     references: new[] {
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
     },
-    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary/*, specificDiagnosticOptions: new KeyValuePair<string, ReportDiagnostic>[] {
-        KeyValuePair.Create("CLI000", ReportDiagnostic.Suppress)
-    }*/)
+    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
 );
 
 var driver = CSharpGeneratorDriver.Create(
@@ -37,6 +39,8 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
 
     var genRun = driver.RunGenerators(unit);
     var results = genRun.GetRunResult().Results[0];
+
+    Utils.DisplaySteps(results);
 
     foreach (var diag in results.Diagnostics) {
         Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
@@ -61,18 +65,26 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
     }
 
     Console.WriteLine($"Total: {genRun.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
+    Console.WriteLine();
 }
 
-//runDriver("init", parsexPath, unit);
-//runDriver("edit", parsex2Path, unit.ReplaceSyntaxTree(parsexTree, parsex2Tree));
-//runDriver("paste", dotnetPath, unit.ReplaceSyntaxTree(parsexTree, dotnetTree));
-runDriver("new", lotusPath, CSharpCompilation.Create(
-    "Lotus",
-    syntaxTrees: new[] { lotusTree },
-    references: new[] {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
-    },
-    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary/*, specificDiagnosticOptions: new KeyValuePair<string, ReportDiagnostic>[] {
-        KeyValuePair.Create("CLI000", ReportDiagnostic.Suppress)
-    }*/)
-));
+static CSharpCompilation createCompUnit(string assemblyName, SyntaxTree tree) {
+    return CSharpCompilation.Create(
+        assemblyName,
+        syntaxTrees: new[] { tree },
+        references: new[] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
+        },
+        options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+    );
+}
+
+var dotnetUnit = createCompUnit("Dotnet", dotnetTree);
+var lotusUnit = createCompUnit("Lotus", lotusTree);
+
+runDriver("init", parsexPath, unit);
+runDriver("edit", parsex2Path, unit.ReplaceSyntaxTree(parsexTree, parsex2Tree));
+runDriver("paste", dotnetPath, unit.ReplaceSyntaxTree(parsexTree, dotnetTree));
+runDriver("new", lotusPath, lotusUnit);
+runDriver("redo", lotusPath, lotusUnit);
+//runDriver("dotnet", dotnetPath, dotnetUnit);

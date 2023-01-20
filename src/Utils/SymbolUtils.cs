@@ -7,6 +7,11 @@ internal static class SymbolUtils
     [Obsolete("Wrong one, buddy")]
     public new static bool Equals(object _, object __) => false;
 
+    public static bool IsNullable(ITypeSymbol type)
+        => type.IsReferenceType
+        ?  type.NullableAnnotation == NullableAnnotation.Annotated
+        :  (type as INamedTypeSymbol)?.SpecialType == SpecialType.System_Nullable_T;
+
     public static string GetRawName(ISymbol symbol) {
         if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
             return GetNameWithNull(arrayTypeSymbol.ElementType) + "[]";
@@ -20,10 +25,10 @@ internal static class SymbolUtils
     }
 
     public static string GetNameWithNull(this ITypeSymbol symbol) {
-        if (symbol.Name == "Nullable")
+        if (IsNullable(symbol))
+            return GetRawName(symbol) + "?";
+        else
             return GetRawName(symbol);
-
-        return GetRawName(symbol) + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
     }
 
     public static string GetSafeName(string name) {
@@ -44,7 +49,9 @@ internal static class SymbolUtils
         static string getFullNameRecursive(ISymbol symbol)
             => symbol.ContainingType is null
                     ? GetRawName(symbol)
-                    : getFullNameRecursive(symbol.ContainingType) + "." + GetRawName(symbol);
+                    : getFullNameRecursive(symbol.ContainingType)
+                        + "."
+                        + (symbol is ITypeSymbol typeSymbol ? GetNameWithNull(typeSymbol) : symbol.Name);
 
         static string getNamespaceRecursive(INamespaceSymbol ns)
             => ns.ContainingNamespace?.IsGlobalNamespace != false
@@ -59,6 +66,27 @@ internal static class SymbolUtils
         return getNamespaceRecursive(symbol.ContainingNamespace) + "." + symbolName;
     }
 
+    public static ImmutableArray<string> GetAllUniqueUsings(INamedTypeSymbol classSymbol)
+        =>  classSymbol
+                .DeclaringSyntaxReferences
+                .Select(r => r.GetSyntax())
+                .SelectMany(n => Utils.GetUsings((n as TypeDeclarationSyntax)!))
+                .Distinct()
+                .ToImmutableArray();
+
     public static string GetErrorName(this ISymbol symbol)
-        => symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
+        => symbol switch {
+            IParameterSymbol param => param.Name,
+            _ => symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat),
+        };
+
+    public static bool IsBaseOf(this ITypeSymbol baseType, ITypeSymbol derived) {
+        var current = derived;
+
+        while (current is not null && Equals(baseType, current))
+            current = current.BaseType;
+
+        // if we exited early, then it will be null
+        return current is not null;
+    }
 }

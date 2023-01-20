@@ -4,7 +4,7 @@ namespace Recline.Generator;
 
 public class ParserFinder
 {
-    private readonly ImmutableArray<Diagnostic>.Builder _diagnostics;
+    private readonly Action<Diagnostic> addDiagnostic;
 
     private readonly Cache<ITypeSymbol, ITypeSymbol, bool> _implicitConversionsCache;
     private readonly TypeCache<ParserInfo> _typeParserCache;
@@ -56,14 +56,15 @@ public class ParserFinder
             }
         };
 
-    public ParserFinder(ref ImmutableArray<Diagnostic>.Builder diags, SemanticModel model) {
-        _diagnostics = diags;
+    public ParserFinder(Action<Diagnostic> addDiagnostic, SemanticModel model) {
+        this.addDiagnostic = addDiagnostic;
         _model = model;
 
+        // todo: make those static and reset them on every end of the pipeline
         _typeParserCache = new(FindParserForTypeCore, _specialTypesMap);
 
         _attrParserCache = new(
-            Utils.ParseWithAttributeComparer,
+            EqualityComparer<ParseWithAttribute>.Default,
             SymbolEqualityComparer.Default,
             GetParserFromNameCore
         );
@@ -105,7 +106,7 @@ public class ParserFinder
                 }
             }
 
-            _diagnostics.Add(diagnostic);
+            addDiagnostic(diagnostic);
 
             parser = invalidParser with { Diagnostic = diagnostic };
         }
@@ -156,7 +157,7 @@ public class ParserFinder
         parser = FindParserForType(sourceType);
 
         if (parser is ParserInfo.Invalid { Diagnostic: null } invalidParser) {
-            parser = invalidParser with {
+            invalidParser = invalidParser with {
                 Diagnostic =
                     Diagnostic.Create(
                         Diagnostics.CouldntFindAutoParser,
@@ -165,7 +166,9 @@ public class ParserFinder
                     )
             };
 
-            _diagnostics.Add(invalidParser.Diagnostic!);
+            addDiagnostic(invalidParser.Diagnostic!);
+
+            parser = invalidParser;
         }
 
         return parser is not ParserInfo.Invalid;
@@ -327,10 +330,10 @@ public class ParserFinder
         }
     }
 
-    public void AddDiagnosticsIfInvalid(ParserInfo parser) {
+    public void AddDiagnosticIfInvalid(ParserInfo parser) {
         if (parser is not ParserInfo.Invalid { Diagnostic: not null } invalidParser)
             return;
 
-        _diagnostics.Add(invalidParser.Diagnostic);
+        addDiagnostic(invalidParser.Diagnostic);
     }
 }

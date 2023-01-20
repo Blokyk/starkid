@@ -27,11 +27,14 @@ internal static class Utils
         return fullStr.Substring(lastDotIdx);
     }
 
-    /*public static string GetFullNameWithNull(this MinimalTypeInfo symbol) {
-        if (symbol.Name == "Nullable")
-
-        return GetRawName(symbol) + (symbol.NullableAnnotation != NullableAnnotation.Annotated ? "" : "?");
-    }*/
+    public static void Deconstruct<TKey, TValue>(
+        this KeyValuePair<TKey, TValue> pair,
+        out TKey key,
+        out TValue value
+    ) {
+        key = pair.Key;
+        value = pair.Value;
+    }
 
     public static Location GetLocation(this SyntaxReference syntaxRef)
         => Location.Create(syntaxRef.SyntaxTree, syntaxRef.Span);
@@ -39,22 +42,66 @@ internal static class Utils
     public static Location GetApplicationLocation(AttributeData attr)
         => attr.ApplicationSyntaxReference?.GetLocation() ?? Location.None;
 
+    public static ImmutableArray<string> GetUsings(TypeDeclarationSyntax classDec) {
+        SyntaxNode? parent = classDec.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
+
+        var usingsSyntaxList = new SyntaxList<UsingDirectiveSyntax>();
+
+        if (parent is null) {
+            var unit = classDec.FirstAncestorOrSelf<CompilationUnitSyntax>();
+
+            if (unit is null)
+                return ImmutableArray<string>.Empty;
+
+            usingsSyntaxList = unit.Usings;
+        } else {
+            var ns = (BaseNamespaceDeclarationSyntax)parent;
+            usingsSyntaxList = ns.Usings;
+        }
+
+        return usingsSyntaxList.Select(u => u.Name.ToString()).ToImmutableArray();
+    }
+
     internal static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
 
-    internal static IEqualityComparer<ParseWithAttribute> ParseWithAttributeComparer = new ReclineAttributesComparer();
-    internal static IEqualityComparer<ValidateWithAttribute> ValidateWithAttributeComparer = new ReclineAttributesComparer();
+    internal static bool IsAsciiLetter(char c) => (uint)((c | 0x20) - 'a') <= 'z' - 'a';
+    internal static bool IsAsciiDigit(char c) => (uint)(c - '0') <= '9' - '0';
 
-    private class ReclineAttributesComparer : IEqualityComparer<ParseWithAttribute>, IEqualityComparer<ValidateWithAttribute>
+    internal readonly struct SequenceComparer<T> : IEqualityComparer<IEnumerable<T>>
     {
-        public bool Equals(ParseWithAttribute x, ParseWithAttribute y)
-            => x.Equals(y);
-        public int GetHashCode(ParseWithAttribute obj)
-            => obj.GetHashCode();
+        public static readonly SequenceComparer<T> Instance = new();
 
-        public bool Equals(ValidateWithAttribute x, ValidateWithAttribute y)
-            => x.Equals(y);
-        public int GetHashCode(ValidateWithAttribute obj)
-            => obj.GetHashCode();
+        public bool Equals(IEnumerable<T> x, IEnumerable<T> y)
+            => x.SequenceEqual(y);
+
+        public int GetHashCode(IEnumerable<T> obj) {
+            int acc = 0;
+
+            foreach (var item in obj)
+                acc = CombineHashCodes(acc, EqualityComparer<T>.Default.GetHashCode(item));
+
+            return acc;
+        }
+    }
+
+    internal static IEqualityComparer<T> CreateComparerFrom<T>(Func<T, T, bool> eq, Func<T, int> hash)
+        => new PredicateEqualityComparer<T>(eq, hash);
+
+    private class PredicateEqualityComparer<T> : IEqualityComparer<T>
+    {
+        private readonly Func<T, T, bool> _predicate;
+        private readonly Func<T, int> _hash;
+
+        public PredicateEqualityComparer(Func<T, T, bool> equality, Func<T, int> hash) {
+            _predicate = equality;
+            _hash = hash;
+        }
+
+        public bool Equals(T a, T b)
+            => _predicate(a, b);
+
+        public int GetHashCode(T a)
+            => _hash(a);
     }
 }
 

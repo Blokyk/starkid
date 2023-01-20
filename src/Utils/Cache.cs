@@ -5,12 +5,17 @@ public readonly struct Cache<TKey, TValue>
     private readonly Dictionary<TKey, TValue> _map;
     private readonly Func<TKey, TValue> _getter;
 
+    public readonly bool IsInitialized = false;
+
     public Cache(IEqualityComparer<TKey> comparer, Func<TKey, TValue> generator) {
         _getter = generator;
         _map = new(comparer);
+        IsInitialized = true;
     }
 
     public TValue GetValue(TKey key) {
+        ThrowIfNotInitialized();
+
         if (!_map.TryGetValue(key, out var val)) {
             val = _getter(key);
             _map.Add(key, val);
@@ -19,8 +24,16 @@ public readonly struct Cache<TKey, TValue>
         return val;
     }
 
-    internal void ForceAdd(TKey key, TValue value)
-        => _map.Add(key, value);
+    internal void ForceAdd(TKey key, TValue value) {
+        ThrowIfNotInitialized();
+
+        _map.Add(key, value);
+    }
+
+    private void ThrowIfNotInitialized() {
+        if (!IsInitialized)
+            throw new InvalidOperationException("The cache was not correctly initialized.");
+    }
 }
 
 public readonly struct Cache<TKey, TArg, TValue>

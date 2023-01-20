@@ -1,23 +1,22 @@
 namespace Recline.Generator;
 
 internal record AttributeListInfo(
-    CLIAttribute? CLI = null,
+    bool IsOnParameter = false,
+    CommandGroupAttribute? CommandGroup = null,
     CommandAttribute? Command = null,
     DescriptionAttribute? Description = null,
     OptionAttribute? Option = null,
     ParseWithAttribute? ParseWith = null,
-    SubCommandAttribute? SubCommand = null,
     ValidateWithAttribute? ValidateWith = null
 ) {
     internal bool IsEmpty
-        => CLI is null
+        => CommandGroup is null
         && Command is null
         && Description is null
         && Option is null
         && ParseWith is null
-        && SubCommand is null
         && ValidateWith is null
         ;
 
-    internal MemberKind Kind => AttributeParser.CategorizeAttributeList(this);
+    internal CLIMemberKind Kind => AttributeParser.CategorizeAttributeList(this);
 }

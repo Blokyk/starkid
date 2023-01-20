@@ -1,4 +1,4 @@
-namespace Recline.Generator;
+namespace Recline.Generator.Model;
 
 internal static class SymbolInfoCache
 {

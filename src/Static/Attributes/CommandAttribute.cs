@@ -11,7 +11,5 @@ public class CommandAttribute : System.Attribute
 
     public void Deconstruct(
         out string cmdName
-    ) {
-        cmdName = CmdName;
-    }
+    ) => cmdName = CmdName;
 }

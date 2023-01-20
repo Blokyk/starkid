@@ -1,18 +1,30 @@
-namespace Recline.Generator;
+namespace Recline.Generator.Model;
 
-public abstract partial record MinimalSymbolInfo(
+public abstract record MinimalSymbolInfo(
     string Name,
-    MinimalTypeInfo? ContainingType
-) {
+    MinimalTypeInfo? ContainingType,
+    MinimalLocation Location
+) : IEquatable<MinimalSymbolInfo> {
     public override string ToString() => ContainingType?.ToString() + (ContainingType is null ? "" : ".") + Name;
+
+    public override int GetHashCode()
+        => Utils.CombineHashCodes(
+            Name.GetHashCode(),
+            ContainingType?.GetHashCode() ?? 0
+        );
+
+    public virtual bool Equals(MinimalSymbolInfo? other)
+        => (object)this == other // from roslyn's default equality for records
+        || (other is not null && other.GetHashCode() == GetHashCode());
 }
 
 public record MinimalTypeInfo(
     string Name,
     MinimalTypeInfo? ContainingType,
     string FullName,
-    bool IsNullable
-) : MinimalSymbolInfo(Name, ContainingType) {
+    bool IsNullable,
+    MinimalLocation Location
+) : MinimalSymbolInfo(Name, ContainingType, Location) {
     public override string ToString() => FullName;
 
     public static MinimalTypeInfo FromSymbol(ITypeSymbol type) {
@@ -24,9 +36,9 @@ public record MinimalTypeInfo(
         bool isNullable
             = type.IsReferenceType
             ? type.NullableAnnotation == NullableAnnotation.Annotated
-            : type.Name == "Nullable";
+            : (type as INamedTypeSymbol)?.SpecialType == SpecialType.System_Nullable_T;
 
-        return new MinimalTypeInfo(SymbolInfoCache.GetShortTypeName(type), containingType, SymbolInfoCache.GetFullTypeName(type), isNullable);
+        return new MinimalTypeInfo(SymbolInfoCache.GetShortTypeName(type), containingType, SymbolInfoCache.GetFullTypeName(type), isNullable, type.GetDefaultLocation());
     }
 }
 
@@ -34,8 +46,8 @@ public record MinimalMemberInfo(
     string Name,
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo Type,
-    Location Location
-) : MinimalSymbolInfo(Name, ContainingType) {
+    MinimalLocation Location
+) : MinimalSymbolInfo(Name, ContainingType, Location) {
     public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMemberInfo FromSymbol(ISymbol symbol) {
@@ -50,14 +62,14 @@ public record MinimalMemberInfo(
     }
 }
 
-public record MinimalMethodInfo(
+public sealed record MinimalMethodInfo(
     string Name,
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo ReturnType,
     ImmutableArray<MinimalParameterInfo> Parameters,
     ImmutableArray<MinimalTypeInfo> TypeArguments,
-    Location Location
-) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location) {
+    MinimalLocation Location
+) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
     public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
@@ -70,28 +82,42 @@ public record MinimalMethodInfo(
             symbol.GetDefaultLocation()
         );
 
+    public override int GetHashCode()
+        => Utils.CombineHashCodes(
+            base.GetHashCode(),
+            Utils.CombineHashCodes(
+                ReturnType.GetHashCode(),
+                Utils.CombineHashCodes(
+                    Utils.SequenceComparer<MinimalParameterInfo>.Instance.GetHashCode(Parameters),
+                    Utils.SequenceComparer<MinimalTypeInfo>.Instance.GetHashCode(TypeArguments)
+                )
+            )
+        );
+
+    // doesn't use GetHashCode to take advantage of SpanHelpers.SequenceEqual's better perf
+    public bool Equals(MinimalMethodInfo? other)
+        => base.Equals(other)
+        && Parameters.AsSpan().SequenceEqual(other.Parameters.AsSpan())
+        && TypeArguments.AsSpan().SequenceEqual(other.TypeArguments.AsSpan());
+
     public bool ReturnsVoid => Type.Name == "Void";
 }
 
-public record MinimalParameterInfo(
+public sealed record MinimalParameterInfo(
     string Name, // need the name cause the help text might change otherwise
     MinimalTypeInfo Type,
     bool IsNullable,
     bool IsParams,
-    Optional<object?> DefaultValue,
-    Location Location
-) : MinimalSymbolInfo(Name, null) {
+    MinimalLocation Location
+) : MinimalSymbolInfo(Name, null, Location) {
     public static MinimalParameterInfo FromSymbol(IParameterSymbol symbol)
         => new(
             symbol.Name,
             SymbolInfoCache.GetTypeInfo(symbol.Type),
             symbol.NullableAnnotation == NullableAnnotation.Annotated,
             symbol.IsParams,
-            symbol.HasExplicitDefaultValue ? new Optional<object?>(symbol.ExplicitDefaultValue) : new Optional<object?>(),
             symbol.GetDefaultLocation()
         );
 
     public override string ToString() => SymbolUtils.GetSafeName(Name);
-
-    public bool HasDefaultValue => DefaultValue.HasValue;
 }

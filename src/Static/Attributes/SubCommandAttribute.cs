@@ -7,9 +7,8 @@ public sealed class SubCommandAttribute : CommandAttribute
 {
     public string ParentCmd { get; }
 
-    public SubCommandAttribute(string cmdName, string parentCmdName) : base(cmdName) {
-        ParentCmd = parentCmdName;
-    }
+    public SubCommandAttribute(string cmdName, string parentCmdName) : base(cmdName)
+        => ParentCmd = parentCmdName;
 
     public void Deconstruct(
         out string cmdName,

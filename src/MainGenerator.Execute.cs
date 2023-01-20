@@ -1,116 +1,69 @@
 using System.Diagnostics;
 
+using Recline.Generator.Model;
+
 namespace Recline.Generator;
 
 public partial class MainGenerator : IIncrementalGenerator
 {
-    static void GenerateFromData(ImmutableArray<(CLIData? data, ImmutableArray<Diagnostic> diags)> tuples, int columnLength, SourceProductionContext spc) {
-        spc.ReportDiagnostic(
-            Diagnostic.Create(
-                Diagnostics.TimingInfo,
-                Location.None,
-                "PostInit", postInitMS
-            )
-        );
-
-        spc.ReportDiagnostic(
-            Diagnostic.Create(
-                Diagnostics.TimingInfo,
-                Location.None,
-                "Transform", analysisMS
-            )
-        );
-
+    static void GenerateFromData(Group? rootGroup, ImmutableArray<string> usings, ReclineConfig config, LanguageVersion langVersion, SourceProductionContext spc) {
         var watch = new Stopwatch();
         watch.Start();
 
-        bool hasError = false;
-
-        foreach (var (data, diags) in tuples) {
-            hasError |= data is null;
-
-            foreach (var diag in diags) {
-                spc.ReportDiagnostic(diag);
-
-                if (diag.Severity == DiagnosticSeverity.Error)
-                    hasError = true;
-            }
-        }
-
-        if (hasError)
+        if (rootGroup is null)
             return;
 
-        if (tuples.Length < 1)
-            return;
+        SanitizeConfig(ref config, spc);
 
-        if (tuples.Length > 1) {
-            spc.ReportDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.TooManyCLIClasses,
-                    Location.None,
-                    tuples[0].data!.FullClassName, tuples[1].data!.FullClassName
-                )
-            );
+        Resources.MAX_LINE_LENGTH = config.ColumnLength!.Value;
 
-            return;
-        }
-
-        if (columnLength <= 0) {
-            spc.ReportDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.InvalidColumnLength,
-                    Location.None
-                )
-            );
-
-            columnLength = 80;
-        }
-
-        Resources.MAX_LINE_LENGTH = columnLength;
-        GenerateFromDataCore(tuples[0].data!, spc);
-
-        watch.Stop();
-        codegenMS = watch.Elapsed.TotalMilliseconds;
-
-        spc.ReportDiagnostic(
-            Diagnostic.Create(
-                Diagnostics.TimingInfo,
-                Location.None,
-                "Generation", codegenMS
-            )
-        );
-    }
-
-    static void GenerateFromDataCore(CLIData data, SourceProductionContext context) {
-        var (appName, fullClassName, usings, cmdAndArgs, opts, appDesc, cmds, helpExitCode) = data!;
-
-        var descBuilder = new CmdDescBuilder(
-            appName,
-            fullClassName,
-            usings,
-            cmdAndArgs,
-            opts,
-            appDesc
-        ) {
-            HelpExitCode = helpExitCode
-        };
-
-        foreach (var cmd in cmds)
-            descBuilder.AddCmd(cmd, cmd.Options, cmd.Args);
-
-        var descDynamicText = descBuilder.ToString();
-
-        context.AddSource(
+        spc.AddSource(
             Resources.GenNamespace + "_Program.g.cs",
             SourceText.From(Resources.ProgClassStr, Encoding.UTF8)
         );
 
-        context.AddSource(
+        CodeGenerator.UseLanguageVersion(langVersion);
+
+        spc.AddSource(
             Resources.GenNamespace + "_CmdDescDynamic.g.cs",
-            SourceText.From(descDynamicText, Encoding.UTF8)
+            SourceText.From(GenerateUsingsHeaderCode(usings) + CodeGenerator.ToSourceCode(rootGroup), Encoding.UTF8)
         );
 
+        watch.Stop();
+        codegenMS = watch.Elapsed.TotalMilliseconds;
+
         SymbolInfoCache.FullReset();
-        CommonTypes.Clear();
+        CommonTypes.Reset();
     }
+
+    static void SanitizeConfig(ref ReclineConfig config, SourceProductionContext spc) {
+        if (config.ColumnLength is null or <= 0) {
+            spc.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.InvalidValueForProjectProperty,
+                    Location.None,
+                    "Recline_ColumnLength"
+                )
+            );
+
+            config = config with { ColumnLength = ReclineConfig.DEFAULT_COLUMN_LENGTH };
+        }
+
+        if (config.HelpExitCode is null) {
+            spc.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.InvalidValueForProjectProperty,
+                    Location.None,
+                    "Recline_HelpExitCode"
+                )
+            );
+
+            config = config with { HelpExitCode = ReclineConfig.DEFAULT_HELP_EXIT_CODE };
+        }
+    }
+
+    static string GenerateUsingsHeaderCode(ImmutableArray<string> usings)
+        => usings.IsDefaultOrEmpty
+         ? ""
+         : "using " + String.Join(";\nusing ", usings) + ";\n\n";
 }
