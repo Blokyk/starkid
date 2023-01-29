@@ -127,7 +127,7 @@ internal static partial class CodeGenerator
                 sb.Append("> ");
             }
 
-            sb.Remove(sb.Length - 1, 1);
+            sb.Length--; // remove the last space
         }
 
         static void AddShortOptionList(StringBuilder sb, IEnumerable<Option> opts, int count) {
@@ -163,7 +163,7 @@ internal static partial class CodeGenerator
                 sb.Append("] ");
             }
 
-            sb.Remove(sb.Length - 1, 1);
+            sb.Length--; // remove the last space
         }
 
         static int GetDisplayLength(IEnumerable<Option> opts) {
