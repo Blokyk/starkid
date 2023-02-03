@@ -19,7 +19,7 @@ internal static class Diagnostics {
         = new(
             "CLI001",
             "This assembly defines multiple root groups, which is illegal",
-            "Both classes '{0}' and '{1}' declare root groups, because they are not nested in a class marked with [CommandGroup], which is illegal",
+            "Classes '{0}' and '{1}' both declare a root group, because neither of them are nested in a class marked with [CommandGroup], which is illegal",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
