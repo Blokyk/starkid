@@ -75,7 +75,7 @@ namespace Recline;
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    typeof(CommandGroupAttribute).FullName,
+                    typeof(CommandGroupAttribute).FullName!,
                     (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
                     (ctx, _) => Utils.GetUsings((ctx.TargetNode as ClassDeclarationSyntax)!)
                 )
@@ -87,7 +87,7 @@ namespace Recline;
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    typeof(CommandGroupAttribute).FullName,
+                    typeof(CommandGroupAttribute).FullName!,
                     (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
                     (ctx, _) => {
                         var wrapper = new GeneratorDataWrapper<Group?>();

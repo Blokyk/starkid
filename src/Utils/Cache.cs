@@ -1,6 +1,6 @@
 namespace Recline.Generator;
 
-public readonly struct Cache<TKey, TValue>
+public readonly struct Cache<TKey, TValue> where TKey : notnull
 {
     private readonly Dictionary<TKey, TValue> _map;
     private readonly Func<TKey, TValue> _getter;
