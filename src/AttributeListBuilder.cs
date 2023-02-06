@@ -231,6 +231,17 @@ internal class AttributeListBuilder
             return false;
         }
 
+        if (longName == "help" || alias == 'h' ) {
+            _addDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.OptCantBeNamedHelp,
+                   location
+                )
+            );
+
+            return false;
+        }
+
         return ValidateName(longName, location, isForCommands: false);
     }
 }

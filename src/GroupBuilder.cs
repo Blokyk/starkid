@@ -27,7 +27,7 @@ internal sealed class GroupBuilder
 
         var groupBuilder = new GroupBuilder(attrListBuilder, model, addDiagnostic);
 
-        if (!IsValidGroupClass(classSymbol))
+        if (!groupBuilder.IsValidGroupClass(classSymbol))
             return false;
 
         if (!attrListBuilder.TryGetAttributeList(classSymbol, out var attrList))
@@ -64,9 +64,6 @@ internal sealed class GroupBuilder
                     if (!groupBuilder.TryCreateOptionFrom(member, optAttrInfo, out var option))
                         return false;
 
-                    if (!groupBuilder.IsOptionNameValid(option, member))
-                        return false;
-
                     TryBindChildDocInfo(ref option, docInfo);
 
                     group.AddOption(option);
@@ -81,7 +78,7 @@ internal sealed class GroupBuilder
                     if (!groupBuilder.TryCreateCommandFrom((IMethodSymbol)member, cmdAttInfo, group, out var cmd))
                         return false;
 
-                    if (!groupBuilder.IsCommandNameValid(cmd, member))
+                    if (!groupBuilder.TryRegisterCommandName(cmd, member))
                         return false;
 
                     // if the cmd's "real name" is '#'
@@ -191,9 +188,6 @@ internal sealed class GroupBuilder
 
             if (paramAttrList.Kind == CLIMemberKind.Option) {
                 if (!TryCreateOptionFrom(param, paramAttrList, out var opt))
-                    return false;
-
-                if (!IsOptionNameValid(opt, param))
                     return false;
 
                 TryBindChildDocInfo(ref opt, docInfo);
@@ -381,44 +375,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool IsOptionNameValid(Option option, ISymbol _) {
-        // fixme!: check that option name is all ascii letters (+ underscore/dash)
-
-        if (String.IsNullOrWhiteSpace(option.Name)) {
-            _addDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.EmptyOptLongName,
-                    option.GetLocation()
-                )
-            );
-
-            return false;
-        }
-
-        if (Char.IsWhiteSpace(option.Alias)) {
-            _addDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.EmptyOptAlias,
-                    option.GetLocation()
-                )
-            );
-        }
-
-        if (option is { Name: "help" } or { Alias: 'h'}) {
-            _addDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.OptCantBeNamedHelp,
-                    option.GetLocation()
-                )
-            );
-
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool IsCommandNameValid(Command cmd, ISymbol _) {
+    private bool TryRegisterCommandName(Command cmd, ISymbol _) {
         if (!_cmdNames.Add(cmd.Name)) {
             _addDiagnostic(
                 Diagnostic.Create(
@@ -434,15 +391,19 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    static bool IsValidGroupClass(INamedTypeSymbol classSymbol) {
+    bool IsValidGroupClass(INamedTypeSymbol classSymbol) {
         if (!classSymbol.IsStatic)
             return false;
 
-        if (classSymbol.IsGenericType)
-            return false;
-
-        if (classSymbol.DeclaredAccessibility < Accessibility.Internal)
-            return false;
+        if (classSymbol.IsGenericType) {
+            _addDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.GroupClassMustBeStatic,
+                    classSymbol.GetDefaultLocation(),
+                    classSymbol.GetErrorName()
+                )
+            );
+        }
 
         return true;
     }

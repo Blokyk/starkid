@@ -105,11 +105,11 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor CmdMustBeStatic
+    public static readonly DiagnosticDescriptor GroupClassMustBeStatic
         = new(
             "CLI100",
-            "Method '{0}' must be static to be a command",
-            "Methods marked with [Command] must be static",
+            "Class '{0}' must be static to be a [CommandGroup]",
+            "Command groups must be static",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
