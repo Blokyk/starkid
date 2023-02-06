@@ -73,6 +73,7 @@ public sealed class HelpTextBuilder
 
     public void WriteTo(StringBuilder sb) {
         if (_args.Count > 0) {
+            sb.AppendLine();
             sb.AppendLine("Arguments:");
             AddAllDescriptions(sb, _args);
         }

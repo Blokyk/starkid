@@ -80,13 +80,13 @@ internal static partial class CodeGenerator
             sb.AppendLine("Usage:");
             AddShortLineHelp(sb, groupOrCmd);
 
+            sb.AppendLine();
+
             if (groupOrCmd is not Group group)
                 return;
 
             if (group.SubGroups.Count + group.Commands.Count > 5)
                 return;
-
-            sb.AppendLine();
 
             foreach (var subGroup in group.SubGroups) {
                 AddShortLineHelp(sb, subGroup);
@@ -220,7 +220,7 @@ internal static partial class CodeGenerator
 
             AppendAllLines(sb, notes, padding: "");
 
-            if (notes.Last() != '\n')
+            if (notes[^1] != '\n')
                 sb.AppendLine();
         }
 
