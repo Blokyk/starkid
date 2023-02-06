@@ -47,7 +47,7 @@ internal static partial class CodeGenerator
                 foreach (var sub in group.SubGroups) {
                     builder.AddSubcommandDescription(
                         sub.Name + " [cmds] [options]",
-                        sub.Description?.ShortDesc
+                        sub.Description?.ShortDesc ?? sub.Description?.Description
                     );
                 }
 
@@ -61,7 +61,7 @@ internal static partial class CodeGenerator
 
                     builder.AddSubcommandDescription(
                         subcmd.Name + argStr,
-                        subcmd.Description?.ShortDesc
+                        subcmd.Description?.ShortDesc ?? subcmd.Description?.Description
                     );
                 }
             }
