@@ -24,8 +24,7 @@ public static class FrenchRiseUp {
 
 }
 
-[CommandGroup("dotnet")]
-[Description("Execute a .NET application")]
+[CommandGroup("dotnet", ShortDesc = "Execute a .NET application")]
 public static partial class Dotnet {
     // [ParseWith(nameof(FrenchRiseUp.AsBool))]
     [Option("verbose", 'v')]
@@ -46,12 +45,14 @@ public static partial class Dotnet {
     internal static bool IntIsPositive(int? i)
         => i > 0;
 
+    /// <summary>
+    /// Build and run the current project
+    /// </summary>
     [Command("run")]
-    [Description("Build and run the current project")]
     public static int Run(
         string? project = null
     ) {
-        return (project is null ? 1 : -1) + Build.BuildProject(6, false, "Release", project);
+        return (project is null ? 1 : -1) + Build.BuildProject(false, "Release", project);
     }
 }
 
@@ -65,7 +66,7 @@ public static partial class Dotnet {
 
         [Command("project")]
         public static int BuildProject(
-            //[Option("verbose", 'v')] bool verbose = false,
+            [Option("very-verbose", 'V')] bool verbose = false,
             [Option("config", 'c')] string config = "Debug",
             string? project = null
         ) {

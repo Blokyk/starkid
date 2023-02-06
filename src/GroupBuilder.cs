@@ -510,7 +510,8 @@ internal sealed class GroupBuilder
             return defaultVal switch {
                 string s => '"' + s + '"',
                 char c => "'" + c + "'",
-                _ => defaultVal.ToString()
+                bool b => b ? "true" : "false",
+                _ => defaultVal.ToString() // fixme: this could break cause of culture
             };
         }
 

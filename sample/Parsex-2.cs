@@ -7,8 +7,10 @@ namespace SomeStuff;
 
 using System.IO;
 
+/// <summary>
+/// A parser/typechecker for lotus.
+/// </summary>
 [CommandGroup("parsex", DefaultCmdName = "silent")]
-[Description("A parser/typechecker for lotus")]
 public static partial class Parsex
 {
     [Option("verbose", 'v')]
@@ -20,13 +22,17 @@ public static partial class Parsex
     [Option("int", 'u')]
     public static bool @int;
 
+    /// <summary>
+    /// Ignore parsing/compilation errors before executing commands
+    /// </summary>
     [Option("force", shortName: 'f')]
-    [Description("Ignore parsing/compilation errors before executing commands")]
     public static bool forceOption = false;
 
     private static FileInfo? _outputFile;
+    /// <summary>
+    /// The file to output stuff to, instead of stdin
+    /// </summary>
     [Option("output", ArgName = "file")]
-    [Description("The file to output stuff to, instead of stdin")]
     public static FileInfo OutputFile {
         get => _outputFile ?? new FileInfo("null");
         set {
@@ -39,8 +45,7 @@ public static partial class Parsex
 
     public static (int start, int end) rangeInfo;
 
-    [Command("silent")]
-    [Description("Don't print anything to stdout (errors go to stderr)")]
+    [Command("silent", ShortDesc = "Don't print anything to stdout (errors go to stderr)")]
     public static void Silent() {
         if (forceOption)
             Console.WriteLine("Silently forcing ??");
@@ -50,8 +55,9 @@ public static partial class Parsex
         Dump();
     }
 
+    /// <param name="files">The list of files to count</param>
     [Command("count")]
-    public static int CheckAll(string anotherOne, [Description("The list of files to count")] params string[] files) {
+    public static int CheckAll(string anotherOne, params string[] files) {
         foreach (var file in files) {
             Console.WriteLine(file);
         }
@@ -59,18 +65,22 @@ public static partial class Parsex
         return files.Length;
     }
 
+    /// <param name="filename">Some filename idk</param>
     [Command("print")]
     public static int Print(
-        [Description("some filename idk")] FileInfo filename
+        FileInfo filename
     ) {
         Console.WriteLine("File " + filename.FullName + " does" + (filename.Exists ? "n't" : "") + " exist");
         return filename.Exists ? 0 : 1;
     }
 
-    [Description("Print the hash of the AST graph")]
+    /// <summary>
+    /// Print the hash of the AST graph
+    /// </summary>
+    /// <param name="file">fileDesc</param>
     [Command("hash")]
     public static int Hash(
-        [Description("fileDesc")] FileInfo? file = null
+        FileInfo? file = null
     ) {
         if (file is null) {
             Console.WriteLine("How original...");
@@ -94,13 +104,37 @@ public static partial class Parsex
 public static partial class Parsex {
     [CommandGroup("graph", DefaultCmdName = "syntax")]
     public static class Graph {
+        /// <summary>
+        /// Color expressions based on whether they are definitely constant or not.
+        /// </summary>
+        [Option("const")]
+        public static bool constOption;
+
         [Command("syntax")]
         public static int GraphSyntax()
-            => constOption ? 0xf : 'g' % 0xf;
+            => constOption ? 0xbeef : 0xdead;
+
+        public static (int, int) ParseRange(string s) {
+            var parts = s.Split("..", 2);
+
+            if (parts.Length != 2)
+                throw new FormatException("Range must be of the format 'num..num'");
+
+            int start = 0;
+            int end = 0;
+
+            if (parts[0].Length != 0)
+                start = Int32.Parse(parts[0]);
+
+            if (parts[1].Length != 0)
+                end = Int32.Parse(parts[1]);
+
+            return (start, end);
+        }
 
         [Command("const")]
         public static int GraphConst(
-            [Option("range", 'r')] bool range
+            [Option("range", 'r')] [ParseWith(nameof(ParseRange))] (int start, int end) range
         ) {
             Console.WriteLine("range = " + range);
             Console.WriteLine("Oh getting fancy tonight");
