@@ -183,14 +183,15 @@ public class ParserFinder
         if (sourceType.SpecialType == SpecialType.System_String)
             return new ParserInfo.Identity(CommonTypes.STRMinInfo);
 
-        if (_implicitConversionsCache.GetValue(sourceType, CommonTypes.STR))
-            return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
-
         if (sourceType is not INamedTypeSymbol type)
             return ParserInfo.Error;
 
+        // if this is a version of nullable
         if (SymbolUtils.Equals(type.ConstructedFrom, CommonTypes.NULLABLE))
             return FindParserForType(type.TypeArguments[0]);
+
+        if (_implicitConversionsCache.GetValue(sourceType, CommonTypes.STR))
+            return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
 
         /*
         * This is way too strict. In reality, you could have type like this :
