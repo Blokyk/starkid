@@ -41,12 +41,12 @@ internal sealed class GroupBuilder
         var (name, defaultCmdName, shortDesc) = attrList.CommandGroup;
         var minClassSymbol = MinimalTypeInfo.FromSymbol(classSymbol);
 
-        var parentClass = classSymbol.ContainingType;
+        var parentSymbol = minClassSymbol.ContainingType;
 
         group = new(
             name,
             minClassSymbol.FullName,
-            parentClass is null ? null : MinimalTypeInfo.FromSymbol(parentClass).FullName,
+            parentSymbol?.FullName,
             minClassSymbol
         ) {
             Description = DescriptionInfo.From(shortDesc, docInfo)

@@ -35,13 +35,18 @@ public class ValidatorFinder
             if (errorInfo.Diagnostic is not null) {
                 addDiagnostic(errorInfo.Diagnostic);
             } else {
-                addDiagnostic(
-                    Diagnostic.Create(
-                        Diagnostics.CouldntFindValidator,
-                        attr.ValidatorNameSyntaxRef.GetLocation(),
-                        attr.ValidatorName
-                    )
-                );
+                errorInfo = errorInfo with {
+                    Diagnostic =
+                        Diagnostic.Create(
+                            Diagnostics.CouldntFindValidator,
+                            attr.ValidatorNameSyntaxRef.GetLocation(),
+                            attr.ValidatorName
+                        )
+                };
+
+                validator = errorInfo;
+
+                addDiagnostic(errorInfo.Diagnostic);
             }
         }
 

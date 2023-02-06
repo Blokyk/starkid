@@ -156,19 +156,21 @@ public class ParserFinder
     public bool TryFindParserForType(ITypeSymbol sourceType, Location queryLocation, out ParserInfo parser) {
         parser = FindParserForType(sourceType);
 
-        if (parser is ParserInfo.Invalid { Diagnostic: null } invalidParser) {
-            invalidParser = invalidParser with {
-                Diagnostic =
-                    Diagnostic.Create(
-                        Diagnostics.CouldntFindAutoParser,
-                        queryLocation,
-                        sourceType.GetErrorName()
-                    )
-            };
+        if (parser is ParserInfo.Invalid invalidParser) {
+            if (invalidParser.Diagnostic is null) {
+                invalidParser = invalidParser with {
+                    Diagnostic =
+                        Diagnostic.Create(
+                            Diagnostics.CouldntFindAutoParser,
+                            queryLocation,
+                            sourceType.GetErrorName()
+                        )
+                };
 
-            addDiagnostic(invalidParser.Diagnostic!);
+                parser = invalidParser;
+            }
 
-            parser = invalidParser;
+            addDiagnostic(invalidParser.Diagnostic);
         }
 
         return parser is not ParserInfo.Invalid;

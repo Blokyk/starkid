@@ -9,7 +9,7 @@ namespace Recline.Generator;
 public partial class MainGenerator : IIncrementalGenerator
 {
     private const string staticFolderPath = "/home/blokyk/csharp/recline/src/Static/";
-    private static readonly string[] _staticFilenames = new string[] {};
+    private static readonly string[] _staticFilenames = Array.Empty<string>();
 
     private static readonly string[] _attributeNames = new[] {
         nameof(CommandAttribute),
@@ -187,7 +187,7 @@ namespace Recline;
         // collect the names of the each group's class
         foreach (var group in groups) {
             if (group is null)
-                continue;
+                return null;
 
             // if we have duplicate class names, it means an attribute
             // was repeated multiple times on the same class. That is pretty
