@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace Recline.Generator.Model;
 
+[System.Diagnostics.DebuggerDisplay("{ID,nq}")]
 public abstract record InvokableBase(string Name) : IEquatable<InvokableBase> {
     public DescriptionInfo? Description { get; set; }
     public abstract MinimalLocation Location { get; }
@@ -54,4 +55,6 @@ public abstract record InvokableBase(string Name) : IEquatable<InvokableBase> {
 
     public virtual bool Equals(InvokableBase? other)
         => (object)this == other || (other is not null && other.GetHashCode() == GetHashCode());
+
+    public override string ToString() => ID;
 }
