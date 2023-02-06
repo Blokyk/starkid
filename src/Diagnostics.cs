@@ -286,26 +286,6 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor DescCantBeNull
-        = new(
-            "CLI300",
-            "Description for '{0}' can't be null",
-            "Descriptions can't be null",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor OnlyDescAttr
-        = new(
-            "CLI301",
-            "Useless [Description] attribute",
-            "The [Description] attribute is only useful on commands, options, arguments or group classes",
-            "Recline.Analysis",
-            DiagnosticSeverity.Warning,
-            true
-        );
-
     public static readonly DiagnosticDescriptor CouldntFindAutoParser
         = new(
             "CLI400",

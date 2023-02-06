@@ -36,7 +36,9 @@ internal sealed class GroupBuilder
         if (attrList.CommandGroup is null)
             return false;
 
-        var (name, defaultCmdName) = attrList.CommandGroup;
+        var docInfo = GetDocInfo(classSymbol);
+
+        var (name, defaultCmdName, shortDesc) = attrList.CommandGroup;
         var minClassSymbol = MinimalTypeInfo.FromSymbol(classSymbol);
 
         var parentClass = classSymbol.ContainingType;
@@ -46,7 +48,9 @@ internal sealed class GroupBuilder
             minClassSymbol.FullName,
             parentClass is null ? null : MinimalTypeInfo.FromSymbol(parentClass).FullName,
             minClassSymbol
-        );
+        ) {
+            Description = DescriptionInfo.From(shortDesc, docInfo)
+        };
 
         foreach (var member in classSymbol.GetMembers()) {
             switch (member.Kind) {
@@ -62,6 +66,8 @@ internal sealed class GroupBuilder
 
                     if (!groupBuilder.IsOptionNameValid(option, member))
                         return false;
+
+                    TryBindChildDocInfo(ref option, docInfo);
 
                     group.AddOption(option);
                     break;
@@ -133,10 +139,15 @@ internal sealed class GroupBuilder
             return false;
         }
 
+        if (attrList.Command is null)
+            return false;
+
+        var docInfo = GetDocInfo(method);
+
         bool hasExitCode = !method.ReturnsVoid;
 
-        string cmdName = attrList.Command!.CmdName;
-        string? desc = attrList.Description?.Description;
+        string cmdName = attrList.Command.CmdName;
+        string? desc = attrList.Command.ShortDesc;
 
         bool isValid = true;
 
@@ -169,7 +180,7 @@ internal sealed class GroupBuilder
             containingGroup,
             MinimalMethodInfo.FromSymbol(method)
         ) {
-            Description = desc
+            Description = DescriptionInfo.From(desc, docInfo)
         };
 
         foreach (var param in method.Parameters) {
@@ -183,10 +194,14 @@ internal sealed class GroupBuilder
                 if (!IsOptionNameValid(opt, param))
                     return false;
 
+                TryBindChildDocInfo(ref opt, docInfo);
+
                 cmd.AddOption(opt);
             } else {
                 if (!TryGetArg(param, paramAttrList, out var arg))
                     return false;
+
+                TryBindChildDocInfo(ref arg, docInfo);
 
                 cmd.AddArg(arg);
             }
@@ -208,8 +223,8 @@ internal sealed class GroupBuilder
 
         string longName = attrInfo.Option!.LongName;
         char shortName = attrInfo.Option!.Alias;
-        string? descStr = attrInfo.Description?.Description;
         string? argName = attrInfo.Option!.ArgName;
+        var docInfo = GetDocInfo(symbol);
 
         bool isValid = IsSymbolValidForOption(symbol, _addDiagnostic);
 
@@ -254,7 +269,7 @@ internal sealed class GroupBuilder
                 defaultValStr
             ) {
                 Validator = validator,
-                Description = descStr
+                Description = docInfo?.Summary
             };
 
             return true;
@@ -270,7 +285,7 @@ internal sealed class GroupBuilder
             defaultValStr
         ) {
             Validator = validator,
-            Description = descStr
+            Description = docInfo?.Summary
         };
 
         return true;
@@ -280,7 +295,6 @@ internal sealed class GroupBuilder
         arg = null;
 
         string? defaultVal = null;
-        string? argDesc = attrList.Description?.Description;
 
         foreach (var synRef in param.DeclaringSyntaxReferences) {
             if (synRef.GetSyntax() is not ParameterSyntax paramDec)
@@ -360,7 +374,6 @@ internal sealed class GroupBuilder
             defaultVal
         ) {
             Validator = validator,
-            Description = argDesc
         };
 
         return true;
@@ -502,5 +515,22 @@ internal sealed class GroupBuilder
         }
 
         return null;
+    }
+
+    static DocumentationInfo? GetDocInfo(ISymbol symbol) {
+        var xml = symbol.GetDocumentationCommentXml(preferredCulture: System.Globalization.CultureInfo.InvariantCulture, expandIncludes: true);
+        return xml is null
+            ? null
+            : DocumentationParser.ParseDocumentationInfoFrom(xml);
+    }
+
+    static void TryBindChildDocInfo(ref Option option, DocumentationInfo? docInfo) {
+        if (docInfo is not null && docInfo.ParamSummaries.TryGetValue(option.BackingSymbol.Name, out var paramDesc))
+            option.Description = paramDesc;
+    }
+
+    static void TryBindChildDocInfo(ref Argument arg, DocumentationInfo? docInfo) {
+        if (docInfo is not null && docInfo.ParamSummaries.TryGetValue(arg.BackingSymbol.Name, out var paramDesc))
+            arg.Description = paramDesc;
     }
 }

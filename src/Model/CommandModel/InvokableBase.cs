@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 namespace Recline.Generator.Model;
 
 public abstract record InvokableBase(string Name) : IEquatable<InvokableBase> {
-    public string? Description { get; set; }
+    public DescriptionInfo? Description { get; set; }
     public abstract MinimalLocation Location { get; }
 
     protected string? _id;

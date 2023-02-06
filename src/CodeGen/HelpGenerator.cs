@@ -19,8 +19,6 @@ internal static partial class CodeGenerator
 
             // fixme: if DefaultCommand is hidden, then add its opts+args in usage and in the help text
 
-            sb.AppendLine();
-
             var builder = new HelpTextBuilder(padSize, MaxLineLength);
 
             if (groupOrCmd is Command cmd) {
@@ -49,7 +47,7 @@ internal static partial class CodeGenerator
                 foreach (var sub in group.SubGroups) {
                     builder.AddSubcommandDescription(
                         sub.Name + " [cmds] [options]",
-                        sub.Description
+                        sub.Description?.ShortDesc
                     );
                 }
 
@@ -63,12 +61,19 @@ internal static partial class CodeGenerator
 
                     builder.AddSubcommandDescription(
                         subcmd.Name + argStr,
-                        subcmd.Description
+                        subcmd.Description?.ShortDesc
                     );
                 }
             }
 
             builder.WriteTo(sb);
+
+            // we *definitely* wrote something to sb at this point,
+            // so no need to check the length
+            if (sb[sb.Length - 1] == '\n')
+                sb.Length--;
+
+            AddNotes(sb, groupOrCmd);
         }
 
         static void AddUsage(StringBuilder sb, InvokableBase groupOrCmd) {
@@ -192,35 +197,58 @@ internal static partial class CodeGenerator
         }
 
         static void AddDescription(StringBuilder sb, InvokableBase groupOrCmd) {
-            var desc = groupOrCmd.Description;
+            var desc = groupOrCmd.Description?.Description ?? groupOrCmd.Description?.ShortDesc;
 
             if (desc is null)
                 return;
 
             // not AppendLine cause that's handled in the loop
             sb.Append("Description:");
+            AppendAllLines(sb, desc, padding);
+            sb.AppendLine();
+            sb.AppendLine();
+        }
 
-            foreach (var line in desc.Split('\n')) {
+        static void AddNotes(StringBuilder sb, InvokableBase groupOrCmd) {
+            var notes = groupOrCmd.Description?.Remarks!;
+
+            if (String.IsNullOrEmpty(notes))
+                return;
+
+            if (notes[0] != '\n')
+                sb.AppendLine();
+
+            AppendAllLines(sb, notes, padding: "");
+
+            if (notes.Last() != '\n')
+                sb.AppendLine();
+        }
+
+        static void AppendAllLines(StringBuilder sb, string s, string padding) {
+            var padSize = padding.Length;
+            var maxPaddedLineLength = MaxLineLength - padSize;
+            foreach (var line in s.Split('\n')) {
                 sb
                     .AppendLine()
                     .Append(padding);
 
-                if (line.Length < MaxLineLength - padSize) {
+                if (line.Length < maxPaddedLineLength) {
                     sb.Append(line);
                     continue;
                 }
 
-                int charsLeft = MaxLineLength - padSize;
+                int charsLeft = maxPaddedLineLength;
 
                 foreach (var word in line.Split(' ')) {
                     if (word.Length > charsLeft) {
                         sb
                             .AppendLine()
                             .Append(padding);
-                        charsLeft = MaxLineLength - padSize;
+                        charsLeft = maxPaddedLineLength;
                     }
 
-                    sb.Append(word);
+                    sb.Append(word).Append(' ');
+                    charsLeft -= word.Length + 1;
                 }
             }
         }

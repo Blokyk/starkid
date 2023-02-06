@@ -5,20 +5,20 @@ namespace Recline.Generator;
 
 public sealed class HelpTextBuilder
 {
-    private readonly struct DescriptionInfo {
-        public static readonly DescriptionInfo Empty = new();
+    private readonly struct TextInfo {
+        public static readonly TextInfo Empty = new();
 
         public readonly string text;
         public readonly string[] lines;
         public readonly int maxLineLength;
         public bool HasNewlines => lines.Length > 1;
 
-        public DescriptionInfo() {
+        public TextInfo() {
             text = "";
             lines = Array.Empty<string>();
         }
 
-        public DescriptionInfo(string s) {
+        public TextInfo(string s) {
             text = s;
             lines = text.Split('\n');
             maxLineLength = 0;
@@ -36,9 +36,9 @@ public sealed class HelpTextBuilder
     private readonly int _maxTotalSize;
     private int _nameMaxSize = 0;
 
-    private readonly Dictionary<string, DescriptionInfo> _args = new();
-    private readonly Dictionary<string, DescriptionInfo> _opts = new();
-    private readonly Dictionary<string, DescriptionInfo> _subs = new();
+    private readonly Dictionary<string, TextInfo> _args = new();
+    private readonly Dictionary<string, TextInfo> _opts = new();
+    private readonly Dictionary<string, TextInfo> _subs = new();
 
     public HelpTextBuilder(int spacing, int maxTotalSize) {
         _padSize = spacing;
@@ -46,11 +46,11 @@ public sealed class HelpTextBuilder
         _maxTotalSize = maxTotalSize;
     }
 
-    private void AddDescription(Dictionary<string, DescriptionInfo> dict, string name, string? desc) {
+    private void AddDescription(Dictionary<string, TextInfo> dict, string name, string? desc) {
         var info
             = desc is not null
-            ? new DescriptionInfo(desc)
-            : DescriptionInfo.Empty;
+            ? new TextInfo(desc)
+            : TextInfo.Empty;
         dict.Add(name, info);
 
         if (name.Length >= _nameMaxSize && name.Length < 30) {
@@ -90,7 +90,7 @@ public sealed class HelpTextBuilder
         }
     }
 
-    private void AddAllDescriptions(StringBuilder sb, Dictionary<string, DescriptionInfo> descriptions) {
+    private void AddAllDescriptions(StringBuilder sb, Dictionary<string, TextInfo> descriptions) {
         int nameColumnSize = _nameMaxSize + (2 * _padSize);
         //                                  ^^^^^^^^^^^^^^
         //                         there's padding before AND after

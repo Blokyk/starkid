@@ -5,7 +5,6 @@ internal static class Resources {
 
     public const string CmdGroupAttribName = nameof(Recline.CommandGroupAttribute);
     public const string CmdAttribName = nameof(Recline.CommandAttribute);
-    public const string DescAttribName = nameof(Recline.DescriptionAttribute);
     public const string OptAttribName = nameof(Recline.OptionAttribute);
     public const string ParseWithAttribName = nameof(Recline.ParseWithAttribute);
     public const string ValidateWithAttribName = nameof(Recline.ValidateWithAttribute);

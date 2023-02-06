@@ -9,7 +9,6 @@ internal enum CLIMemberKind {
     Option,
     Command,
     Invalid,
-    DescriptionOnly,
 }
 
 internal class AttributeParser
@@ -33,24 +32,13 @@ internal class AttributeParser
     CLIMemberKind ValidateAttributeListAndGetKind(AttributeListInfo attrList, ISymbol symbol) {
         var kind = CategorizeAttributeList(attrList);
 
-        if (kind is CLIMemberKind.DescriptionOnly && symbol is not IParameterSymbol) {
-            _addDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.OnlyDescAttr,
-                    symbol.GetDefaultLocation()
-                )
-            );
-
-            return CLIMemberKind.DescriptionOnly;
-        }
-
         if (kind is not CLIMemberKind.Invalid)
             return kind;
 
         // past this point, we are trying to figure out why this wasn't valid
 
         // we don't care about group because it will never be with the other attributes for a valid symbol
-        var (isOnParam, _, cmd, _, opt, parseWith, validateWith) = attrList;
+        var (isOnParam, _, cmd, opt, parseWith, validateWith) = attrList;
 
         if (opt is null) {
             Debug.Assert(!isOnParam);
@@ -90,16 +78,15 @@ internal class AttributeParser
     }
 
     public static CLIMemberKind CategorizeAttributeList(AttributeListInfo attrList) {
-        var (isOnParam, group, cmd, desc, opt, parse, valid) = attrList;
+        var (isOnParam, group, cmd, opt, parse, valid) = attrList;
 
         return
-            (isOnParam,    group,      cmd,      opt,    parse,    valid,     desc) switch {
-            (    false,     null,     null,     null,     null,     null,     null) => CLIMemberKind.None,
-            (    false, not null,     null,     null,     null,     null,        _) => CLIMemberKind.Group,
-            (    false,     null, not null,     null,     null,     null,        _) => CLIMemberKind.Command,
-            (        _,     null,     null, not null,        _,        _,        _) => CLIMemberKind.Option,
-            (     true,     null,     null,     null,        _,        _,        _) => CLIMemberKind.Argument,
-            (    false,     null,     null,     null,     null,     null, not null) => CLIMemberKind.DescriptionOnly,
+            (isOnParam,    group,      cmd,      opt,    parse,    valid) switch {
+            (    false,     null,     null,     null,     null,     null) => CLIMemberKind.None,
+            (    false, not null,     null,     null,     null,     null) => CLIMemberKind.Group,
+            (    false,     null, not null,     null,     null,     null) => CLIMemberKind.Command,
+            (        _,     null,     null, not null,        _,        _) => CLIMemberKind.Option,
+            (     true,     null,     null,     null,        _,        _) => CLIMemberKind.Argument,
             _ => CLIMemberKind.Invalid,
         };
     }
@@ -118,7 +105,6 @@ internal class AttributeParser
 
         CommandGroupAttribute? group = null;
         CommandAttribute? cmd = null;
-        DescriptionAttribute? desc = null;
         OptionAttribute? opt = null;
         ParseWithAttribute? parseWith = null;
         ValidateWithAttribute? validateWith = null;
@@ -174,21 +160,6 @@ internal class AttributeParser
                     }
 
                     break;
-                case Resources.DescAttribName:
-                    if (!TryParseDescAttrib(attr, out desc))
-                        return error();
-
-                    if (String.IsNullOrWhiteSpace(desc.Description)) {
-                        _addDiagnostic(
-                            Diagnostic.Create(
-                                Diagnostics.DescCantBeNull,
-                                Utils.GetApplicationLocation(attr),
-                                symbol.GetErrorName()
-                            )
-                        );
-                    }
-
-                    break;
                 case Resources.OptAttribName:
                     if (!TryParseOptAttrib(attr, out opt))
                         return error();
@@ -229,7 +200,7 @@ internal class AttributeParser
             }
         }
 
-        attribList = new(symbol is IParameterSymbol, group, cmd, desc, opt, parseWith, validateWith);
+        attribList = new(symbol is IParameterSymbol, group, cmd, opt, parseWith, validateWith);
 
         return (isValid, attribList);
     }
@@ -266,20 +237,6 @@ internal class AttributeParser
         ) {
             ArgName = argName
         };
-
-        return true;
-    }
-
-    public bool TryParseDescAttrib(AttributeData attr, [NotNullWhen(true)] out DescriptionAttribute? descAttr) {
-        descAttr = null;
-
-        if (attr.ConstructorArguments.Length < 1)
-            return false;
-
-        if (attr.ConstructorArguments[0].Type?.SpecialType != SpecialType.System_String)
-            return false;
-
-        descAttr = new((string)attr.ConstructorArguments[0].Value!);
 
         return true;
     }
@@ -436,7 +393,4 @@ internal class AttributeParser
 
         return true;
     }
-
-    public bool TryGetDescription(AttributeData descAttrib, out string? desc)
-        => TryGetCtorArg<string?>(descAttrib, 0, SpecialType.System_String, out desc);
 }

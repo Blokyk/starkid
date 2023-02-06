@@ -13,7 +13,6 @@ public partial class MainGenerator : IIncrementalGenerator
 
     private static readonly string[] _attributeNames = new[] {
         nameof(CommandAttribute),
-        nameof(DescriptionAttribute),
         nameof(OptionAttribute),
         nameof(CommandGroupAttribute),
         nameof(ParseWithAttribute),

@@ -6,10 +6,15 @@ namespace Recline;
 public class CommandAttribute : System.Attribute
 {
     public string CmdName { get; }
+    public string? ShortDesc { get; set; }
 
     public CommandAttribute(string cmdName) => CmdName = cmdName;
 
     public void Deconstruct(
-        out string cmdName
-    ) => cmdName = CmdName;
+        out string cmdName,
+        out string? desc
+    ) {
+        cmdName = CmdName;
+        desc = ShortDesc;
+    }
 }
