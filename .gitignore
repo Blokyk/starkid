@@ -16,3 +16,5 @@ raw-sample/
 # Misc
 *.old
 omnisharp.json
+*.nettrace
+*.speedscope.json
