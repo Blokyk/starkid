@@ -70,7 +70,7 @@ internal static partial class CodeGenerator
 
             // we *definitely* wrote something to sb at this point,
             // so no need to check the length
-            if (sb[sb.Length - 1] == '\n')
+            if (sb[^1] == '\n')
                 sb.Length--;
 
             AddNotes(sb, groupOrCmd);
