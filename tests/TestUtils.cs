@@ -16,8 +16,11 @@ internal static class Utils
 
         var steps = results.TrackedSteps.Where(kv => kv.Key.StartsWith("recline_")).ToDictionary(kv => kv.Key, kv => kv.Value);
 
-        if (results.TrackedOutputSteps.Count == 1) {
-            steps.Add("recline_output", results.TrackedOutputSteps.LastOrDefault().Value);
+        if (results.TrackedOutputSteps.Any(s => s.Key == "ImplementationSourceOutput")) {
+            steps.Add(
+                "recline_output",
+                results.TrackedOutputSteps.Single(s => s.Key == "ImplementationSourceOutput").Value
+            );
         } else {
             Console.WriteLine("\x1b[2m-- no output --\x1b[0m");
         }
@@ -33,20 +36,20 @@ internal static class Utils
                 maxLength = stepName.Length - 8;
         }
 
-        var lineSeparator = new string('-', maxLength + 30);
+        var lineSeparator = new string('-', maxLength + 25);
         var spacing = new string(' ', maxLength + 4);
 
         foreach (var (stepName, step) in steps) {
             var name = stepName[8..];
-            var timeMS = step[0].ElapsedTime.TotalMilliseconds;
+            var runtime = step[0].ElapsedTime;
 
             Console.Write("\x1b[2m");
             Console.WriteLine(lineSeparator);
             Console.Write("\x1b[0m| ");
 
             Console.Write(name);
-            Console.Write(spacing.Substring(startIndex: name.Length));
-            Console.Write($"\x1b[2m|\x1b[0m    {timeMS:0000}ms \x1b[2m({timeMS:0000.000})\x1b[0m ");
+            Console.Write(spacing[name.Length..]);
+            Console.Write($"\x1b[2m|\x1b[0m    {runtime.TotalMilliseconds,4:#,##0}\x1b[2mms\x1b[0m {runtime.Microseconds,3:##0}\x1b[2mus\x1b[0m ");
 
             Console.WriteLine("\x1b[2m|\x1b[0m");
         }
