@@ -86,11 +86,8 @@ public sealed record MinimalMethodInfo(
         => Utils.CombineHashCodes(
             base.GetHashCode(),
             Utils.CombineHashCodes(
-                ReturnType.GetHashCode(),
-                Utils.CombineHashCodes(
-                    Utils.SequenceComparer<MinimalParameterInfo>.Instance.GetHashCode(Parameters),
-                    Utils.SequenceComparer<MinimalTypeInfo>.Instance.GetHashCode(TypeArguments)
-                )
+                Utils.SequenceComparer<MinimalParameterInfo>.Instance.GetHashCode(Parameters),
+                Utils.SequenceComparer<MinimalTypeInfo>.Instance.GetHashCode(TypeArguments)
             )
         );
 
@@ -100,7 +97,8 @@ public sealed record MinimalMethodInfo(
         && Parameters.AsSpan().SequenceEqual(other.Parameters.AsSpan())
         && TypeArguments.AsSpan().SequenceEqual(other.TypeArguments.AsSpan());
 
-    public bool ReturnsVoid => Type.Name == "Void";
+    public bool ReturnsVoid => ReturnType.Name == "Void";
+    public bool IsGeneric => TypeArguments.Length > 0;
 }
 
 public sealed record MinimalParameterInfo(

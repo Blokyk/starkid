@@ -175,6 +175,7 @@ public class ValidatorFinder
         if (SymbolUtils.Equals(method.ReturnType, CommonTypes.EXCEPTION))
             return new ValidatorInfo.Method.Exception(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
 
+        // nullability needed here too
         if (SymbolUtils.Equals(method.ReturnType, CommonTypes.STR))
             return new ValidatorInfo.Method.String(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
 

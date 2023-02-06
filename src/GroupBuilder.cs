@@ -113,7 +113,7 @@ internal sealed class GroupBuilder
             addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.CouldntFindDefaultCmd,
-                    classSymbol.GetDefaultLocation(),
+                    minClassSymbol.Location,
                     defaultCmdName
                 )
             );
@@ -144,18 +144,20 @@ internal sealed class GroupBuilder
 
         var docInfo = GetDocInfo(method);
 
-        bool hasExitCode = !method.ReturnsVoid;
+        var minMethodSymbol = MinimalMethodInfo.FromSymbol(method);
+
+        bool hasExitCode = !minMethodSymbol.ReturnsVoid;
 
         string cmdName = attrList.Command.CmdName;
         string? desc = attrList.Command.ShortDesc;
 
         bool isValid = true;
 
-        if (hasExitCode && !SymbolUtils.Equals(method.ReturnType, CommonTypes.INT32)) {
+        if (hasExitCode && minMethodSymbol.ReturnType != CommonTypes.INT32MinInfo) {
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.CmdMustBeVoidOrInt,
-                    method.GetDefaultLocation(),
+                    minMethodSymbol.Location,
                     method.GetErrorName(), method.ReturnType.GetNameWithNull()
                 )
             );
@@ -163,11 +165,11 @@ internal sealed class GroupBuilder
             isValid = false;
         }
 
-        if (method.IsGenericMethod) {
+        if (minMethodSymbol.IsGeneric) {
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.CmdCantBeGeneric,
-                    method.GetDefaultLocation(),
+                    minMethodSymbol.Location,
                     method.GetErrorName()
                 )
             );
@@ -178,7 +180,7 @@ internal sealed class GroupBuilder
         cmd = new Command(
             cmdName,
             containingGroup,
-            MinimalMethodInfo.FromSymbol(method)
+            minMethodSymbol
         ) {
             Description = DescriptionInfo.From(desc, docInfo)
         };
