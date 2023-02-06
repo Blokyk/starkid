@@ -7,30 +7,30 @@ internal sealed class GroupBuilder
     private readonly HashSet<string> _cmdNames = new();
 
     private readonly SemanticModel _model;
-    private readonly AttributeParser _attrParser;
+    private readonly AttributeListBuilder _attrListBuilder;
     private readonly ParserFinder _parserFinder;
     private readonly ValidatorFinder _validatorFinder = null!;
 
     private readonly Action<Diagnostic> _addDiagnostic;
 
     // todo: switch to completely static with a ResetCache method
-    private GroupBuilder(AttributeParser parser, SemanticModel model, Action<Diagnostic> addDiagnostic) {
-        _attrParser = parser;
+    private GroupBuilder(AttributeListBuilder attrListBuilder, SemanticModel model, Action<Diagnostic> addDiagnostic) {
+        _attrListBuilder = attrListBuilder;
         _model = model;
         _addDiagnostic = addDiagnostic;
         _parserFinder = new(_addDiagnostic, _model);
         _validatorFinder = new(_addDiagnostic, _model);
     }
 
-    public static bool TryCreateGroupFrom(INamedTypeSymbol classSymbol, AttributeParser parser, SemanticModel model, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out Group? group) {
+    public static bool TryCreateGroupFrom(INamedTypeSymbol classSymbol, AttributeListBuilder attrListBuilder, SemanticModel model, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out Group? group) {
         group = null;
 
-        var groupBuilder = new GroupBuilder(parser, model, addDiagnostic);
+        var groupBuilder = new GroupBuilder(attrListBuilder, model, addDiagnostic);
 
         if (!IsValidGroupClass(classSymbol))
             return false;
 
-        if (!parser.TryGetAttributeList(classSymbol, out var attrList))
+        if (!attrListBuilder.TryGetAttributeList(classSymbol, out var attrList))
             return false;
 
         if (attrList.CommandGroup is null)
@@ -56,7 +56,7 @@ internal sealed class GroupBuilder
             switch (member.Kind) {
                 case SymbolKind.Field:
                 case SymbolKind.Property:
-                    if (!groupBuilder._attrParser.TryGetAttributeList(member, out var optAttrInfo))
+                    if (!groupBuilder._attrListBuilder.TryGetAttributeList(member, out var optAttrInfo))
                         return false;
                     if (optAttrInfo.Kind != CLIMemberKind.Option)
                         continue;
@@ -73,7 +73,7 @@ internal sealed class GroupBuilder
                     break;
 
                 case SymbolKind.Method:
-                    if (!groupBuilder._attrParser.TryGetAttributeList(member, out var cmdAttInfo))
+                    if (!groupBuilder._attrListBuilder.TryGetAttributeList(member, out var cmdAttInfo))
                         return false;
                     if (cmdAttInfo.Kind != CLIMemberKind.Command)
                         continue;
@@ -184,7 +184,7 @@ internal sealed class GroupBuilder
         };
 
         foreach (var param in method.Parameters) {
-            if (!_attrParser.TryGetAttributeList(param, out var paramAttrList))
+            if (!_attrListBuilder.TryGetAttributeList(param, out var paramAttrList))
                 return false;
 
             if (paramAttrList.Kind == CLIMemberKind.Option) {
@@ -396,7 +396,7 @@ internal sealed class GroupBuilder
         if (Char.IsWhiteSpace(option.Alias)) {
             _addDiagnostic(
                 Diagnostic.Create(
-                    Diagnostics.EmptyOptShortName,
+                    Diagnostics.EmptyOptAlias,
                     option.GetLocation()
                 )
             );

@@ -161,7 +161,7 @@ namespace Recline;
         var model = ctx.SemanticModel;
         CommonTypes.Refresh(model.Compilation, force: false);
 
-        var attribParser = new AttributeParser(addDiagnostic);
+        var attrListBuilder = new AttributeListBuilder(addDiagnostic);
 
         static Group? bail() {
             CommonTypes.Reset();
@@ -172,7 +172,7 @@ namespace Recline;
         if (ctx.TargetSymbol is not INamedTypeSymbol classSymbol)
             return bail();
 
-        if (!GroupBuilder.TryCreateGroupFrom(classSymbol, attribParser, model, addDiagnostic, out var group))
+        if (!GroupBuilder.TryCreateGroupFrom(classSymbol, attrListBuilder, model, addDiagnostic, out var group))
             return bail();
 
         return group;

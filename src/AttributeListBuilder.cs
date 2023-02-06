@@ -1,0 +1,236 @@
+using System.Diagnostics;
+
+namespace Recline.Generator;
+
+internal enum CLIMemberKind {
+    None,
+    Argument,
+    Group,
+    Option,
+    Command,
+    Invalid
+}
+
+internal class AttributeListBuilder
+{
+    private readonly Action<Diagnostic> _addDiagnostic;
+    private readonly Cache<ISymbol, (bool, AttributeListInfo)> _attrListCache;
+    private readonly AttributeParser _parser;
+
+    public AttributeListBuilder(Action<Diagnostic> addDiagnostic) {
+        _addDiagnostic = addDiagnostic;
+
+        _attrListCache
+            = new(
+                SymbolEqualityComparer.Default,
+                TryGetAttributeList
+            );
+
+        _parser = new(addDiagnostic);
+    }
+
+    /// <summary>
+    /// Reports diagnostics for invalid member kinds
+    /// </summary>
+    CLIMemberKind ValidateAttributeListAndGetKind(AttributeListInfo attrList, ISymbol symbol) {
+        var kind = CategorizeAttributeList(attrList);
+
+        if (kind is not CLIMemberKind.Invalid)
+            return kind;
+
+        // past this point, we are trying to figure out why this wasn't valid
+
+        // we don't care about group because it will never be with the other attributes for a valid symbol
+        var (isOnParam, _, cmd, opt, parseWith, validateWith) = attrList;
+
+        if (opt is null) {
+            Debug.Assert(!isOnParam);
+
+            if (parseWith is not null) {
+                _addDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.ParseOnNonOptOrArg,
+                        symbol.GetDefaultLocation(),
+                        symbol.GetErrorName()
+                    )
+                );
+            }
+
+            if (validateWith is not null) {
+                _addDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.ValidateOnNonOptOrArg,
+                        symbol.GetDefaultLocation(),
+                        symbol.GetErrorName()
+                    )
+                );
+            }
+        } else { // if opt is not null
+            if (cmd is not null) {
+                _addDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.BothOptAndCmd,
+                        symbol.GetDefaultLocation(),
+                        symbol.GetErrorName()
+                    )
+                );
+            }
+        }
+
+        return CLIMemberKind.Invalid;
+    }
+
+    public static CLIMemberKind CategorizeAttributeList(AttributeListInfo attrList) {
+        var (isOnParam, group, cmd, opt, parse, valid) = attrList;
+
+        return
+            (isOnParam,    group,      cmd,      opt,    parse,    valid) switch {
+            (    false,     null,     null,     null,     null,     null) => CLIMemberKind.None,
+            (    false, not null,     null,     null,     null,     null) => CLIMemberKind.Group,
+            (    false,     null, not null,     null,     null,     null) => CLIMemberKind.Command,
+            (        _,     null,     null, not null,        _,        _) => CLIMemberKind.Option,
+            (     true,     null,     null,     null,        _,        _) => CLIMemberKind.Argument,
+            _ => CLIMemberKind.Invalid,
+        };
+    }
+
+    public bool TryGetAttributeList(ISymbol symbol, out AttributeListInfo attrList) {
+        (var isValid, attrList) = _attrListCache.GetValue(symbol);
+
+        ValidateAttributeListAndGetKind(attrList, symbol);
+
+        return isValid;
+    }
+
+    (bool, AttributeListInfo) TryGetAttributeList(ISymbol symbol) {
+        var attribList = new AttributeListInfo();
+        var attrs = symbol.GetAttributes();
+
+        CommandGroupAttribute? group = null;
+        CommandAttribute? cmd = null;
+        OptionAttribute? opt = null;
+        ParseWithAttribute? parseWith = null;
+        ValidateWithAttribute? validateWith = null;
+
+        bool isValid = true;
+
+        (bool, AttributeListInfo) error() => (false, attribList);
+
+        foreach (var attr in attrs) {
+            switch (attr.AttributeClass?.Name) {
+                case Resources.CmdGroupAttribName:
+                    if (!_parser.TryParseGroupAttrib(attr, out group))
+                        return error();
+
+                    isValid = ValidateName(
+                        group.GroupName,
+                        Utils.GetApplicationLocation(attr),
+                        isForCommands: true
+                    );
+
+                    break;
+                case Resources.CmdAttribName:
+                    if (!_parser.TryParseCmdAttrib(attr, out cmd))
+                        return error();
+
+                    isValid = ValidateName(
+                        cmd.CmdName,
+                        Utils.GetApplicationLocation(attr),
+                        isForCommands: true
+                    );
+
+                    break;
+                case Resources.OptAttribName:
+                    if (!_parser.TryParseOptAttrib(attr, out opt))
+                        return error();
+
+                    isValid = ValidateOptionName(
+                        opt.LongName,
+                        opt.Alias,
+                        Utils.GetApplicationLocation(attr)
+                    );
+
+                    break;
+                case Resources.ParseWithAttribName:
+                    if (!_parser.TryParseParseAttrib(attr, out parseWith))
+                        return error();
+                    break;
+                case Resources.ValidateWithAttribName:
+                    if (!_parser.TryParseValidateAttrib(attr, out validateWith))
+                        return error();
+                    break;
+                default:
+                    continue;
+            }
+        }
+
+        attribList = new(symbol is IParameterSymbol, group, cmd, opt, parseWith, validateWith);
+
+        return (isValid, attribList);
+    }
+
+    public bool ValidateName(string name, Location location, bool isForCommands) {
+        if (String.IsNullOrEmpty(name)) {
+            _addDiagnostic(
+                Diagnostic.Create(
+                    isForCommands ? Diagnostics.EmptyCmdName : Diagnostics.EmptyOptLongName,
+                    location
+                )
+            );
+
+            return false;
+        }
+
+        var nameIsValid
+            = name.All(
+                c => Utils.IsAsciiLetter(c)
+                  || Utils.IsAsciiDigit(c)
+                  || c == '-'
+                  || c == '_'
+            );
+
+        if (nameIsValid)
+            return true;
+
+        // if the only character is '#' (The Special Name(tm))
+        if (isForCommands && name.Length == 1 && name[0] == '#')
+            return true;
+
+        _addDiagnostic(
+            Diagnostic.Create(
+                isForCommands ? Diagnostics.InvalidCmdName : Diagnostics.InvalidOptLongName,
+                location,
+                name
+            )
+        );
+
+        return false;
+    }
+
+    public bool ValidateOptionName(string longName, char alias, Location location) {
+        if (alias != '\0' && !Utils.IsAsciiLetter(alias) && !Utils.IsAsciiDigit(alias)) {
+            _addDiagnostic(
+                Diagnostic.Create(
+                    Char.IsWhiteSpace(alias) ? Diagnostics.EmptyOptAlias : Diagnostics.InvalidOptAlias,
+                    location,
+                    alias
+                )
+            );
+
+            return false;
+        }
+
+        if (String.IsNullOrWhiteSpace(longName)) {
+            _addDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.EmptyOptLongName,
+                    location
+                )
+            );
+
+            return false;
+        }
+
+        return ValidateName(longName, location, isForCommands: false);
+    }
+}

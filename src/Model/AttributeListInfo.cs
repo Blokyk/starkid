@@ -16,5 +16,5 @@ internal record AttributeListInfo(
         && ValidateWith is null
         ;
 
-    internal CLIMemberKind Kind => AttributeParser.CategorizeAttributeList(this);
+    internal CLIMemberKind Kind => AttributeListBuilder.CategorizeAttributeList(this);
 }

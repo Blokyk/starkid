@@ -216,11 +216,21 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor EmptyOptShortName
+    public static readonly DiagnosticDescriptor EmptyOptAlias
         = new(
             "CLI200",
             "Whitespace characters can't be used for option's aliases",
             "Whitespace characters can't be used for option's aliases",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor InvalidOptAlias
+        = new(
+            "CLI200",
+            "'{0}' is not a valid option alias",
+            "Option aliases can only contain '-', '_', or ASCII letters/digits",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -231,6 +241,16 @@ internal static class Diagnostics {
             "CLI200",
             "Null/empty/whitespace-only option names are disallowed",
             "Option names cannot be null, empty or only contain whitespace",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor InvalidOptLongName
+        = new(
+            "CLI200",
+            "'{0}' is not a valid option name",
+            "Option names can only contain '-', '_', or ASCII letters/digits",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
