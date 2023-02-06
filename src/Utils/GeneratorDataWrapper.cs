@@ -31,4 +31,7 @@ internal struct GeneratorDataWrapper<T> : IEquatable<GeneratorDataWrapper<T>>
         => Data is null
          ? _diags.GetHashCode()
          : Utils.CombineHashCodes(Data.GetHashCode(), _diags.GetHashCode());
+
+    public override bool Equals(object? obj)
+        => obj is GeneratorDataWrapper<T> generatorDataWrapper && Equals(generatorDataWrapper);
 }
