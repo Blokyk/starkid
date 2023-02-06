@@ -243,6 +243,10 @@ internal static partial class {{ProgClassName}}
 
     [System.Diagnostics.StackTraceHidden]
     private static string GetFriendlyNameOf(Type t) {
+        if (t.IsArray) {
+            return GetFriendlyNameOf(t.GetElementType()!) + "[]";
+        }
+
         if (!t.IsGenericType) {
             return t.Name switch {
                 "Char"   => "char",
@@ -258,17 +262,21 @@ internal static partial class {{ProgClassName}}
             };
         }
 
-        if (t.Name == typeof(Nullable<>).Name && t.IsConstructedGenericType) {
-            return GetFriendlyNameOf(t.GenericTypeArguments[0]) + "?";
-        }
-
-        if (t.IsArray) {
-            return GetFriendlyNameOf(t.GetElementType()!) + "[]";
+        if (t.IsConstructedGenericType) {
+            if (t.Name == typeof(Nullable<>).Name)
+                return GetFriendlyNameOf(t.GenericTypeArguments[0]) + "?";
+            else if (t.Name
+                is "ValueTuple`1" or "ValueTuple`2" or "ValueTuple`3" or "ValueTuple`4"
+                or "ValueTuple`5" or "ValueTuple`6" or "ValueTuple`7" or "ValueTuple`8"
+                or "Tuple`1" or "Tuple`2" or "Tuple`3" or "Tuple`4"
+                or "Tuple`5" or "Tuple`6" or "Tuple`7" or "Tuple`8"
+            )
+                return '(' + String.Join(", ", t.GenericTypeArguments.Select(GetFriendlyNameOf)) + ')';
         }
 
         var baseName = t.Name[..^(t.GenericTypeArguments.Length < 10 ? 2 : 3)];
 
-        return baseName + "<" + string.Join(',', t.GenericTypeArguments.Select(u => GetFriendlyNameOf(u))) + ">";
+        return baseName + "<" + string.Join(',', t.GenericTypeArguments.Select(GetFriendlyNameOf)) + ">";
     }
 
     private static int posArgIdx = 0;
