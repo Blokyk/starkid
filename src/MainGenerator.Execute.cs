@@ -12,11 +12,6 @@ public partial class MainGenerator : IIncrementalGenerator
 
         Resources.MAX_LINE_LENGTH = config.ColumnLength!.Value;
 
-        spc.AddSource(
-            Resources.GenNamespace + "_Program.g.cs",
-            SourceText.From(Resources.ProgClassStr, Encoding.UTF8)
-        );
-
         CodeGenerator.UseLanguageVersion(langVersion);
 
         spc.AddSource(

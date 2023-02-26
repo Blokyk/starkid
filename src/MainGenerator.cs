@@ -8,7 +8,9 @@ namespace Recline.Generator;
 public partial class MainGenerator : IIncrementalGenerator
 {
     private const string staticFolderPath = "/home/blokyk/csharp/recline/src/Static/";
-    private static readonly string[] _staticFilenames = Array.Empty<string>();
+    private static readonly string[] _staticFilenames = new[] {
+        "ReclineProgram.nocs"
+    };
 
     private static readonly string[] _attributeNames = new[] {
         nameof(CommandAttribute),
@@ -25,8 +27,8 @@ public partial class MainGenerator : IIncrementalGenerator
 
                 foreach (var filename in _staticFilenames) {
                     postInitCtx.AddSource(
-                        Resources.GenNamespace + "_" + filename + ".g.cs",
-                        SourceText.From(File.ReadAllText(staticFolderPath + filename + ".cs"), Encoding.UTF8)
+                        Resources.GenNamespace + "_" + Path.ChangeExtension(filename, "g.cs"),
+                        SourceText.From(File.ReadAllText(staticFolderPath + filename), Encoding.UTF8)
                     );
                 }
 
