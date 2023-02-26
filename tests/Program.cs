@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Recline.Generator;
 
 var sampleDir = "../sample/";
@@ -36,6 +36,12 @@ var driver = CSharpGeneratorDriver.Create(
 
 void runDriver(string phase, string filename, CSharpCompilation unit) {
     Console.WriteLine("\x1b[33m  " + phase + " -- " + filename[..filename.IndexOf('.')].ToLowerInvariant() + "\x1b[0m");
+
+    if (args.FirstOrDefault() is "--profile") {
+        Console.WriteLine("Press any key to launch this run... \nIf you want to attach, we're PID " + Environment.ProcessId);
+        Console.ReadKey(intercept: true);
+        Console.CursorTop -= 2; // go back to the previous lines, so that we'll erase the message
+    }
 
     var genRun = driver.RunGenerators(unit);
     var results = genRun.GetRunResult().Results[0];
