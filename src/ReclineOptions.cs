@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Recline.Generator;
 
-public record ReclineConfig(
+public record struct ReclineConfig(
     int? ColumnLength,
     int? HelpExitCode
 ) {

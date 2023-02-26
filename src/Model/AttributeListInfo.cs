@@ -1,6 +1,6 @@
 namespace Recline.Generator;
 
-internal record AttributeListInfo(
+internal record struct AttributeListInfo(
     bool IsOnParameter = false,
     CommandGroupAttribute? CommandGroup = null,
     CommandAttribute? Command = null,

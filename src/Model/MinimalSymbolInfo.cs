@@ -18,7 +18,7 @@ public abstract record MinimalSymbolInfo(
         || (other is not null && other.GetHashCode() == GetHashCode());
 }
 
-public record MinimalTypeInfo(
+public sealed record MinimalTypeInfo(
     string Name,
     MinimalTypeInfo? ContainingType,
     string FullName,
