@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using Recline.Generator;
 
 var sampleDir = "../sample/";
@@ -34,6 +34,10 @@ var driver = CSharpGeneratorDriver.Create(
     )
 );
 
+/// <summary>
+/// Runs the generator in the given unit, and, if filename doesn't
+/// end with '.old', copies the original file and the result into $testDir
+/// </summary>
 void runDriver(string phase, string filename, CSharpCompilation unit) {
     Console.WriteLine("\x1b[33m  " + phase + " -- " + filename[..filename.IndexOf('.')].ToLowerInvariant() + "\x1b[0m");
 
@@ -60,6 +64,9 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
         Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
 
         if (filename[^4..] != ".old") {
+            foreach (var path in Directory.EnumerateFiles(testDir).Where(name => name.EndsWith(".g.cs")))
+                File.Delete(path);
+
             File.Copy(sampleDir + filename, testDir + "Main.cs", true);
 
             foreach (var src in results.GeneratedSources) {
@@ -93,4 +100,3 @@ runDriver("edit", parsex2Path, unit.ReplaceSyntaxTree(parsexTree, parsex2Tree));
 runDriver("paste", dotnetPath, unit.ReplaceSyntaxTree(parsexTree, dotnetTree));
 runDriver("new", lotusPath, lotusUnit);
 runDriver("redo", lotusPath, lotusUnit);
-//runDriver("dotnet", dotnetPath, dotnetUnit);
