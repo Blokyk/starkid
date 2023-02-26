@@ -67,10 +67,7 @@ internal static partial class CodeGenerator
         internal const string _name = """).Append(group.Name).Append("\";")
             .AppendLine();
 
-            if (!isRoot)
-                sb.Append('\t');
-
-            sb.Append("\t}");
+            sb.AppendLine().Append("\t}").AppendLine();
 
             foreach (var sub in group.SubGroups) {
                 AddSourceCode(sb, sub, false);
@@ -116,6 +113,7 @@ internal static partial class CodeGenerator
 
             sb
             .Append("\t}")  // enum CmdID
+            .AppendLine()
             .AppendLine();
 
             sb.AppendLine(
@@ -128,6 +126,7 @@ internal static partial class CodeGenerator
                     }
 
                     _prevCmdName = _currCmdName;
+
                     switch (subCmdID) {
             """
             );
@@ -159,21 +158,27 @@ internal static partial class CodeGenerator
         }
 
         static void AddRootFooter(StringBuilder sb, Group rootGroup)
-            => sb.Append("}"); // class Program
+            => sb.AppendLine("}"); // class Program
 
         static void AddSubsDictionary(StringBuilder sb, Group group) {
             sb.Append(@"
-        internal static readonly Dictionary<string, CmdID> _subs = new() {")
-            .AppendLine();
+        internal static readonly Dictionary<string, CmdID> _subs = new() {");
+
+            if (group.SubGroups.Count == 0 && group.Commands.Count == 0) {
+                sb.AppendLine(" };");
+                return;
+            }
+
+            sb.AppendLine();
 
             foreach (var sub in group.SubGroups)
-                sb.AppendDictEntry(sub.Name, "CmdID." + sub.ID);
+                sb.AppendDictEntry(sub.Name, "CmdID." + sub.ID).AppendLine();
 
             foreach (var cmd in group.Commands)
-                sb.AppendDictEntry(cmd.Name, "CmdID." + cmd.ID);
+                sb.AppendDictEntry(cmd.Name, "CmdID." + cmd.ID).AppendLine();
 
             sb
-            .Append("\t\t};") // _subs = new { }
+            .Append("\t\t};")
             .AppendLine();
         }
     }

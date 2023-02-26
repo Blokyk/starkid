@@ -22,8 +22,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace {GenNamespace};
-";
+namespace {GenNamespace};";
 
     public const string ProgClassName = "ReclineProgram";
 }

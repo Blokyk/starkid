@@ -58,7 +58,7 @@ internal static partial class CodeGenerator
         internal const string _name = """).Append(cmd.Name).Append("\";")
             .AppendLine();
 
-            sb.Append("\t\t}");
+            sb.Append("\t}").AppendLine();
         }
 
         static void AddCommandFunc(StringBuilder sb, MinimalMethodInfo method) {

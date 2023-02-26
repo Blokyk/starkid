@@ -18,7 +18,6 @@ internal static partial class CodeGenerator
         void appendAllOptions(IEnumerable<Option> options, string prefix) {
             foreach (var opt in options) {
                 sb
-                .Append("\t\t\t")
                 .AppendOptDictionaryLine(
                     opt.Name,
                     opt.Alias,
@@ -50,7 +49,7 @@ internal static partial class CodeGenerator
         );
 
         sb
-        .Append("\t\t};") // _flags = new { }
+        .Append("\t\t};")
         .AppendLine();
     }
 
@@ -302,13 +301,13 @@ internal static partial class CodeGenerator
     }
 
     static StringBuilder AppendDictEntry(this StringBuilder sb, string key, string value)
-        => sb.Append("{ \"").Append(key).Append("\", ").Append(value).Append(" },");
+        => sb.Append("\t\t\t{ \"").Append(key).Append("\", ").Append(value).Append(" },");
 
     static StringBuilder AppendOptDictionaryLine(this StringBuilder sb, string longName, char shortName, string methodName) {
         sb.AppendDictEntry("--" + longName, methodName);
 
         if (shortName is not '\0')
-            sb.Append(' ').AppendDictEntry("-" + shortName, methodName);
+            sb.AppendLine().AppendDictEntry("-" + shortName, methodName);
 
         return sb.AppendLine();
     }
