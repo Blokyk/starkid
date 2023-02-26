@@ -106,7 +106,6 @@ internal class AttributeParser
     public bool TryParseParseAttrib(AttributeData attr, [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
         parseWithAttr = null;
 
-        // fixme: find a solution to transport the expression without rooting the tree
         var attrSyntax = (attr.ApplicationSyntaxReference!.GetSyntax() as AttributeSyntax)!;
 
         var argList = attrSyntax.ArgumentList!.Arguments;

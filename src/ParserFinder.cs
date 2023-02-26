@@ -202,7 +202,7 @@ public class ParserFinder
         *
         * Which would be completely valid if it was "instantiated" as Wrapper<string>
         */
-        if (type.IsGenericType) { // todo: restriction on generics could/should be lifted, cf above
+        if (type.IsGenericType) { // todo(#6): restriction on generics could/should be lifted, cf above
             return new ParserInfo.Invalid(
                 Diagnostic.Create(
                     Diagnostics.NoGenericAutoParser,
@@ -215,7 +215,7 @@ public class ParserFinder
         if (type.EnumUnderlyingType is not null) {
             var minTypeInfo = MinimalTypeInfo.FromSymbol(type);
 
-            // todo: lift the shame i got from writing this code
+            // todo: replace hard-coded Enum.TryParse ParserInfo obj with a subtype
             // (this is only a temp solution because rn this is the only way
             // a generic method could get into a parser, since we disallow generics
             // in GetParserInfo)
@@ -232,8 +232,9 @@ public class ParserFinder
                 return parserInfo;
         }
 
+        // todo(#7): support extension methods
+
         // if we didn't find a suitable constructor, try to find TryParse(string, out $target) or Parse(string)
-        // todo: support extension methods ?
 
         // prefer TryParse-style methods over Parse-and-throw
         ParserInfo? directParseCandidate = null;
@@ -260,16 +261,16 @@ public class ParserFinder
     }
 
     ParserInfo GetParserInfo(IMethodSymbol method, ITypeSymbol targetType) {
-        // todo: add checks like bound generics, no ref return, etc
-
-        // todo: btw, we should probably warn when using a method that takes a non-nullable string
-        // parameter for bool opts, as __arg will be null in most cases
+        // todo: add checks like bound generics, etc
 
         var isCtor = method.MethodKind == MethodKind.Constructor;
 
+        if (method.ReturnsByRef || method.ReturnsByRefReadonly)
+            return ParserInfo.Error;
+
         // note: when we lift the restriction on generic methods, also change
         // the enum TryParse code in FindParserForType
-        if (!isCtor && (!method.IsStatic || method.IsGenericMethod))// || !_model.IsAccessible(1, method))
+        if (!isCtor && (!method.IsStatic || method.IsGenericMethod))
             return ParserInfo.Error;
 
         switch (method.Parameters.Length) {

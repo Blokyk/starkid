@@ -26,7 +26,6 @@ public sealed record Group(
 
     public Command? DefaultCommand { get; private set; }
 
-    // todo: validate default command
     public void SetDefaultCommand(Command cmd)
         => DefaultCommand = cmd;
 

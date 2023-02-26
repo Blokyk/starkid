@@ -6,9 +6,6 @@ public record ReclineConfig(
     int? ColumnLength,
     int? HelpExitCode
 ) {
-    // todo: have a ReclineUseStaticHelpText property, with an optional attribute like 'ColumnLength'
-    // todo: look into CompilerVisibleItemMetadata and CompilerVisibleProperty
-
     public const string COLUMN_LENGTH_PROP_NAME = "ReclineColumnLength";
     public const string HELP_EXIT_CODE_PROP_NAME = "ReclineHelpExitCode";
     public const int DEFAULT_COLUMN_LENGTH = 80, DEFAULT_HELP_EXIT_CODE = 1;

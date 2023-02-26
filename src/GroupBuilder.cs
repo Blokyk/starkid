@@ -224,9 +224,6 @@ internal sealed class GroupBuilder
 
         bool isValid = IsSymbolValidForOption(symbol, _addDiagnostic);
 
-        // todo: check that default value for fields and props is valid outside of scope
-        // and maybe transform it if it's invalid (e.g. by qualifying names) ?
-        // we could use ISymbol.GetMinimalQualifiedName(model, position, etc)
         var defaultValStr = GetDefaultValueForSymbol(symbol);
 
         if (!isValid)
@@ -237,6 +234,7 @@ internal sealed class GroupBuilder
                     ? MinimalParameterInfo.FromSymbol(paramSymbol)
                     : MinimalMemberInfo.FromSymbol(symbol);
 
+        // todo(#4): special-case arrays/lists to be "repeatable" options
         var type = GetTypeForSymbol(symbol);
 
         ParserInfo? parser;
@@ -304,9 +302,7 @@ internal sealed class GroupBuilder
 
         bool isParams = param.IsParams;
 
-        // todo: if type is T[], then treat it as "OneOrMore", if it's T[]? then it's "ZeroOrMore"
-
-        // todo: allow custom 'params' args (e.g. params FileInfo[] files)
+        // todo(#3): allow custom 'params' args (e.g. params FileInfo[] files)
         // doesn't really matter rn, but it'd be nice to be able to use any type for params,
         // because i'd really like to just say 'params FileInfo[] files' instead of having
         // to transform/validate it myself
@@ -474,7 +470,7 @@ internal sealed class GroupBuilder
                 string s => '"' + s + '"',
                 char c => "'" + c + "'",
                 bool b => b ? "true" : "false",
-                _ => defaultVal.ToString() // fixme: this could break cause of culture
+                _ => defaultVal.ToString() // fixme(#2): this could break cause of culture
             };
         }
 

@@ -17,7 +17,7 @@ internal static partial class CodeGenerator
             AddDescription(sb, groupOrCmd);
             AddUsage(sb, groupOrCmd);
 
-            // fixme: if DefaultCommand is hidden, then add its opts+args in usage and in the help text
+            // fixme(#1): if DefaultCommand is hidden, then add its opts+args in usage and in the help text
 
             var builder = new HelpTextBuilder(padSize, MaxLineLength);
 
