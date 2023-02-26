@@ -1,5 +1,4 @@
 using System.IO;
-using System.Diagnostics;
 
 using Recline.Generator.Model;
 
@@ -19,17 +18,10 @@ public partial class MainGenerator : IIncrementalGenerator
         nameof(ValidateWithAttribute)
     };
 
-    public static double postInitMS = -1;
-    public static double analysisMS = -1;
-    public static double codegenMS = -1;
-
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         context.RegisterPostInitializationOutput(
             static postInitCtx => {
                 // fixme: load stuff from const strings when everything is stable
-
-                var watch = new Stopwatch();
-                watch.Start();
 
                 foreach (var filename in _staticFilenames) {
                     postInitCtx.AddSource(
@@ -58,8 +50,6 @@ namespace Recline;
                     Resources.GenNamespace + "_Attributes.g.cs",
                     SourceText.From(sb.ToString(), Encoding.UTF8)
                 );
-                watch.Stop();
-                postInitMS = watch.Elapsed.TotalMilliseconds;
             }
         );
 

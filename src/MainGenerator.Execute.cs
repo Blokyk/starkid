@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 using Recline.Generator.Model;
 
 namespace Recline.Generator;
@@ -7,9 +5,6 @@ namespace Recline.Generator;
 public partial class MainGenerator : IIncrementalGenerator
 {
     static void GenerateFromData(Group? rootGroup, ImmutableArray<string> usings, ReclineConfig config, LanguageVersion langVersion, SourceProductionContext spc) {
-        var watch = new Stopwatch();
-        watch.Start();
-
         if (rootGroup is null)
             return;
 
@@ -28,9 +23,6 @@ public partial class MainGenerator : IIncrementalGenerator
             Resources.GenNamespace + "_CmdDescDynamic.g.cs",
             SourceText.From(GenerateUsingsHeaderCode(usings) + CodeGenerator.ToSourceCode(rootGroup), Encoding.UTF8)
         );
-
-        watch.Stop();
-        codegenMS = watch.Elapsed.TotalMilliseconds;
 
         SymbolInfoCache.FullReset();
         CommonTypes.Reset();
