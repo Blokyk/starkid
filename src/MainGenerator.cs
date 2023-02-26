@@ -70,6 +70,21 @@ namespace Recline;
                     (comp, _) => (comp as CSharpCompilation) ?.LanguageVersion ?? LanguageVersion.Default
                 );
 
+    #if DEBUG
+        var fawmnWarmup
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    typeof(CommandGroupAttribute).FullName!,
+                    (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
+                    (_, _) => 0
+                )
+                .Collect()
+                .WithTrackingName("fawmn_warmup");
+
+        context.RegisterSourceOutput(fawmnWarmup, (_, _) => { });
+    #endif
+
         var usingsSource
             = context
                 .SyntaxProvider
