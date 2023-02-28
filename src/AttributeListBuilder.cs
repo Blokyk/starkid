@@ -41,7 +41,7 @@ internal class AttributeListBuilder
         // past this point, we are trying to figure out why this wasn't valid
 
         // we don't care about group because it will never be with the other attributes for a valid symbol
-        var (isOnParam, _, cmd, opt, parseWith, validateWith) = attrList;
+        var (_, cmd, opt, parseWith, validateWith, isOnParam) = attrList;
 
         if (opt is null) {
             Debug.Assert(!isOnParam);
@@ -81,7 +81,7 @@ internal class AttributeListBuilder
     }
 
     public static CLIMemberKind CategorizeAttributeList(AttributeListInfo attrList) {
-        var (isOnParam, group, cmd, opt, parse, valid) = attrList;
+        var (group, cmd, opt, parse, valid, isOnParam) = attrList;
 
         return
             (isOnParam,    group,      cmd,      opt,    parse,    valid) switch {
@@ -164,7 +164,7 @@ internal class AttributeListBuilder
             }
         }
 
-        attribList = new(symbol is IParameterSymbol, group, cmd, opt, parseWith, validateWith);
+        attribList = new(group, cmd, opt, parseWith, validateWith, symbol is IParameterSymbol);
 
         return (isValid, attribList);
     }
