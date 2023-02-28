@@ -132,7 +132,15 @@ internal static partial class ReclineProgram
         return true;
     }
 
-    [StackTraceHidden]
+    static int NonInvokableGroupAction() {
+        PrintHelpString(
+            "Can't use '{0}' without a sub-command!",
+            _currCmdName
+        );
+
+        return 1;
+    }
+
     static string InRed(string msg)
         => "\x1b[31m" + msg + "\x1b[0m";
 

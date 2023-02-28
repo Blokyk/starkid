@@ -137,7 +137,7 @@ internal static partial class CodeGenerator
         if (group.DefaultCommand is not null) {
             sb.Append(group.DefaultCommand.ID).Append("CmdDesc._invokeCmd");
         } else {
-            sb.Append("DisplayHelp");
+            sb.Append("ReclineProgram.NonInvokableGroupAction");
         }
 
         sb.Append(';')
