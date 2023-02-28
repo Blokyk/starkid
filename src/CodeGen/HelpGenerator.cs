@@ -52,6 +52,9 @@ internal static partial class CodeGenerator
                 }
 
                 foreach (var subcmd in group.Commands) {
+                    if (subcmd.IsHiddenCommand)
+                        continue;
+
                     string argStr
                         = subcmd.Arguments.Count switch {
                             0 => "",
