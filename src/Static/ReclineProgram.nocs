@@ -9,7 +9,8 @@ using System.Runtime.CompilerServices;
 
 namespace Recline.Generated;
 
-[EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+[StackTraceHidden]
 internal static partial class ReclineProgram
 {
 #pragma warning disable CS8618
@@ -32,7 +33,6 @@ internal static partial class ReclineProgram
     private static Dictionary<string, Action<string>> _options;
     private static Dictionary<string, CmdID> _subs;
 
-    [StackTraceHidden]
     static int Main(string[] args) {
         var argCount = 0;
 
@@ -108,7 +108,6 @@ internal static partial class ReclineProgram
         return _invokeCmd();
     }
 
-    [StackTraceHidden]
     static bool TryDoAction(Action<string?> act, string arg1, string? arg2, string rawArg) {
         try {
             act(arg2);
@@ -123,7 +122,6 @@ internal static partial class ReclineProgram
         }
     }
 
-    [StackTraceHidden]
     static bool TryGetNext(ref int i, string[] args, [NotNullWhen(true)] out string? nextArg) {
         if (args.Length == (i + 1)) {
             nextArg = null;
@@ -137,24 +135,20 @@ internal static partial class ReclineProgram
     [StackTraceHidden]
     static string InRed(string msg)
         => "\x1b[31m" + msg + "\x1b[0m";
-    [StackTraceHidden]
+
     static string FormatError(string reason, object obj1)
         => InRed(string.Format(reason, "\x1b[1m" + obj1.ToString() + "\x1b[22m"));
 
-    [StackTraceHidden]
     public static void PrintHelpString(string reason) {
         Console.Error.WriteLine(InRed(reason));
         DisplayHelp();
     }
 
-    [StackTraceHidden]
     public static void PrintHelpString(string reason, string argName)
         => PrintHelpString(FormatError(reason, argName));
 
-    [StackTraceHidden]
     private static bool AsBool(string? val) => AsBool(val, true);
 
-    [StackTraceHidden]
     private static bool AsBool(string? val, bool defaultVal) {
         if (val is null)
             return defaultVal;
@@ -168,7 +162,6 @@ internal static partial class ReclineProgram
         throw new FormatException("Couldn't understand '" + val + "' as a boolean value");
     }
 
-    [StackTraceHidden]
     private static T ThrowIfNotValid<T>(T val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         var errorMessage = isValid(val);
 
@@ -178,7 +171,6 @@ internal static partial class ReclineProgram
         return val;
     }
 
-    [StackTraceHidden]
     private static T ThrowIfNotValid<T>(T val, Func<T, Exception?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         var e = isValid(val);
 
@@ -188,7 +180,6 @@ internal static partial class ReclineProgram
         return val;
     }
 
-    [StackTraceHidden]
     private static T ThrowIfNotValid<T>(T val, Func<T, bool> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcExpr = "") {
         if (!isValid(val))
             throw new Exception(message ?? "'" + funcExpr + "' returned false");
@@ -198,7 +189,6 @@ internal static partial class ReclineProgram
 
     private delegate bool BoolOut<T>(string arg, out T t);
 
-    [StackTraceHidden]
     private static T ThrowIfTryParseNotTrue<T>(BoolOut<T> tryParse, string arg) {
         if (!tryParse(arg, out var val))
             throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'");
@@ -206,7 +196,6 @@ internal static partial class ReclineProgram
         return val;
     }
 
-    [StackTraceHidden]
     private static T ThrowIfParseError<T>(Func<string, T> parse, string arg) {
         try {
             return parse(arg);
@@ -217,7 +206,6 @@ internal static partial class ReclineProgram
         }
     }
 
-    [StackTraceHidden]
     private static string GetFriendlyNameOf(Type t) {
         if (t.IsArray) {
             return GetFriendlyNameOf(t.GetElementType()!) + "[]";
@@ -259,7 +247,6 @@ internal static partial class ReclineProgram
     internal static int ArgCount => posArgIdx + _params.Count;
     internal static int ArgSlotsLeft => _posArgActions.Length - posArgIdx;
 
-    [StackTraceHidden]
     internal static bool TryAddPosArg(string arg) {
         if (ArgSlotsLeft > 0) {
             _posArgActions[posArgIdx++](arg);
@@ -273,10 +260,8 @@ internal static partial class ReclineProgram
         }
     }
 
-    [StackTraceHidden]
     internal static void DisplayHelp(string? _) => DisplayHelp();
 
-    [StackTraceHidden]
     internal static int DisplayHelp() {
         Console.Error.WriteLine(_helpString);
         Environment.Exit(1);
