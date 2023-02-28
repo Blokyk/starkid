@@ -63,11 +63,15 @@ internal class AttributeParser
         if (!TryGetProp<string?>(attr, nameof(OptionAttribute.ArgName), SpecialType.System_String, null, out var argName))
             return false;
 
+        if (!TryGetProp<bool>(attr, nameof(OptionAttribute.IsGlobal), SpecialType.System_Boolean, false, out var isGlobal))
+            return false;
+
         optAttr = new OptionAttribute(
             longName,
             shortName
         ) {
-            ArgName = argName
+            ArgName = argName,
+            IsGlobal = isGlobal,
         };
 
         return true;

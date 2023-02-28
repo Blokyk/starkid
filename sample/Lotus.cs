@@ -6,7 +6,7 @@ using Recline;
 [CommandGroup("upject")]
 public static class Lotus
 {
-    [Option("verbose", 'V')]
+    [Option("verbose", 'V', IsGlobal = true)]
     public static bool canBeVerbose = false;
 
     public static void PrintIsVerbose() => Console.WriteLine(canBeVerbose);
@@ -24,7 +24,7 @@ public static class Lotus
     [Command("new")]
     public static int SetupNewProject(
         string projectName,
-        [ValidateWith(nameof(FileInfo.Exists))] FileInfo? outputDir = null, // argument optionnel ('?' -> la variable peut être nulle)
+        [ValidateWith(nameof(FileInfo.Exists))] FileInfo? outputDir = null,
         [Option("framework")] string framework = "latest"
     ) { return 0; }
 }

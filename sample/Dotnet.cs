@@ -27,7 +27,7 @@ public static class FrenchRiseUp {
 [CommandGroup("dotnet", ShortDesc = "Execute a .NET application")]
 public static partial class Dotnet {
     // [ParseWith(nameof(FrenchRiseUp.AsBool))]
-    [Option("verbose", 'v')]
+    [Option("verbose", 'v', IsGlobal = true)]
     public static bool verboseFlag;
 
     [ParseWith(nameof(FrenchRiseUp.AsBool))]
@@ -59,10 +59,13 @@ public static partial class Dotnet {
 public static partial class Dotnet {
     [CommandGroup("build", DefaultCmdName = "project")]
     public static class Build {
-        [Option("framework", 'f')]
+        [Option("framework", 'f', IsGlobal = true)]
         [ValidateWith(nameof(IntIsPositive), "Framework version must be positive")]
         [ParseWith(nameof(FrenchRiseUp.AsInt))]
         public static int? framework;
+
+        [Option("directory", 'd', IsGlobal = true)]
+        public static FileInfo? outputDir;
 
         [Command("project")]
         public static int BuildProject(

@@ -220,6 +220,7 @@ internal sealed class GroupBuilder
         string longName = attrInfo.Option!.LongName;
         char shortName = attrInfo.Option!.Alias;
         string? argName = attrInfo.Option!.ArgName;
+        bool isGlobal = attrInfo.Option!.IsGlobal;
         var docInfo = GetDocInfo(symbol);
 
         bool isValid = IsSymbolValidForOption(symbol, _addDiagnostic);
@@ -258,6 +259,7 @@ internal sealed class GroupBuilder
             option = new Flag(
                 longName,
                 shortName,
+                isGlobal,
                 parser,
                 backingSymbol,
                 defaultValStr
@@ -274,6 +276,7 @@ internal sealed class GroupBuilder
             longName,
             shortName,
             argName ?? symbol.Name,
+            isGlobal,
             parser,
             backingSymbol,
             defaultValStr

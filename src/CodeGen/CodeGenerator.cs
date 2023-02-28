@@ -14,7 +14,7 @@ internal static partial class CodeGenerator
         return sb.ToString();
     }
 
-    static void AddOptionDictionary(StringBuilder sb, Union<Group, Command> groupOrCmd, bool isFlags) {
+    static void AddOptionDictionary(StringBuilder sb, InvokableBase groupOrCmd, bool isFlags) {
         void appendAllOptions(IEnumerable<Option> options, string prefix) {
             foreach (var opt in options) {
                 sb
@@ -27,7 +27,8 @@ internal static partial class CodeGenerator
         }
 
         void appendGroupOptions(Group group) {
-            appendAllOptions(isFlags ? group.Flags : group.Options, group.ID + "CmdDesc.");
+            IEnumerable<Option> groupOpts = isFlags ? group.Flags : group.Options;
+            appendAllOptions(groupOpts.Where(opt => opt.IsGlobal), group.ID + "CmdDesc.");
 
             if (group.ParentGroup is not null)
                 appendGroupOptions(group.ParentGroup);
@@ -37,16 +38,12 @@ internal static partial class CodeGenerator
 
         sb.Append(@"
         internal static readonly Dictionary<string, Action<string").Append(isFlags ? "?" : "").Append(">> ").Append(dictName).Append(@" = new() {
-            { ""--help"", DisplayHelp }, { ""-h"", DisplayHelp },
-");
+            { ""--help"", DisplayHelp }, { ""-h"", DisplayHelp },")
+        .AppendLine();
 
-        groupOrCmd.Match(
-            group => appendGroupOptions(group),
-            cmd => {
-                appendAllOptions(isFlags ? cmd.Flags : cmd.Options, "");
-                appendGroupOptions(cmd.ParentGroup);
-            }
-        );
+        appendAllOptions(isFlags ? groupOrCmd.Flags : groupOrCmd.Options, "");
+        if (groupOrCmd.ParentGroup is not null)
+            appendGroupOptions(groupOrCmd.ParentGroup);
 
         sb
         .Append("\t\t};")

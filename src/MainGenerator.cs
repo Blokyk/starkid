@@ -255,7 +255,12 @@ namespace Recline;
             var commandOptions = group.Commands.SelectMany(cmd => cmd.OptionsAndFlags);
 
             foreach (var option in groupOptions.Concat(commandOptions)) {
-                if (!names.Add(option.Name)) {
+                var longNameExists
+                    = option.IsGlobal
+                    ? !names.Add(option.Name)
+                    : names.Contains(option.Name);
+
+                if (longNameExists) {
                     addDiagnostic(
                         Diagnostic.Create(
                             Diagnostics.OptNameAlreadyExists,
@@ -265,14 +270,21 @@ namespace Recline;
                     );
                 }
 
-                if (option.Alias != default(char) && !aliases.Add(option.Alias)) {
-                    addDiagnostic(
-                        Diagnostic.Create(
-                            Diagnostics.OptAliasAlreadyExists,
-                            option.GetLocation(),
-                            option.Alias
-                        )
-                    );
+                if (option.Alias != default(char)) {
+                    var aliasExists
+                        = option.IsGlobal
+                        ? !aliases.Add(option.Alias)
+                        : aliases.Contains(option.Alias);
+
+                    if (aliasExists) {
+                        addDiagnostic(
+                            Diagnostic.Create(
+                                Diagnostics.OptAliasAlreadyExists,
+                                option.GetLocation(),
+                                option.Alias
+                            )
+                        );
+                    }
                 }
             }
 

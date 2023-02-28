@@ -10,6 +10,8 @@ public sealed class OptionAttribute : System.Attribute
 
     public string? ArgName { get; set; }
 
+    public bool IsGlobal { get; set; }
+
     public OptionAttribute(string longName, char shortName = '\0') {
         LongName = longName;
         Alias = shortName;
