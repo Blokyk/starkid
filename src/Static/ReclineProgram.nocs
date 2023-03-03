@@ -62,7 +62,7 @@ internal static partial class ReclineProgram
 
                 if (_options.TryGetValue(arg, out var actOpt)) {
                     if (value is null) {
-                        if (!TryGetNext(ref i, args, out value)) {
+                        if (!TryGetNextArgFromArgv(ref i, args, out value)) {
                             PrintHelpString("Option {0} needs an argument", arg);
                             return 1;
                         }
@@ -122,7 +122,11 @@ internal static partial class ReclineProgram
         }
     }
 
-    static bool TryGetNext(ref int i, string[] args, [NotNullWhen(true)] out string? nextArg) {
+    /// <summary>
+    /// In case the option is separated from its value/argument by a space, it will be the next
+    /// item in argv. This function tries to extract it, when possible
+    /// </summary>
+    static bool TryGetNextArgFromArgv(ref int i, string[] args, [NotNullWhen(true)] out string? nextArg) {
         if (args.Length == (i + 1)) {
             nextArg = null;
             return false;
