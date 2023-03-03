@@ -1,6 +1,6 @@
 namespace Recline.Generator;
 
-internal struct GeneratorDataWrapper<T> : IEquatable<GeneratorDataWrapper<T>>
+internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
 {
     public T? Data { get; set; }
 
@@ -10,12 +10,12 @@ internal struct GeneratorDataWrapper<T> : IEquatable<GeneratorDataWrapper<T>>
     public ImmutableArray<Diagnostic> GetDiagnostics()
         => _diags.ToImmutableArray();
 
-    public GeneratorDataWrapper() {
+    public DataAndDiagnostics() {
         Data = default(T);
         _diags = new();
     }
 
-    public GeneratorDataWrapper(T data) : this()
+    public DataAndDiagnostics(T data) : this()
         => Data = data;
 
     public void AddDiagnostic(Diagnostic diag)
@@ -23,7 +23,7 @@ internal struct GeneratorDataWrapper<T> : IEquatable<GeneratorDataWrapper<T>>
 
     // fixme: implement different equality for diagnostics and data
 
-    public bool Equals(GeneratorDataWrapper<T> other)
+    public bool Equals(DataAndDiagnostics<T> other)
         => EqualityComparer<T?>.Default.Equals(Data, other.Data)
         && _diags.SetEquals(other._diags);
 
@@ -33,5 +33,5 @@ internal struct GeneratorDataWrapper<T> : IEquatable<GeneratorDataWrapper<T>>
          : Utils.CombineHashCodes(Data.GetHashCode(), _diags.GetHashCode());
 
     public override bool Equals(object? obj)
-        => obj is GeneratorDataWrapper<T> generatorDataWrapper && Equals(generatorDataWrapper);
+        => obj is DataAndDiagnostics<T> generatorDataWrapper && Equals(generatorDataWrapper);
 }

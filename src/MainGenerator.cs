@@ -96,7 +96,7 @@ namespace Recline;
                     typeof(CommandGroupAttribute).FullName!,
                     (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
                     (ctx, _) => {
-                        var wrapper = new GeneratorDataWrapper<Group?>();
+                        var wrapper = new DataAndDiagnostics<Group?>();
                         wrapper.Data = CreateGroup(ctx, wrapper.AddDiagnostic);
                         return wrapper;
                     }
@@ -109,7 +109,7 @@ namespace Recline;
                 .Collect()
                 .Select(
                     (groups, _) => {
-                        var wrapper = new GeneratorDataWrapper<Group?>();
+                        var wrapper = new DataAndDiagnostics<Group?>();
                         wrapper.Data = BindGroups(groups, wrapper.AddDiagnostic);
                         return wrapper;
                     }
