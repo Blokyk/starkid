@@ -26,6 +26,11 @@ internal static partial class CodeGenerator
                     builder.AddArgumentDescription(arg.Name, arg.Description);
             }
 
+            builder.AddOptionDescription(
+                "-h, --help",
+                "Display this help message"
+            );
+
             foreach (var opt in groupOrCmd.OptionsAndFlags) {
                 var aliasStr
                     = opt.Alias == '\0'

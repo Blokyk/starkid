@@ -35,10 +35,15 @@ internal static partial class ReclineProgram
     private static Dictionary<string, Action<string>> _options;
     private static Dictionary<string, CmdID> _subs;
 
+    private static bool _displayHelp = false;
+
     static int Main(string[] args) {
         var argCount = 0;
 
         var onlyArgs = false; // set to true if we get '--'
+
+        if (args.Contains("-h") || args.Contains("--help"))
+            _displayHelp = true;
 
         for (int i = 0; i < args.Length; i++) {
             ref var rawArg = ref args[i];
@@ -86,10 +91,16 @@ internal static partial class ReclineProgram
                 }
 
                 if (arg[0] == '-') {
+                    // if we get here, it means arg isn't a valid flag, so the only valid interpretation
+                    // of it is as POSIX-style 'argument separator' -- anything after it should only
+                    // be treated as pure arguments and never as options or subcommands
                     if (arg.Length == 2 && arg[1] == '-') {
                         onlyArgs = true;
                         continue;
                     }
+
+                    if (_displayHelp)
+                        continue;
 
                     PrintHelpString("Couldn't understand '{0}' in this context", rawArg);
                     return 1;
@@ -97,10 +108,16 @@ internal static partial class ReclineProgram
             }
 
             if (!TryAddPosArg(arg)) {
+                if (_displayHelp)
+                    continue;
+
                 PrintHelpString("Couldn't understand '{0}' in this context", rawArg);
                 return 1;
             }
         }
+
+        if (_displayHelp)
+            return DisplayHelp();
 
         if (ArgSlotsLeft > 0) {
             PrintHelpString("Expected at least {0} arguments, but only got " + argCount, (ArgSlotsLeft + argCount).ToString());
@@ -111,6 +128,11 @@ internal static partial class ReclineProgram
     }
 
     static bool TryDoAction(Action<string?> act, string arg1, string? arg2, string rawArg) {
+        // we don't want to potentially cause any errors if the user just wants to see the help
+        // text
+        if (_displayHelp)
+            return true;
+
         try {
             act(arg2);
             return true;
@@ -130,6 +152,15 @@ internal static partial class ReclineProgram
     /// </summary>
     static bool TryGetNextArgFromArgv(ref int i, string[] args, [NotNullWhen(true)] out string? nextArg) {
         if (args.Length == (i + 1)) {
+            // cf TryDoAction
+            // note that here, we only "escape"/ignore after we know there's an error,
+            // cause if we don't consume the next argument, we might misinterpret everything
+            // afterward
+            if (_displayHelp) {
+                nextArg = "";
+                return true;
+            }
+
             nextArg = null;
             return false;
         }

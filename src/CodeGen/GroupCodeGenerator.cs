@@ -119,7 +119,7 @@ internal static partial class CodeGenerator
             sb.AppendLine(
                 """
                 private static bool TryUpdateCommand(CmdID subCmdID) {
-                    if (ArgCount != 0) {
+                    if (!_displayHelp && ArgCount != 0) {
                         PrintHelpString("Can't invoke sub-command '{0}' with arguments for the '" + _prevCmdName + "' command", _currCmdName);
                         return false;
                     }

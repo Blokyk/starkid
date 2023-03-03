@@ -223,6 +223,7 @@ internal static partial class CodeGenerator
             : "";
 
         string expr
+            // = opt.BackingSymbol.ToString() + " = " + validExpr;
             = fieldPrefix + SymbolUtils.GetSafeName(opt.BackingSymbol.Name) + " = " + validExpr;
 
         // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
