@@ -2,6 +2,9 @@ namespace Recline.Generator.Model;
 
 public sealed class MinimalLocation
 {
+    public static readonly MinimalLocation Default
+        = new("", TextSpan.FromBounds(0, 0), new(LinePosition.Zero, LinePosition.Zero));
+
     public string FilePath { get; }
     public TextSpan TextSpan { get; }
     public LinePositionSpan LineSpan { get; }
