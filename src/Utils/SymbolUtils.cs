@@ -10,7 +10,7 @@ internal static class SymbolUtils
     public static bool IsNullable(ITypeSymbol type)
         => type.IsReferenceType
         ?  type.NullableAnnotation == NullableAnnotation.Annotated
-        :  (type as INamedTypeSymbol)?.SpecialType == SpecialType.System_Nullable_T;
+        :  type is INamedTypeSymbol { SpecialType: SpecialType.System_Nullable_T };
 
     public static string GetRawName(ISymbol symbol) {
         if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
