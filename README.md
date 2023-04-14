@@ -2,13 +2,13 @@
 
 A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).
 
-# What can it actually do?
+## What can it actually do?
 
 Recline allows you to write code that matches perfectly your command line interface's structure, by using nesting to represent your CLI's hierarchy of verbs and subcommands.
 
 It also includes a bunch of mechanisms to make parsing and validating options/args easier, so you never have string-type anything, you can simply use the appropriate type for everything instead of writing walls of `if-then-throw`s at the start of every method.
 
-# Getting started 🚀
+## Getting started 🚀
 
 Recline is just like most other source generators and requires no additional dependency. You can install it just like a normal package, with:
 
@@ -18,13 +18,13 @@ dotnet add package Blokyk.Recline
 
 That's it! To start writing your CLI, check out [Your first app with Recline](docs/../Your%20first%20app%20with%20Recline.md), or have a quick look through the TL;DR docs below.
 
-# TL;DR docs 📖
+## TL;DR docs 📖
 
 - Commands are represented by methods marked with `[Command]`, *groups* of commands by (static) classes marked with `[CommandGroup]`.
 
 - Just like you can nest classes inside others, you can have a command group "inside" another group, which acts as a subgroup to its parent.
 
-- The outmost `[CommandGroup]` class is the root group, which is only special in that it has to be unique (since you can't have multiple CLIs inside a single assembly).
+- The outmost `[CommandGroup]` class is the root group, which basically defines the CLI; it is only special in that there can't be multiple root groups (since you can't have multiple CLIs inside a single assembly).
 
 - Just like you can't have methods outside of classes, you can't have `[Command]`s outside of `[CommandGroup]`s.
 
@@ -36,7 +36,7 @@ That's it! To start writing your CLI, check out [Your first app with Recline](do
 
 For more information, check out [Your first app with Recline](docs/Your-first-app-with-Recline.md) and [Recline overview](docs/Recline-overview.md).
 
-# Known bugs & missing features 🐛
+## Known bugs & missing features 🐛
 
 - You cannot declare a custom `--help` or `-h` option.
 
@@ -44,7 +44,7 @@ For more information, check out [Your first app with Recline](docs/Your-first-ap
 
 - Errors and warnings from Recline do not show up as red squiggles, and instead are only available from the `Build output` window in VS, or in the output of `dotnet build`.
 
-# ...why tho?
+## ...why tho?
 
 While rewriting [lotus](https://github.com/lotuslang/lotus)'s command line interface to use `System.CommandLine`, I found myself looking at [System.CommandLine.DragonFruit](https://github.com/dotnet/command-line-api/blob/main/docs/DragonFruit-overview.md), a generator that makes writing basic CLIs absolutely effortless.
 
@@ -56,7 +56,7 @@ I wanted to try my hand at writing a source generator, as well as having a sligh
 
 One thing to note is that this generator does not simply replace your declaration with calls to the `System.CommandLine` library, which does have a few caveats. For example, you won't get compatibility with [dotnet-suggest](https://github.com/dotnet/command-line-api/blob/main/docs/dotnet-suggest.md), or any kind of "debug-mode" like in that library. However, as I've stated above, my initial goal was simply to get a reflection- and overhead-free alternative to `System.CommandLine`, which was a bit overpowered for me.
 
-# Disclaimer ⚠️
+## Disclaimer ⚠️
 
 You probably shouldn't actually use this for anything serious. It has basically no tests and can be pretty brittle in some cases. It also does not follow e.g. POSIX conventions and is pretty opinionated in some cases. It is also not fit for every case or app in the world; in fact, it heavily discourages "one root command, a thousand options" kind of CLI. In short: you ain't gonna be writing a `gcc` wrapper with this Recline.
 
