@@ -7,7 +7,7 @@ internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
     private readonly HashSet<Diagnostic> _diags;
     public int DiagnosticsCount => _diags.Count;
 
-    public ImmutableArray<Diagnostic> GetDiagnostics()
+    public readonly ImmutableArray<Diagnostic> GetDiagnostics()
         => _diags.ToImmutableArray();
 
     public DataAndDiagnostics() {
@@ -18,20 +18,22 @@ internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
     public DataAndDiagnostics(T data) : this()
         => Data = data;
 
+#pragma warning disable IDE0251 // Yes, roslyn, this method does in fact have side-effects :|
     public void AddDiagnostic(Diagnostic diag)
         => _diags.Add(diag);
+#pragma warning restore
 
     // fixme: implement different equality for diagnostics and data
 
-    public bool Equals(DataAndDiagnostics<T> other)
+    public readonly bool Equals(DataAndDiagnostics<T> other)
         => EqualityComparer<T?>.Default.Equals(Data, other.Data)
         && _diags.SetEquals(other._diags);
 
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
         => Data is null
          ? _diags.GetHashCode()
          : Utils.CombineHashCodes(Data.GetHashCode(), _diags.GetHashCode());
 
-    public override bool Equals(object? obj)
+    public override readonly bool Equals(object? obj)
         => obj is DataAndDiagnostics<T> generatorDataWrapper && Equals(generatorDataWrapper);
 }
