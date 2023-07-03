@@ -50,14 +50,16 @@ While rewriting [lotus](https://github.com/lotuslang/lotus)'s command line inter
 
 However, after looking at its implementation, I was slightly disappointed to find that it was basically just a redirect to reflection-based parsing. Don't get me wrong, I heavily respect the people behind that project, both for the simplicity of DragonFruit and the flexibility of `System.CommandLine`[^1], but it did feel like there was a gap to be filled there.
 
-[^1] It also tries its best to follow POSIX standards and conventions which is absolutely impressive in its right.
+[^1]: It also tries to follow POSIX standards and conventions which is absolutely impressive in its right.
 
 I wanted to try my hand at writing a source generator, as well as having a slightly less complex/obscure mechanism for lotus's CLI. So I started writing, not expecting to actually do anything useful, let alone have an actual generator. And yet here we are.
 
-One thing to note is that this generator does not simply replace your declaration with calls to the `System.CommandLine` library, which does have a few caveats. For example, you won't get compatibility with [dotnet-suggest](https://github.com/dotnet/command-line-api/blob/main/docs/dotnet-suggest.md), or any kind of "debug-mode" like in that library. However, as I've stated above, my initial goal was simply to get a reflection- and overhead-free alternative to `System.CommandLine`, which was a bit overpowered for me.
+One thing to note is that this generator does not simply replace your declaration with calls to the `System.CommandLine` library, it *is* a completely separate thing. Unfortunately, right now a few tools in the dotnet environment rely on `System.CLI`'s niceties, which means for now some features you might be used to will be unavailable; for example, you won't get compatibility with [dotnet-suggest](https://github.com/dotnet/command-line-api/blob/main/docs/dotnet-suggest.md), or any kind of "debug-mode" like in `System.CLI`. As I've stated above, my initial goal was simply to get a reflection- and overhead-free alternative to that library, and given how tightly integrated dotnet-suggest is with it, I can't make any promises as to whether this will be supported in any future versions. However, it is a tool I use a lot given my usage of the terminal, so I'll definitely try to investigate it in my free time.
+
+For now, I don't actually plan on maintaining this any further than I need to for my personal projects, but I'm completely open to hearing about any issues or requests you might have, so feel free to create an issue/PR and I'll try to take a look at it!
 
 ## Disclaimer ⚠️
 
-You probably shouldn't actually use this for anything serious. It has basically no tests and can be pretty brittle in some cases. It also does not follow e.g. POSIX conventions and is pretty opinionated in some cases. It is also not fit for every case or app in the world; in fact, it heavily discourages "one root command, a thousand options" kind of CLI. In short: you ain't gonna be writing a `gcc` wrapper with this Recline.
+You probably shouldn't actually use this for anything serious. While I've put a lot of effort into it, it is still pretty brittle in some cases; and although Recline's design has gone through multiple iterations, it is fairly opinionated, goes against some of C#'s coding conventions, and can quickly lead to unmaintainable code if not planned carefully. I personally encourage partial classes split into files and folders reflecting your CLI's structure.
 
-For now, I don't actually plan on maintaining this any further than I need to for my personal projects, but I'm completely open to hearing about any issues or requests you might have, so feel free to create an issue/PR and I'll try to take a look at it!
+In addition, it is not fit for every case or app in the world: it heavily discourages "one root command, a thousand options"-kind of CLI. If you're trying to write a GCC-style CLI with a thousand different flags, this is probably not the library for you.
