@@ -42,14 +42,12 @@ public abstract record InvokableBase(string Name) : IEquatable<InvokableBase> {
         => _flags.Add(flag);
 
     public override int GetHashCode()
+        // we don't compare parents here because otherwise it'd just be recursion
         => Utils.CombineHashCodes(
             Description?.GetHashCode() ?? 0,
             Utils.CombineHashCodes(
-                ParentGroup?.GetHashCode() ?? 0,
-                Utils.CombineHashCodes(
-                    Utils.SequenceComparer<Option>.Instance.GetHashCode(_options),
-                    Utils.SequenceComparer<Flag>.Instance.GetHashCode(_flags)
-                )
+                Utils.SequenceComparer<Option>.Instance.GetHashCode(_options),
+                Utils.SequenceComparer<Flag>.Instance.GetHashCode(_flags)
             )
         );
 
