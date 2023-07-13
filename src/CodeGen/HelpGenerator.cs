@@ -86,15 +86,25 @@ internal static partial class CodeGenerator
 
         static void AddUsage(StringBuilder sb, InvokableBase groupOrCmd) {
             sb.AppendLine("Usage:");
-            AddShortLineHelp(sb, groupOrCmd);
 
-            sb.AppendLine();
-
-            if (groupOrCmd is not Group group)
+            if (groupOrCmd is not Group group) { // if it's a command, there's nothing else to do
+                AddShortLineHelp(sb, groupOrCmd);
+                sb.AppendLine();
                 return;
+            }
 
-            if (group.SubGroups.Count + group.Commands.Count > 5)
+            // only add usage if this group has any option OR it's invokable (has a default command)
+            if (group.DefaultCommand is not null || group.OptionsAndFlags.Any()) {
+                AddShortLineHelp(sb, group);
+                sb.AppendLine();
                 return;
+            }
+
+            // if it'd be too long to display, just return, the help text will do the rest
+            if (group.SubGroups.Count + group.Commands.Count > 5) {
+                sb.AppendLine("...\n");
+                return;
+            }
 
             foreach (var subGroup in group.SubGroups) {
                 AddShortLineHelp(sb, subGroup);
