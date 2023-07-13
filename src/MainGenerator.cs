@@ -7,7 +7,7 @@ namespace Recline.Generator;
 [Generator(LanguageNames.CSharp)]
 public partial class MainGenerator : IIncrementalGenerator
 {
-    private const string staticFolderPath = "/home/blokyk/csharp/recline/src/Static/";
+    private const string _staticFolderPath = "/home/blokyk/csharp/recline/src/Static/";
     private static readonly string[] _staticFilenames = new[] {
         "ReclineProgram.nocs"
     };
@@ -28,7 +28,7 @@ public partial class MainGenerator : IIncrementalGenerator
                 foreach (var filename in _staticFilenames) {
                     postInitCtx.AddSource(
                         Resources.GenNamespace + "_" + Path.ChangeExtension(filename, "g.cs"),
-                        SourceText.From(File.ReadAllText(staticFolderPath + filename), Encoding.UTF8)
+                        SourceText.From(File.ReadAllText(_staticFolderPath + filename), Encoding.UTF8)
                     );
                 }
 
@@ -45,7 +45,7 @@ namespace Recline;
 ");
 
                 foreach (var filename in _attributeNames) {
-                    sb.AppendLine(File.ReadAllText(staticFolderPath + "Attributes/" + filename + ".cs"));
+                    sb.AppendLine(File.ReadAllText(_staticFolderPath + "Attributes/" + filename + ".cs"));
                 }
 
                 postInitCtx.AddSource(
@@ -68,7 +68,7 @@ namespace Recline;
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
                     typeof(CommandGroupAttribute).FullName!,
-                    (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
+                    (node, _) => node is ClassDeclarationSyntax,
                     (_, _) => 0
                 )
                 .Collect()
@@ -82,19 +82,34 @@ namespace Recline;
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
                     typeof(CommandGroupAttribute).FullName!,
-                    (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
+                    (node, _) => node is ClassDeclarationSyntax,
                     (ctx, _) => Utils.GetUsings((ctx.TargetNode as ClassDeclarationSyntax)!)
                 )
                 .SelectMany((arr, _) => arr)
                 .Collect()
                 .WithTrackingName("recline_collect_usings");
 
+        // todo: separate this into three pipelines:
+        //      - ParseWith resolution with FAWMN (returns a map between symbol name and parser)
+        //      - same with ValidateWith
+        //      - Group building, like before
+        // We can then bind parsers back to their original symbols by going through the whole
+        // command tree (maybe have an variable for like "needs a parser/validator" so that
+        // we don't lookup *every single symbol name*)
+        //
+        // do we also want to separate auto-parsers? the problem is that we need to do the group
+        // building first, but we could the ParseWith
+        // part after group_building, and have group_building output a list of stuff that needs
+        // an auto-parser
+        //
+        // todo: we could also make another pipeline to get the xml docs and use a similar strategy to merge back
+        // we'd have to do that for every symbol with either [Command], [CommandGroup], or [Option]
         var groupsSource
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
                     typeof(CommandGroupAttribute).FullName!,
-                    (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
+                    (node, _) => node is ClassDeclarationSyntax,
                     (ctx, _) => {
                         var wrapper = new DataAndDiagnostics<Group?>();
                         wrapper.Data = CreateGroup(ctx, wrapper.AddDiagnostic);

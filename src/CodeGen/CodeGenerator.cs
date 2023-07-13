@@ -52,7 +52,7 @@ internal static partial class CodeGenerator
 
     static void AddHasParamsField(StringBuilder sb, Command? cmd)
          => sb.Append(@"
-        internal static readonly bool _hasParams = ").Append((cmd?.HasParams ?? false) ? "true" : "false").Append(";")
+        internal static readonly bool _hasParams = ").Append((cmd?.HasParams ?? false) ? "true" : "false").Append(';')
          .AppendLine();
 
     static void AddPosArgActions(StringBuilder sb, Group group) {
@@ -181,7 +181,7 @@ internal static partial class CodeGenerator
         }
 
         sb
-        .Append(";")
+        .Append(';')
         .AppendLine();
     }
 

@@ -115,30 +115,30 @@ internal static class Utils
             => _hash(a);
     }
 
-    public static IReadOnlyDictionary<TKey, TValue> EmptyDictionary<TKey, TValue>() => new EmptyMapImpl<TKey, TValue>();
+    public static IReadOnlyDictionary<TKey, TValue> EmptyDictionary<TKey, TValue>() => default(EmptyMapImpl<TKey, TValue>);
 
     private struct EmptyMapImpl<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
     {
-        public TValue this[TKey key] => throw new KeyNotFoundException();
+        public readonly TValue this[TKey key] => throw new KeyNotFoundException();
 
-        public IEnumerable<TKey> Keys => Enumerable.Empty<TKey>();
+        public readonly IEnumerable<TKey> Keys => Enumerable.Empty<TKey>();
 
-        public IEnumerable<TValue> Values => Enumerable.Empty<TValue>();
+        public readonly IEnumerable<TValue> Values => Enumerable.Empty<TValue>();
 
-        public int Count => 0;
+        public readonly int Count => 0;
 
-        public bool ContainsKey(TKey key)
+        public readonly bool ContainsKey(TKey key)
             => false;
 
-        public bool TryGetValue(TKey key, out TValue value) {
+        public readonly bool TryGetValue(TKey key, out TValue value) {
             value = default!;
             return false;
         }
 
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+        public readonly IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
             => ((IEnumerable<KeyValuePair<TKey, TValue>>)Array.Empty<KeyValuePair<TKey, TValue>>()).GetEnumerator();
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        readonly System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             => Array.Empty<KeyValuePair<TKey, TValue>>().GetEnumerator();
     }
 }

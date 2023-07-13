@@ -29,7 +29,7 @@ public partial class MainGenerator : IIncrementalGenerator
                 Diagnostic.Create(
                     Diagnostics.InvalidValueForProjectProperty,
                     Location.None,
-                    "Recline_ColumnLength"
+                    ReclineConfig.COLUMN_LENGTH_PROP_NAME
                 )
             );
 
@@ -41,7 +41,7 @@ public partial class MainGenerator : IIncrementalGenerator
                 Diagnostic.Create(
                     Diagnostics.InvalidValueForProjectProperty,
                     Location.None,
-                    "Recline_HelpExitCode"
+                    ReclineConfig.HELP_EXIT_CODE_PROP_NAME
                 )
             );
 
