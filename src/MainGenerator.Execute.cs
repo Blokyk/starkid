@@ -19,6 +19,11 @@ public partial class MainGenerator : IIncrementalGenerator
             SourceText.From(GenerateUsingsHeaderCode(usings) + CodeGenerator.ToSourceCode(rootGroup), Encoding.UTF8)
         );
 
+        spc.AddSource(
+            Resources.GenNamespace + "_ReclineProgram.g.cs",
+            SourceText.From(_reclineProgramCode, Encoding.UTF8)
+        );
+
         SymbolInfoCache.FullReset();
         CommonTypes.Reset();
     }

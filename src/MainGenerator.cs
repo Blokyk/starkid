@@ -8,9 +8,9 @@ namespace Recline.Generator;
 public partial class MainGenerator : IIncrementalGenerator
 {
     private const string _staticFolderPath = "/home/blokyk/csharp/recline/src/Static/";
-    private static readonly string[] _staticFilenames = new[] {
-        "ReclineProgram.nocs"
-    };
+    private static readonly string[] _staticFilenames = new string[] {};
+
+    private static readonly string _reclineProgramCode = File.ReadAllText(_staticFolderPath + "ReclineProgram.nocs");
 
     private static readonly string[] _attributeNames = new[] {
         nameof(CommandAttribute),
