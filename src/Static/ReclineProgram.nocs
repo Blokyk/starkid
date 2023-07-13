@@ -216,11 +216,12 @@ internal static partial class ReclineProgram
         return val;
     }
 
-    private static T ThrowIfNotValid<T>(T val, Func<T, Exception?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
-        var e = isValid(val);
-
-        if (e is not null)
-            throw e;
+    private static T ThrowIfNotValid<T>(T val, Action<T> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
+        try {
+            isValid(val);
+        } catch (Exception) when (message != null) {
+            throw new Exception(message);
+        }
 
         return val;
     }

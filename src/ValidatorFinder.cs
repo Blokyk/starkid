@@ -171,13 +171,12 @@ public class ValidatorFinder
         if (returnType.SpecialType == SpecialType.System_Boolean)
             return new ValidatorInfo.Method.Bool(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
 
-        // we need nullability here
-        if (SymbolUtils.Equals(method.ReturnType, CommonTypes.EXCEPTION))
+        if (method.ReturnsVoid)
             return new ValidatorInfo.Method.Exception(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
 
-        // nullability needed here too
-        if (SymbolUtils.Equals(method.ReturnType, CommonTypes.STR))
-            return new ValidatorInfo.Method.String(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
+        // // nullability needed here too
+        // if (SymbolUtils.Equals(method.ReturnType, CommonTypes.STR))
+        //     return new ValidatorInfo.Method.String(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
 
         return new ValidatorInfo.Invalid(
                 Diagnostic.Create(
