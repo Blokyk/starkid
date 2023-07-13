@@ -88,7 +88,7 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ParamsHasToBeString
         = new(
             "CLI006",
-            "Can't use type '{0}' for on params argument for commands",
+            "Can't use type '{0}' for params argument for commands",
             "'params' arguments for commands must be of type string[]",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
@@ -359,7 +359,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor ParseWithMustBeNameOfExpr
         = new(
-            "CLI405",
+            "CLI499",
             "The parameter to a ParseWith attribute must be a nameof expression",
             "Expression '{0}' can't be used as a parameter to a ParseWith attribute; "
             + "it must be a nameof expression",
@@ -371,7 +371,7 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CouldntFindValidator
         = new(
             "CLI500",
-            "Couldn't find suitable a method named '{0}' for validation",
+            "Couldn't find a method named '{0}' suitable for validation",
             "Couldn't find any method named '{0}' suitable to validate this option/argument",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
