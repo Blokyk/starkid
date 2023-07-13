@@ -168,7 +168,7 @@ public class ValidatorFinder
 
         var returnType = minMethodInfo.ReturnType;
 
-        if (returnType == CommonTypes.BOOLMinInfo)
+        if (returnType.SpecialType == SpecialType.System_Boolean)
             return new ValidatorInfo.Method.Bool(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
 
         // we need nullability here
@@ -193,7 +193,7 @@ public class ValidatorFinder
         ValidateWithAttribute attr,
         ITypeSymbol argType
     ) {
-        if (!SymbolUtils.Equals(prop.Type, CommonTypes.BOOL)) {
+        if (prop.Type.SpecialType != SpecialType.System_Boolean) {
             return new ValidatorInfo.Invalid(
                 Diagnostic.Create(
                     Diagnostics.ValidatorPropertyReturnMismatch,

@@ -27,6 +27,8 @@ public sealed record MinimalTypeInfo(
 ) : MinimalSymbolInfo(Name, ContainingType, Location) {
     public override string ToString() => FullName;
 
+    public required SpecialType SpecialType { get; init; }
+
     public static MinimalTypeInfo FromSymbol(ITypeSymbol type) {
         MinimalTypeInfo? containingType = null;
 
@@ -38,7 +40,13 @@ public sealed record MinimalTypeInfo(
             ? type.NullableAnnotation == NullableAnnotation.Annotated
             : type is INamedTypeSymbol { SpecialType: SpecialType.System_Nullable_T };
 
-        return new MinimalTypeInfo(SymbolInfoCache.GetShortTypeName(type), containingType, SymbolInfoCache.GetFullTypeName(type), isNullable, type.GetDefaultLocation());
+        return new MinimalTypeInfo(
+            SymbolInfoCache.GetShortTypeName(type),
+            containingType,
+            SymbolInfoCache.GetFullTypeName(type),
+            isNullable,
+            type.GetDefaultLocation()
+        ) { SpecialType = type.SpecialType };
     }
 }
 

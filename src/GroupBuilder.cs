@@ -150,7 +150,7 @@ internal sealed class GroupBuilder
 
         bool isValid = true;
 
-        if (hasExitCode && minMethodSymbol.ReturnType != CommonTypes.INT32MinInfo) {
+        if (hasExitCode && minMethodSymbol.ReturnType.SpecialType != SpecialType.System_Int32) {
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.CmdMustBeVoidOrInt,
@@ -255,7 +255,7 @@ internal sealed class GroupBuilder
         var typeMinInfo = MinimalTypeInfo.FromSymbol(type);
 
         // if it's a flag
-        if (typeMinInfo == CommonTypes.BOOLMinInfo) {
+        if (typeMinInfo.SpecialType == SpecialType.System_Boolean) {
             option = new Flag(
                 longName,
                 shortName,
@@ -309,7 +309,7 @@ internal sealed class GroupBuilder
         // doesn't really matter rn, but it'd be nice to be able to use any type for params,
         // because i'd really like to just say 'params FileInfo[] files' instead of having
         // to transform/validate it myself
-        if (isParams && (param.Type is not IArrayTypeSymbol paramArrayType || !SymbolUtils.Equals(paramArrayType.ElementType, CommonTypes.STR))) {
+        if (isParams && (param.Type is not IArrayTypeSymbol paramArrayType || paramArrayType.ElementType.SpecialType != SpecialType.System_String)) {
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.ParamsHasToBeString,

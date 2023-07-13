@@ -250,19 +250,21 @@ internal static partial class CodeGenerator
 
         string expr = "";
 
-        if (parser.TargetType == CommonTypes.BOOLMinInfo) {
+        var targetType = parser.TargetType;
+
+        if (targetType.SpecialType == SpecialType.System_Boolean) {
             expr = "__arg is null ? true : ";
         }
 
         expr += parser switch {
             ParserInfo.Identity => "__arg" + (argName is null ? "" : " ?? " + argName),
-            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + parser.TargetType.FullName + ">(" + dm.FullName + ", __arg ?? \"\")",
+            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + targetType.FullName + ">(" + dm.FullName + ", __arg ?? \"\")",
             ParserInfo.Constructor ctor => "new " + ctor.TargetType.FullName + "(__arg ?? \"\")",
-            ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + parser.TargetType.FullName + ">(" + bom.FullName + ", __arg ?? \"\")",
+            ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + targetType.FullName + ">(" + bom.FullName + ", __arg ?? \"\")",
             _ => throw new Exception(parser.GetType().Name + " is not a supported ParserInfo type."),
         };
 
-        if (parser.TargetType.IsNullable && defaultValueExpr is not null)
+        if (targetType.IsNullable && defaultValueExpr is not null)
             expr = '(' + expr + " ?? " + defaultValueExpr + ')';
 
         return expr;
