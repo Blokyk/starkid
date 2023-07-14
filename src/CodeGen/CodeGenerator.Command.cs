@@ -30,8 +30,8 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
         sb.AppendLine();
 
         sb.Append(@"
-    // needed to simplify recline's codegen
-    internal static readonly Dictionary<string, CmdID> _subs = new();");
+        // needed to simplify recline's codegen
+        internal static readonly Dictionary<string, CmdID> _subs = new();");
 
         sb.AppendLine();
         sb.AppendLine();
@@ -53,7 +53,7 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
         AddHelpTextLine(sb, cmd);
 
         sb.Append(@"
-    internal const string _name = """).Append(cmd.Name).Append("\";")
+        internal const string _name = """).Append(cmd.Name).Append("\";")
         .AppendLine();
 
         sb.Append("\t}").AppendLine();
@@ -61,7 +61,7 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
 
     void AddCommandFunc(StringBuilder sb, MinimalMethodInfo method) {
         sb.Append(@"
-    internal static ");
+        internal static ");
 
         var isVoid = method.ReturnsVoid;
         var methodParams = method.Parameters;
