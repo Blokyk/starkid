@@ -35,12 +35,12 @@ internal static class CodegenHelpers
 
         var fieldPrefix
             = groupOrCmd is Group group
-            ? group.FullClassName + "."
-            : "";
+            ? group.FullClassName + ".@"
+            : "@";
 
         string expr
             // = opt.BackingSymbol.ToString() + " = " + validExpr;
-            = fieldPrefix + SymbolUtils.GetSafeName(opt.BackingSymbol.Name) + " = " + validExpr;
+            = fieldPrefix + opt.BackingSymbol.Name + " = " + validExpr;
 
         // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
         return sb

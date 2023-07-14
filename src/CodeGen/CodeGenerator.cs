@@ -177,7 +177,7 @@ internal sealed partial class CodeGenerator
                 defArgName[i]
                     = methodParams[i].IsParams
                         ? "_params.ToArray()"
-                        : SymbolUtils.GetSafeName(methodParams[i].Name) + "!";
+                        : "@" + methodParams[i].Name + "!";
             }
 
             sb.Append(String.Join(", ", defArgName));
