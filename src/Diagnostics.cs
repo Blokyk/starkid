@@ -309,9 +309,18 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CouldntFindAutoParser
         = new(
             "CLI400",
-            "Couldn't find a suitable parsing method for type '{0}'",
-            "Type '{0}' can't be automatically parsed from a string. "
-            + "Make sure it has either a constructor that has a single string parameter, or matching TryParse or Parse methods",
+            "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
+            "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor NoValidAutoParser
+        = new(
+            "CLI400",
+            "None of the 'Parse' or 'TryParse' methods for type '{0}' were valid parsers",
+            "None of the 'Parse' or 'TryParse' methods for type '{0}' were valid parsers",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -327,11 +336,11 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor CouldntFindNamedParser
+    public static readonly DiagnosticDescriptor NoValidParserOverload
         = new(
             "CLI402",
-            "Couldn't find suitable method '{0}' for parsing",
-            "Couldn't find method '{0}', or it wasn't suitable to parse this option/argument",
+            "No overload for '{0}' can be used as a parsing method here",
+            "No overload for '{0}' can be used as a parsing method here",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -347,11 +356,91 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor NoValidParserMethod
+    public static readonly DiagnosticDescriptor CouldntFindNamedParser
         = new(
             "CLI404",
-            "No overload for '{0}' can be used as a parsing method here",
-            "No overload for '{0}' can be used as a parsing method here",
+            "Couldn't find a method named '{0}' suitable for parsing",
+            "Couldn't find method '{0}', or it wasn't suitable to parse this option/argument",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParserCantReturnRef
+        = new(
+            "CLI405",
+            "Parsing methods cannot return by ref or ref readonly",
+            "Parsing methods cannot return by ref or ref readonly",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParserCantBeGenericMethod
+        = new(
+            "CLI406",
+            "Parsing methods cannot have any type parameters",
+            "Parsing methods cannot have any type parameters",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParserHasToBeStatic
+        = new(
+            "CLI407",
+            "Parsing methods have to be static",
+            "Parsing methods have to be static",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParserHasToReturnTargetType
+        = new(
+            "CLI408",
+            "This parser doesn't return a type compatible with '{0}'",
+            "There is no implicit conversion from return type '{1}' to target type '{0}'",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParserMustTakeStringParam
+        = new(
+            "CLI409",
+            "A parsing method's first parameter must be of type 'string'",
+            "A parsing method's first parameter must be of type 'string'",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor InvalidIndirectParserForm
+        = new(
+            "CLI410",
+            "Indirect parsers must be of the form 'bool Foo(string, out T)'",
+            "Indirect parsers must be of the form 'bool Foo(string, out T)'",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor IndirectParserWrongTargetType
+        = new(
+            "CLI411",
+            "The out parameter of an indirect parser must be exactly the same as the target type",
+            "This out parameter must be of target type '{0}' to be a valid indirect parser",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParamCountWrongForParser
+        = new(
+            "CLI412",
+            "Parsing methods must have either 1 or 2 parameters",
+            "Method '{0}' needs either 1 or 2 parameters to be a parser, but has '{1}' instead",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -431,8 +520,18 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ValidatorMustBeStatic
         = new(
             "CLI504",
-            "Validator method '{0}' must be static",
+            "Validator methods must be static",
             "Method '{0}' must be static to be used as a validator",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ValidatorWrongParameter
+        = new(
+            "CLI505",
+            "Validator methods must take a single parameter of type '{0}'",
+            "Validator methods must take a single parameter of type '{0}'",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -440,7 +539,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor ValidateWithMustBeNameOfExpr
         = new(
-            "CLI505",
+            "CLI599",
             "The parameter to a ValidateWith attribute must be a nameof expression",
             "Expression '{0}' can't be used as a parameter to a ValidateWith attribute; "
             + "it must be a nameof expression",

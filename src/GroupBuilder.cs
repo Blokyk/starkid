@@ -344,15 +344,11 @@ internal sealed class GroupBuilder
             parser = ParserInfo.StringIdentity;
         } else {
             if (attrList.ParseWith is null) {
-                if (!_parserFinder.TryFindParserForType(param.Type, param.GetDefaultLocation(), out parser)) {
-                    _parserFinder.AddDiagnosticIfInvalid(parser);
+                if (!_parserFinder.TryFindParserForType(param.Type, param.GetDefaultLocation(), out parser))
                     return false;
-                }
             } else {
-                if (!_parserFinder.TryGetParserFromName(attrList.ParseWith, param.Type, out parser)) {
-                    _parserFinder.AddDiagnosticIfInvalid(parser);
+                if (!_parserFinder.TryGetParserFromName(attrList.ParseWith, param.Type, out parser))
                     return false;
-                }
             }
 
             if (attrList.ValidateWith is not null && !_validatorFinder.TryGetValidator(attrList.ValidateWith, param.Type, out validator))

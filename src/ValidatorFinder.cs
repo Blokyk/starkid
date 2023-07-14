@@ -31,65 +31,59 @@ public class ValidatorFinder
     public bool TryGetValidator(ValidateWithAttribute attr, ITypeSymbol argType, out ValidatorInfo validator) {
         validator = _attrValidatorCache.GetValue(attr, argType) with { Message = attr.ErrorMessage };
 
-        if (validator is ValidatorInfo.Invalid errorInfo) {
-            if (errorInfo.Diagnostic is not null) {
-                addDiagnostic(errorInfo.Diagnostic);
-            } else {
-                errorInfo = errorInfo with {
-                    Diagnostic =
-                        Diagnostic.Create(
-                            Diagnostics.CouldntFindValidator,
-                            attr.ValidatorNameSyntaxRef.GetLocation(),
-                            attr.ValidatorName
-                        )
-                };
+        if (validator is not ValidatorInfo.Invalid invalidValidator)
+            return true;
 
-                validator = errorInfo;
+        addDiagnostic(
+            Diagnostic.Create(
+                invalidValidator.Descriptor,
+                attr.ValidatorNameSyntaxRef.GetLocation(),
+                invalidValidator.MessageArgs
+            )
+        );
 
-                addDiagnostic(errorInfo.Diagnostic);
-            }
-        }
-
-        return validator is not ValidatorInfo.Invalid;
+        return false;
     }
 
-    ValidatorInfo GetValidatorCoreWithoutProperty(ValidateWithAttribute attr, ITypeSymbol argType) {
+    ValidatorInfo GetValidatorCoreWithoutProperty(ValidateWithAttribute attr, ITypeSymbol type) {
+        if (type is not INamedTypeSymbol argType)
+            return new ValidatorInfo.Invalid(Diagnostics.NotValidValidatorType, type.GetErrorName());
+
         var members = _model.GetMemberGroup(attr.ValidatorNameSyntaxRef.GetSyntax());
 
-        bool hasAnyMethodWithName = false;
+        int candidateMethods = 0;
+        ValidatorInfo? validator = null;
 
         foreach (var member in members) {
             if (member is not IMethodSymbol method)
                 break;
 
-            hasAnyMethodWithName = true;
+            candidateMethods++;
 
-            var validator = GetValidatorFromMethod(method, attr, argType);
-
-            if (validator is not null)
+            if (TryGetValidatorFromMethod(method, argType, out validator))
                 return validator;
         }
 
-        if (hasAnyMethodWithName) {
+        if (candidateMethods == 0) {
             return new ValidatorInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.NoValidValidatorMethod,
-                    attr.ValidatorNameSyntaxRef.GetLocation(),
-                    attr.ValidatorName, argType.GetErrorName()
-                )
+                Diagnostics.CouldntFindValidator,
+                attr.ValidatorName
             );
         }
 
+        if (candidateMethods == 1)
+            return validator!; // nonull: always assigned when there's a candidate
+
         return new ValidatorInfo.Invalid(
-            Diagnostic.Create(
-                Diagnostics.CouldntFindValidator,
-                attr.ValidatorNameSyntaxRef.GetLocation(),
-                attr.ValidatorName
-            )
+            Diagnostics.NoValidValidatorMethod,
+            attr.ValidatorName, argType.GetErrorName()
         );
     }
 
-    ValidatorInfo GetValidatorCore(ValidateWithAttribute attr, ITypeSymbol argType) {
+    ValidatorInfo GetValidatorCore(ValidateWithAttribute attr, ITypeSymbol type) {
+        if (type is not INamedTypeSymbol argType)
+            return new ValidatorInfo.Invalid(Diagnostics.NotValidValidatorType, type.GetErrorName());
+
         var memberSymbolInfo = _model.GetSymbolInfo(attr.ValidatorNameSyntaxRef.GetSyntax());
 
         if (memberSymbolInfo.Symbol is not null) {
@@ -101,114 +95,115 @@ public class ValidatorFinder
             if (symbol is not IPropertySymbol propSymbol)
                 goto COULDNT_FIND_VALIDATOR;
 
-            var validator = GetValidatorFromProperty(propSymbol, attr, argType);
-
-            if (validator is not null)
-                return validator;
+            // we return even if it's invalid because there's no alternative anyway
+            return GetValidatorFromProperty(propSymbol, argType);
         } else if (memberSymbolInfo.CandidateReason == CandidateReason.MemberGroup) {
+            ValidatorInfo? validator = null;
+
             foreach (var symbol in memberSymbolInfo.CandidateSymbols) {
                 // we should only be getting methods here, cf note above
                 if (symbol is not IMethodSymbol methodSymbol)
                     goto COULDNT_FIND_VALIDATOR;
 
-                var validator = GetValidatorFromMethod(methodSymbol, attr, argType);
-
-                if (validator is not null)
+                if (TryGetValidatorFromMethod(methodSymbol, argType, out validator))
                     return validator;
             }
 
+            // if there's only one candidate symbol, then return the error specific to it
+            if (memberSymbolInfo.CandidateSymbols.Length == 1)
+                return validator!; // nonnull: if there's any candidate, we will always have tried to find a validator
+
             return new ValidatorInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.NoValidValidatorMethod,
-                    attr.ValidatorNameSyntaxRef.GetLocation(),
-                    attr.ValidatorName, argType.GetErrorName()
-                )
+                Diagnostics.NoValidValidatorMethod,
+                attr.ValidatorName, argType.GetErrorName()
             );
         }
 
     COULDNT_FIND_VALIDATOR:
         return new ValidatorInfo.Invalid(
-            Diagnostic.Create(
-                Diagnostics.CouldntFindValidator,
-                attr.ValidatorNameSyntaxRef.GetLocation(),
-                attr.ValidatorName
-            )
+            Diagnostics.CouldntFindValidator,
+            attr.ValidatorName
         );
     }
 
-    ValidatorInfo? GetValidatorFromMethod(
+    bool TryGetValidatorFromMethod(
         IMethodSymbol method,
-        ValidateWithAttribute attr,
-        ITypeSymbol argType
+        INamedTypeSymbol argType,
+        out ValidatorInfo validator
     ) {
-        if (method.MethodKind != MethodKind.Ordinary)
-            return null;
+        if (method.MethodKind != MethodKind.Ordinary) {
+            validator = new ValidatorInfo.Invalid(
+                Diagnostics.NoValidValidatorMethod,
+                method.GetErrorName()
+            );
 
-        if (method.Parameters.Length != 1)
-            return null;
-
-        if (!_implicitConversionsCache.GetValue(argType, method.Parameters[0].Type))
-            return null;
-
-        // at this point there's no other possible overload
+            return false;
+        }
 
         if (!method.IsStatic) {
-            return new ValidatorInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.ValidatorMustBeStatic,
-                    attr.ValidatorNameSyntaxRef.GetLocation(),
-                    method.GetErrorName()
-                )
+            validator = new ValidatorInfo.Invalid(
+                Diagnostics.ValidatorMustBeStatic,
+                method.GetErrorName()
             );
+
+            return false;
+        }
+
+        if (method.Parameters.Length != 1) {
+            validator = new ValidatorInfo.Invalid(
+                Diagnostics.ValidatorWrongParameter,
+                argType.GetErrorName()
+            );
+
+            return false;
+        }
+
+        if (!_implicitConversionsCache.GetValue(argType, method.Parameters[0].Type)) {
+            validator = new ValidatorInfo.Invalid(
+                Diagnostics.ValidatorWrongParameter,
+                argType.GetErrorName()
+            );
+
+            return false;
         }
 
         var minMethodInfo = MinimalMethodInfo.FromSymbol(method);
 
         var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
 
-        var returnType = minMethodInfo.ReturnType;
+        if (method.ReturnsVoid) {
+            validator = new ValidatorInfo.Method.Exception(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
+            return true;
+        }
 
-        if (returnType.SpecialType == SpecialType.System_Boolean)
-            return new ValidatorInfo.Method.Bool(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
+        if (minMethodInfo.ReturnType.SpecialType == SpecialType.System_Boolean) {
+            validator = new ValidatorInfo.Method.Bool(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
+            return true;
+        }
 
-        if (method.ReturnsVoid)
-            return new ValidatorInfo.Method.Exception(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
+        validator = new ValidatorInfo.Invalid(
+            Diagnostics.ValidatorReturnMismatch,
+            method.GetErrorName()
+        );
 
-        // // nullability needed here too
-        // if (SymbolUtils.Equals(method.ReturnType, CommonTypes.STR))
-        //     return new ValidatorInfo.Method.String(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
-
-        return new ValidatorInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.ValidatorReturnMismatch,
-                    attr.ValidatorNameSyntaxRef.GetLocation(),
-                    method.GetErrorName()
-                )
-            );
+        return false;
     }
 
     ValidatorInfo GetValidatorFromProperty(
         IPropertySymbol prop,
-        ValidateWithAttribute attr,
-        ITypeSymbol argType
+        INamedTypeSymbol argType
     ) {
         if (prop.Type.SpecialType != SpecialType.System_Boolean) {
             return new ValidatorInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.ValidatorPropertyReturnMismatch,
-                    attr.ValidatorNameSyntaxRef.GetLocation(),
-                    prop.GetErrorName()
-                )
+                Diagnostics.ValidatorPropertyReturnMismatch,
+                prop.GetErrorName()
             );
         }
 
         if (!prop.ContainingType.IsBaseOf(argType)) {
             return new ValidatorInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.PropertyValidatorNotOnArgType,
-                    attr.ValidatorNameSyntaxRef.GetLocation(),
-                    prop.GetErrorName(), argType.GetErrorName()
-                )
+                Diagnostics.PropertyValidatorNotOnArgType,
+                prop.GetErrorName(), argType.GetErrorName()
             );
         }
 

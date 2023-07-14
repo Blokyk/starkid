@@ -11,5 +11,5 @@ public abstract record ValidatorInfo() {
 
     public record Property(string PropertyName, MinimalMemberInfo PropertyInfo) : ValidatorInfo;
 
-    public record Invalid(Diagnostic? Diagnostic = null) : ValidatorInfo;
+    public record Invalid(DiagnosticDescriptor Descriptor, params object[] MessageArgs) : ValidatorInfo;
 }

@@ -12,6 +12,7 @@ public class ParserFinder
 
     private readonly SemanticModel _model;
 
+    // todo: convert this to an array and lookup by casting to numeric underlying type
     private static readonly Dictionary<SpecialType, ParserInfo> _specialTypesMap
         = new() {
             {
@@ -25,14 +26,14 @@ public class ParserFinder
                 ParserInfo.StringIdentity
             }, {
                 SpecialType.System_Char,
-                new ParserInfo.BoolOutMethod(
-                    "System.Char.TryParse",
+                new ParserInfo.DirectMethod(
+                    "System.Char.Parse",
                     CommonTypes.CHARMinInfo
                 )
             }, {
                 SpecialType.System_Int32,
-                new ParserInfo.BoolOutMethod(
-                    "System.Int32.TryParse",
+                new ParserInfo.DirectMethod(
+                    "System.Int32.Parse",
                     CommonTypes.INT32MinInfo
                 )
             }, {
@@ -43,14 +44,14 @@ public class ParserFinder
                 )
             }, {
                 SpecialType.System_Single,
-                new ParserInfo.BoolOutMethod(
-                    "System.Single.TryParse",
+                new ParserInfo.DirectMethod(
+                    "System.Single.Parse",
                     CommonTypes.SINGLEMinInfo
                 )
             }, {
                 SpecialType.System_DateTime,
-                new ParserInfo.BoolOutMethod(
-                    "System.DateTime.TryParseExact",
+                new ParserInfo.DirectMethod(
+                    "System.DateTime.Parse",
                     CommonTypes.DATE_TIMEMinInfo
                 )
             }
@@ -79,45 +80,26 @@ public class ParserFinder
     public bool TryGetParserFromName(ParseWithAttribute attr, ITypeSymbol targetType, out ParserInfo parser) {
         parser = _attrParserCache.GetValue(attr, targetType);
 
-        if (parser is ParserInfo.Invalid invalidParser) {
-            var diagnostic = invalidParser.Diagnostic;
+        if (parser is not ParserInfo.Invalid invalidParser)
+            return true;
 
-            if (diagnostic is null) {
-                diagnostic =
-                    Diagnostic.Create(
-                        Diagnostics.CouldntFindNamedParser,
-                        attr.ParserNameSyntaxRef.GetLocation(),
-                        attr.ParserName
-                    );
-            } else {
-                // we have to re-create the error because the location might
-                // be different even with a cache hit
-                // In case GetParserWithName returns other diagnostics, you should
-                // expand this section
-                // unfortunately we can't change the location of a diagnostic
-                // easily while keeping all the information
-                if (diagnostic.Descriptor == Diagnostics.NoValidParserMethod) {
-                    diagnostic =
-                        Diagnostic.Create(
-                            Diagnostics.NoValidParserMethod,
-                            attr.ParserNameSyntaxRef.GetLocation(),
-                            attr.ParserName
-                        );
-                }
-            }
+        addDiagnostic(
+            Diagnostic.Create(
+                invalidParser.Descriptor,
+                attr.ParserNameSyntaxRef.GetLocation(),
+                invalidParser.MessageArgs
+            )
+        );
 
-            addDiagnostic(diagnostic);
-
-            parser = invalidParser with { Diagnostic = diagnostic };
-        }
-
-        return parser is not ParserInfo.Invalid;
+        return false;
     }
 
     ParserInfo GetParserFromNameCore(ParseWithAttribute attr, ITypeSymbol targetType) {
         var members = _model.GetMemberGroup(attr.ParserNameSyntaxRef.GetSyntax());
 
         bool hasAnyMethodWithName = false; // can't use members.Length cause they're not all methods
+
+        ParserInfo? parserInfo = null;
 
         foreach (var member in members) {
             if (member.Kind != SymbolKind.Method)
@@ -130,50 +112,43 @@ public class ParserFinder
             if (method.MethodKind != MethodKind.Ordinary)
                 continue;
 
-            var parserInfo = GetParserInfo(method, targetType);
-
-            if (parserInfo is not ParserInfo.Invalid)
+            if (TryGetParserInfo(method, targetType, out parserInfo))
                 return parserInfo;
         }
 
-        return !hasAnyMethodWithName
-            ? new ParserInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.CouldntFindNamedParser,
-                    Location.None,
-                    attr.ParserName
-                )
-            )
-            : new ParserInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.NoValidParserMethod,
-                    Location.None,
-                    attr.ParserName
-                )
+        if (hasAnyMethodWithName) {
+            if (members.Length == 1)
+                return parserInfo!;
+
+            // if there's more than one methods, better to just say none of them fit
+            // rather than spit out just the reason the last candidate was rejected
+            return new ParserInfo.Invalid(
+                Diagnostics.NoValidParserOverload,
+                attr.ParserName
             );
+        }
+
+        return new ParserInfo.Invalid(
+            Diagnostics.CouldntFindNamedParser,
+            attr.ParserName
+        );
     }
 
     public bool TryFindParserForType(ITypeSymbol sourceType, Location queryLocation, out ParserInfo parser) {
         parser = FindParserForType(sourceType);
 
-        if (parser is ParserInfo.Invalid invalidParser) {
-            if (invalidParser.Diagnostic is null) {
-                invalidParser = invalidParser with {
-                    Diagnostic =
-                        Diagnostic.Create(
-                            Diagnostics.CouldntFindAutoParser,
-                            queryLocation,
-                            sourceType.GetErrorName()
-                        )
-                };
+        if (parser is not ParserInfo.Invalid invalidParser)
+            return true;
 
-                parser = invalidParser;
-            }
+        addDiagnostic(
+            Diagnostic.Create(
+                invalidParser.Descriptor,
+                queryLocation,
+                invalidParser.MessageArgs
+            )
+        );
 
-            addDiagnostic(invalidParser.Diagnostic);
-        }
-
-        return parser is not ParserInfo.Invalid;
+        return false;
     }
 
     ParserInfo FindParserForType(ITypeSymbol sourceType)
@@ -181,20 +156,22 @@ public class ParserFinder
 
     ParserInfo FindParserForTypeCore(ITypeSymbol sourceType) {
         if (sourceType.SpecialType == SpecialType.System_String)
-            return new ParserInfo.Identity(CommonTypes.STRMinInfo);
+            return ParserInfo.StringIdentity;
 
-        if (sourceType is not INamedTypeSymbol type)
-            return ParserInfo.Error;
+        if (sourceType is not INamedTypeSymbol type) {
+            return new ParserInfo.Invalid(Diagnostics.NotValidParserType);
+        }
 
-        // if this is a version of nullable
-        if (SymbolUtils.Equals(type.ConstructedFrom, CommonTypes.NULLABLE))
+        // if this is a version of nullable (no we can't use SpecialType)
+        if (SymbolUtils.Equals(type.ConstructedFrom, CommonTypes.NULLABLE)) {
             return FindParserForType(type.TypeArguments[0]);
+        }
 
-        if (_implicitConversionsCache.GetValue(sourceType, CommonTypes.STR))
+        if (_implicitConversionsCache.GetValue(CommonTypes.STR, sourceType))
             return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
 
         /*
-        * This is way too strict. In reality, you could have type like this :
+        * This is way too strict. In reality, you could have a type like this :
         *
         * class Wrapper<T> {
         *     public Wrapper(T item) { ... }
@@ -204,11 +181,8 @@ public class ParserFinder
         */
         if (type.IsGenericType) { // todo(#6): restriction on generics could/should be lifted, cf above
             return new ParserInfo.Invalid(
-                Diagnostic.Create(
-                    Diagnostics.NoGenericAutoParser,
-                    Location.None,
-                    type.GetErrorName()
-                )
+                Diagnostics.NoGenericAutoParser,
+                type.GetErrorName()
             );
         }
 
@@ -225,19 +199,19 @@ public class ParserFinder
             );
         }
 
-        foreach (var ctor in type.Constructors) {
-            var parserInfo = GetParserInfo(ctor, type);
+        ParserInfo? parserInfo = null;
 
-            if (parserInfo is not ParserInfo.Invalid)
+        foreach (var ctor in type.Constructors) {
+            if (TryGetParserInfo(ctor, type, out parserInfo))
                 return parserInfo;
         }
 
         // todo(#7): support extension methods
 
-        // if we didn't find a suitable constructor, try to find TryParse(string, out $target) or Parse(string)
+        // if we didn't find a suitable constructor, try to find Parse(string) or TryParse(string, out $target)
 
-        // prefer TryParse-style methods over Parse-and-throw
-        ParserInfo? directParseCandidate = null;
+        ParserInfo? boolOutParseCandidate = null;
+        int candidateCount = 0;
 
         foreach (var member in type.GetMembers()) {
             if (member.Kind != SymbolKind.Method)
@@ -246,32 +220,57 @@ public class ParserFinder
             var method = (member as IMethodSymbol)!;
 
             if (method.Name is "TryParse" or "Parse") {
-                var parserInfo = GetParserInfo(method, type);
-
-                if (parserInfo is not ParserInfo.Invalid) {
-                    if (parserInfo is ParserInfo.DirectMethod dm)
-                        directParseCandidate = dm;
+                candidateCount++;
+                if (TryGetParserInfo(method, type, out parserInfo)) {
+                    // always prefer Parse methods over TryParse, since the
+                    // first generally gives more info with exception
+                    // messages
+                    if (parserInfo is ParserInfo.BoolOutMethod bo)
+                        boolOutParseCandidate = bo;
                     else
                         return parserInfo;
                 }
             }
         }
 
-        return directParseCandidate ?? ParserInfo.Error;
+        // if we're here, we went through every method without finding
+        // any Parse() method
+        if (boolOutParseCandidate is not null)
+            return boolOutParseCandidate;
+
+        switch (candidateCount) {
+            case 0:
+                return new ParserInfo.Invalid(Diagnostics.CouldntFindAutoParser, type.GetErrorName());
+            case 1:
+                return parserInfo!; // notnull: parserInfo gets set at the same time as candidateCount gets incremented
+            default:
+                return new ParserInfo.Invalid(Diagnostics.NoValidAutoParser, type.GetErrorName());
+        }
     }
 
-    ParserInfo GetParserInfo(IMethodSymbol method, ITypeSymbol targetType) {
+    bool TryGetParserInfo(IMethodSymbol method, ITypeSymbol targetType, out ParserInfo parser) {
         // todo: add checks like bound generics, etc
 
         var isCtor = method.MethodKind == MethodKind.Constructor;
 
-        if (method.ReturnsByRef || method.ReturnsByRefReadonly)
-            return ParserInfo.Error;
+        if (!isCtor) {
+            if (!method.IsStatic) {
+                parser = new ParserInfo.Invalid(Diagnostics.ParserHasToBeStatic);
+                return false;
+            }
 
-        // note: when we lift the restriction on generic methods, also change
-        // the enum TryParse code in FindParserForType
-        if (!isCtor && (!method.IsStatic || method.IsGenericMethod))
-            return ParserInfo.Error;
+            // note: when we refactor to lift the restriction on generic methods,
+            // also change the Enum.Parse code in FindParserForType
+            if (method.IsGenericMethod) {
+                parser = new ParserInfo.Invalid(Diagnostics.ParserCantBeGenericMethod);
+                return false;
+            }
+
+            if (method.ReturnsByRef || method.ReturnsByRefReadonly) {
+                parser = new ParserInfo.Invalid(Diagnostics.ParserCantReturnRef);
+                return false;
+            }
+        }
 
         switch (method.Parameters.Length) {
             case 1: { // $targetType Parse(string)
@@ -281,63 +280,90 @@ public class ParserFinder
                     =  param.Type.SpecialType == SpecialType.System_String
                     || _implicitConversionsCache.GetValue(CommonTypes.STR, param.Type);
 
-                var isReturnTypeTarget = _implicitConversionsCache.GetValue(targetType, method.ReturnType);
+                if (!firstArgumentIsString) {
+                    parser = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
+                    return false;
+                }
 
-                var isValid = firstArgumentIsString && (isCtor || isReturnTypeTarget);
+                var isReturnTypeTarget
+                    = isCtor
+                    ? _implicitConversionsCache.GetValue(method.ContainingType, targetType)
+                    : _implicitConversionsCache.GetValue(method.ReturnType, targetType);
 
-                if (!isValid)
-                    return ParserInfo.Error;
+                if (!isReturnTypeTarget) {
+                    parser = new ParserInfo.Invalid(
+                        Diagnostics.ParserHasToReturnTargetType,
+                        targetType.GetErrorName(),
+                        method.ReturnType.GetErrorName()
+                    );
+                    return false;
+                }
 
                 var targetTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
 
-                if (isCtor)
-                    return new ParserInfo.Constructor(targetTypeInfo);
+                if (isCtor) {
+                    parser = new ParserInfo.Constructor(targetTypeInfo);
+                    return true;
+                }
 
                 var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
-                return new ParserInfo.DirectMethod(containingTypeFullName + "." + method.Name, targetTypeInfo);
+
+                parser = new ParserInfo.DirectMethod(containingTypeFullName + "." + method.Name, targetTypeInfo);
+                return true;
             }
             case 2: { // bool TryParse(string, out $targetType)
                 // the return type should be exactly bool
-                if (method.ReturnType.SpecialType != SpecialType.System_Boolean)
-                    return ParserInfo.Error;
-
-                var outParam = method.Parameters[1];
-
-                // the second parameter should always be out
-                if (outParam.RefKind != RefKind.Out)
-                    return ParserInfo.Error;
-
-                // and its type should always be implicitly convertible to the target type
-                if (!_implicitConversionsCache.GetValue(outParam.Type, targetType))
-                    return ParserInfo.Error;
+                if (method.ReturnType.SpecialType != SpecialType.System_Boolean) {
+                    parser = new ParserInfo.Invalid(Diagnostics.InvalidIndirectParserForm);
+                    return false;
+                }
 
                 var inputParam = method.Parameters[0];
 
                 // first argument should be a string or at least implicitly convertible to a string
-                var isValid
-                    =  inputParam.Type.SpecialType == SpecialType.System_String // still true if string?
+                var firstArgIsString
+                    = inputParam.Type.SpecialType == SpecialType.System_String // still true if string?
                     || _implicitConversionsCache.GetValue(CommonTypes.STR, inputParam.Type);
 
-                if (!isValid)
-                    return ParserInfo.Error;
+                if (!firstArgIsString) {
+                    parser = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
+                    return false;
+                }
+
+                var outParam = method.Parameters[1];
+
+                // the second parameter should always be out
+                if (outParam.RefKind != RefKind.Out) {
+                    parser = new ParserInfo.Invalid(Diagnostics.InvalidIndirectParserForm);
+                    return false;
+                }
+
+                // and its type should always be the same as the target type (out parameters can't be co- or contra- variant)
+                if (!SymbolUtils.Equals(outParam.Type, targetType)) {
+                    parser = new ParserInfo.Invalid(
+                        Diagnostics.IndirectParserWrongTargetType,
+                        targetType.GetErrorName()
+                    );
+                    return false;
+                }
 
                 var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
 
-                return new ParserInfo.BoolOutMethod(
+                parser = new ParserInfo.BoolOutMethod(
                     containingTypeFullName + "." + method.Name,
                     MinimalTypeInfo.FromSymbol(targetType)
                 );
+
+                return false;
             }
             default: {
-                return ParserInfo.Error;
+                parser = new ParserInfo.Invalid(
+                    Diagnostics.ParamCountWrongForParser,
+                    method.GetErrorName(),
+                    method.Parameters.Length
+                );
+                return false;
             }
         }
-    }
-
-    public void AddDiagnosticIfInvalid(ParserInfo parser) {
-        if (parser is not ParserInfo.Invalid { Diagnostic: not null } invalidParser)
-            return;
-
-        addDiagnostic(invalidParser.Diagnostic);
     }
 }
