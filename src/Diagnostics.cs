@@ -411,8 +411,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ValidatorReturnMismatch
         = new(
             "CLI503",
-            "Validator method '{0}' must return bool, string? or Exception?",
-            "Validator method '{0}' must return bool, string? or Exception?",
+            "Validator method '{0}' must return bool or void",
+            "Validator method '{0}' must return bool or void",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
