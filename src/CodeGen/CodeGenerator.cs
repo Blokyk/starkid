@@ -6,20 +6,17 @@ namespace Recline.Generator;
 
 internal sealed partial class CodeGenerator
 {
-    private readonly LanguageVersion _langVersion;
     private readonly ReclineConfig _config;
 
     private readonly HelpGenerator _helpGenerator;
 
-    public CodeGenerator(LanguageVersion languageVersion, ReclineConfig config) {
-        _langVersion = languageVersion;
+    public CodeGenerator(ReclineConfig config) {
         _config = config;
-
         _helpGenerator = new(config);
     }
 
-    public static string ToSourceCode(Group rootGroup, LanguageVersion langVersion, ReclineConfig config) {
-        var generator = new CodeGenerator(langVersion, config);
+    public static string ToSourceCode(Group rootGroup, ReclineConfig config) {
+        var generator = new CodeGenerator(config);
         var sb = new StringBuilder();
         generator.AddSourceCode(sb, rootGroup, true);
         return sb.ToString();
@@ -164,7 +161,7 @@ internal sealed partial class CodeGenerator
             sb.Append("_func");
         } else {
             // lambda attributes are only supported since C#10
-            if (_langVersion >= LanguageVersion.CSharp10)
+            if (_config.LanguageVersion >= LanguageVersion.CSharp10)
                 sb.Append("[System.Diagnostics.StackTraceHidden]");
 
             sb.Append("() => "); // can't be static because of _params

@@ -131,11 +131,7 @@ namespace Recline;
                 )
                 .WithTrackingName("recline_binding");
 
-        var reclineConfig
-            = context
-                .AnalyzerConfigOptionsProvider
-                .Select((opts, _) => ReclineConfig.Parse(opts.GlobalOptions))
-                .WithTrackingName("recline_config");
+        var globalConfigSource = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
 
         var groupTreeOnlySource
             = groupTreeSource.Select((w, _) => w.Data);
@@ -144,7 +140,7 @@ namespace Recline;
         var combinedValueProvider
             = groupTreeOnlySource
                 .Combine(usingsSource)
-                .Combine(reclineConfig.Combine(langVersionSource));
+            .Combine(globalConfigSource.Combine(langVersionSource));
 
         // Generate the source using the compilation and enums
         context.RegisterImplementationSourceOutput(
