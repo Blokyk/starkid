@@ -134,8 +134,8 @@ namespace Recline;
         var reclineConfig
             = context
                 .AnalyzerConfigOptionsProvider
-                .WithTrackingName("recline_config")
-                .Select((opts, _) => ReclineConfig.Parse(opts.GlobalOptions));
+                .Select((opts, _) => ReclineConfig.Parse(opts.GlobalOptions))
+                .WithTrackingName("recline_config");
 
         var groupTreeOnlySource
             = groupTreeSource.Select((w, _) => w.Data);
@@ -165,8 +165,7 @@ namespace Recline;
                     => w.GetDiagnostics()
                 )
                 .Combine(groupTreeSource.Select((w, _) => w.GetDiagnostics()))
-                .WithTrackingName("recline_collect_diagnostics")
-                ;
+                .WithTrackingName("recline_collect_diagnostics");
 
         context.RegisterSourceOutput(
             reclineDiagnosticSource,

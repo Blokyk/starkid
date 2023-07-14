@@ -5,21 +5,32 @@ using System.Collections.ObjectModel;
 
 namespace Recline.Generator;
 
-internal static partial class CodeGenerator
+internal sealed partial class CodeGenerator
 {
-    internal static class HelpGenerator
+    void AddHelpTextLine(StringBuilder sb, InvokableBase groupOrCmd) {
+        var helpTextSb = new StringBuilder();
+        _helpGenerator.AddHelpText(helpTextSb, groupOrCmd);
+
+        sb.Append(@"
+        internal const string _helpText = ").Append(SyntaxFactory.Literal(helpTextSb.ToString())).Append(';')
+        .AppendLine();
+    }
+
+    internal sealed class HelpGenerator
     {
         private const string padding = "  ";
         private const int padSize = 2;
-        private static int MaxLineLength => Resources.MAX_LINE_LENGTH;
+        private readonly int _maxLineLength;
 
-        public static void AddHelpText(StringBuilder sb, InvokableBase groupOrCmd) {
+        public HelpGenerator(ReclineConfig config) => _maxLineLength = config.ColumnLength;
+
+        public void AddHelpText(StringBuilder sb, InvokableBase groupOrCmd) {
             AddDescription(sb, groupOrCmd);
             AddUsage(sb, groupOrCmd);
 
             // fixme(#1): if DefaultCommand is hidden, then add its opts+args in usage and in the help text
 
-            var builder = new HelpTextBuilder(padSize, MaxLineLength);
+            var builder = new HelpTextBuilder(padSize, _maxLineLength);
 
             if (groupOrCmd is Command cmd) {
                 foreach (var arg in cmd.Arguments)
@@ -84,7 +95,7 @@ internal static partial class CodeGenerator
             AddNotes(sb, groupOrCmd);
         }
 
-        static void AddUsage(StringBuilder sb, InvokableBase groupOrCmd) {
+        void AddUsage(StringBuilder sb, InvokableBase groupOrCmd) {
             sb.AppendLine("Usage:");
 
             if (groupOrCmd is not Group group) { // if it's a command, there's nothing else to do
@@ -120,7 +131,7 @@ internal static partial class CodeGenerator
             }
         }
 
-        static void AddShortLineHelp(StringBuilder sb, InvokableBase groupOrCmd) {
+        void AddShortLineHelp(StringBuilder sb, InvokableBase groupOrCmd) {
             sb.Append(padding);
             AddNameWithParentsBefore(sb, groupOrCmd);
 
@@ -136,7 +147,7 @@ internal static partial class CodeGenerator
             }
         }
 
-        static void AddShortArgumentList(StringBuilder sb, ReadOnlyCollection<Argument> args) {
+        void AddShortArgumentList(StringBuilder sb, ReadOnlyCollection<Argument> args) {
             if (args.Count == 0)
                 return;
 
@@ -153,7 +164,7 @@ internal static partial class CodeGenerator
             sb.Length--; // remove the last space
         }
 
-        static void AddShortOptionList(StringBuilder sb, IEnumerable<Option> opts, int count) {
+        void AddShortOptionList(StringBuilder sb, IEnumerable<Option> opts, int count) {
             if (count == 0)
                 return;
 
@@ -189,7 +200,7 @@ internal static partial class CodeGenerator
             sb.Length--; // remove the last space
         }
 
-        static int GetDisplayLength(IEnumerable<Option> opts) {
+        int GetDisplayLength(IEnumerable<Option> opts) {
             int length = 0;
 
             foreach (var opt in opts) {
@@ -205,7 +216,7 @@ internal static partial class CodeGenerator
             return length - 1; // minus the last space
         }
 
-        static void AddNameWithParentsBefore(StringBuilder sb, InvokableBase groupOrCmd) {
+        void AddNameWithParentsBefore(StringBuilder sb, InvokableBase groupOrCmd) {
             if (groupOrCmd.ParentGroup is not null) {
                 AddNameWithParentsBefore(sb, groupOrCmd.ParentGroup);
                 sb.Append(' ');
@@ -214,7 +225,7 @@ internal static partial class CodeGenerator
             sb.Append(groupOrCmd.Name);
         }
 
-        static void AddDescription(StringBuilder sb, InvokableBase groupOrCmd) {
+        void AddDescription(StringBuilder sb, InvokableBase groupOrCmd) {
             var desc = groupOrCmd.Description?.Description ?? groupOrCmd.Description?.ShortDesc;
 
             if (desc is null)
@@ -227,7 +238,7 @@ internal static partial class CodeGenerator
             sb.AppendLine();
         }
 
-        static void AddNotes(StringBuilder sb, InvokableBase groupOrCmd) {
+        void AddNotes(StringBuilder sb, InvokableBase groupOrCmd) {
             var notes = groupOrCmd.Description?.Remarks!;
 
             if (String.IsNullOrEmpty(notes))
@@ -242,9 +253,9 @@ internal static partial class CodeGenerator
                 sb.AppendLine();
         }
 
-        static void AppendAllLines(StringBuilder sb, string s, string padding) {
+        void AppendAllLines(StringBuilder sb, string s, string padding) {
             var padSize = padding.Length;
-            var maxPaddedLineLength = MaxLineLength - padSize;
+            var maxPaddedLineLength = _maxLineLength - padSize;
             foreach (var line in s.Split('\n')) {
                 sb
                     .AppendLine()

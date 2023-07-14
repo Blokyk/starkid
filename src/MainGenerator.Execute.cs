@@ -10,13 +10,12 @@ public partial class MainGenerator : IIncrementalGenerator
 
         SanitizeConfig(ref config, spc);
 
-        Resources.MAX_LINE_LENGTH = config.ColumnLength!.Value;
-
-        CodeGenerator.UseLanguageVersion(langVersion);
+        var usingsCode = CodegenHelpers.GenerateUsingsHeaderCode(usings);
+        var cmdDescCode = CodeGenerator.ToSourceCode(rootGroup, langVersion, config);
 
         spc.AddSource(
             Resources.GenNamespace + "_CmdDescDynamic.g.cs",
-            SourceText.From(GenerateUsingsHeaderCode(usings) + CodeGenerator.ToSourceCode(rootGroup), Encoding.UTF8)
+            SourceText.From(usingsCode + cmdDescCode, Encoding.UTF8)
         );
 
         spc.AddSource(
