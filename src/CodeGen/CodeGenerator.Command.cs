@@ -60,34 +60,20 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
     }
 
     void AddCommandFunc(StringBuilder sb, MinimalMethodInfo method) {
+        var typeName
+            = method.ReturnsVoid
+            ? "void"
+            : method.ReturnType.FullName;
+
         sb.Append(@"
-        internal static ");
+        private delegate ").Append(typeName).Append(" __funcT(");
 
-        var isVoid = method.ReturnsVoid;
-        var methodParams = method.Parameters;
+        sb.Append(String.Join(", ", method.Parameters.Select((p, i) => p.Type.FullName + " param" + i)));
 
-        if (isVoid) {
-            sb.Append("Action");
+        sb.Append(");\n");
 
-            if (methodParams.Length != 0)
-                sb.Append('<');
-        } else {
-            sb.Append("Func<");
-        }
-
-        sb.Append(String.Join(", ", methodParams.Select(p => p.Type.FullName)));
-
-        if (isVoid) {
-            if (methodParams.Length != 0)
-                sb.Append('>');
-        } else {
-            if (methodParams.Length != 0)
-                sb.Append(", ");
-
-            sb.Append("int>");
-        }
-
-        sb.Append(" _func = ").Append(method.ToString()).Append(';')
+        sb.Append(@"
+        private static __funcT _func = ").Append(method.ToString()).Append(';')
         .AppendLine();
     }
 }
