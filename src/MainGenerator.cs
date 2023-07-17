@@ -7,6 +7,8 @@ namespace Recline.Generator;
 [Generator(LanguageNames.CSharp)]
 public partial class MainGenerator : IIncrementalGenerator
 {
+    private static readonly string _cmdGroupAttributeName = typeof(CommandGroupAttribute).FullName!;
+
     private const string _staticFolderPath = "/home/blokyk/csharp/recline/src/Static/";
     private static readonly string[] _staticFilenames = new string[] {};
 
@@ -67,7 +69,7 @@ namespace Recline;
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    typeof(CommandGroupAttribute).FullName!,
+                    _cmdGroupAttributeName,
                     (node, _) => node is ClassDeclarationSyntax,
                     (_, _) => 0
                 )
@@ -81,7 +83,7 @@ namespace Recline;
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    typeof(CommandGroupAttribute).FullName!,
+                    _cmdGroupAttributeName,
                     (node, _) => node is ClassDeclarationSyntax,
                     (ctx, _) => Utils.GetUsings((ctx.TargetNode as ClassDeclarationSyntax)!)
                 )
@@ -108,7 +110,7 @@ namespace Recline;
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    typeof(CommandGroupAttribute).FullName!,
+                    _cmdGroupAttributeName,
                     (node, _) => node is ClassDeclarationSyntax,
                     (ctx, _) => {
                         var wrapper = new DataAndDiagnostics<Group?>();
