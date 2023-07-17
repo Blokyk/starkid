@@ -166,8 +166,7 @@ internal sealed class GroupBuilder
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.CmdCantBeGeneric,
-                    minMethodSymbol.Location,
-                    method.GetErrorName()
+                    minMethodSymbol.Location
                 )
             );
 
@@ -387,17 +386,31 @@ internal sealed class GroupBuilder
     }
 
     bool IsValidGroupClass(INamedTypeSymbol classSymbol) {
-        if (!classSymbol.IsStatic)
-            return false;
-
         if (classSymbol.IsGenericType) {
             _addDiagnostic(
                 Diagnostic.Create(
-                    Diagnostics.GroupClassMustBeStatic,
-                    classSymbol.GetDefaultLocation(),
-                    classSymbol.GetErrorName()
+                    Diagnostics.GroupClassMustNotBeGeneric,
+                    classSymbol.GetDefaultLocation()
                 )
             );
+
+            return false;
+        }
+
+        var curr = classSymbol;
+        while (curr is not null) {
+            if (!curr.IsStatic) {
+                _addDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.GroupClassMustBeStatic,
+                        curr.GetDefaultLocation()
+                    )
+                );
+
+                return false;
+            }
+
+            curr = curr.ContainingType;
         }
 
         return true;

@@ -105,11 +105,21 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor GroupClassMustNotBeGeneric
+        = new(
+            "CLI100",
+            "Command group classes must not be generic, and neither should any containing type",
+            "Command group classes must not be generic, and neither should any containing type",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor GroupClassMustBeStatic
         = new(
             "CLI100",
-            "Class '{0}' must be static to be a [CommandGroup]",
-            "Command groups must be static",
+            "Command group classes must be static (and their containing type as well)",
+            "Command group classes must be static (and their containing type as well)",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -118,8 +128,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CmdCantBeGeneric
         = new(
             "CLI101",
-            "Generic method '{0}' cannot be a command",
-            "Methods marked with [Command] can't be generic",
+            "Command methods cannot be generic",
+            "Command methods cannot be generic",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
