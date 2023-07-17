@@ -326,7 +326,11 @@ what they need to change in case of a parsing error.
 
 You can check [Recline's general restrictions](#restrictions) for
 a list of restrictions on what can and can't be a manual parsing
-method, but basically: almost anything that isn't generic.
+method, but basically: almost anything that isn't generic. Because
+of the `nameof` mechanism, it is unfortunately impossible to specify
+type argument for a generic method, and inferring them would probably
+be too expansive in terms of performance (and even then, that's
+assuming there *is* a perfect fit for it, which is not a given!)
 
 ### Validators
 
@@ -383,6 +387,9 @@ that a file exists before, you could do the following:
 [ValidateWith(nameof(DirectoryInfo.Exists))]
 public static DirectoryInfo logDir;
 ```
+
+In terms of restrictions, validators have mostly the same limitations
+as manual parsers (in addition to [Recline's general restrictions](#restrictions))
 
 ## Help text generation
 
