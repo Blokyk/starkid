@@ -28,6 +28,9 @@ public sealed record MinimalTypeInfo(
     public override string ToString() => FullName;
 
     public required SpecialType SpecialType { get; init; }
+    public required ImmutableArray<MinimalTypeInfo> TypeArguments { get; init; }
+
+    public bool IsGeneric => TypeArguments.Length == 0;
 
     public static MinimalTypeInfo FromSymbol(ITypeSymbol type) {
         MinimalTypeInfo? containingType = null;
@@ -40,13 +43,35 @@ public sealed record MinimalTypeInfo(
             ? type.NullableAnnotation == NullableAnnotation.Annotated
             : type is INamedTypeSymbol { SpecialType: SpecialType.System_Nullable_T };
 
+        var typeArgs
+            = type is INamedTypeSymbol namedType
+            ? ImmutableArray.CreateRange(
+                namedType.TypeArguments,
+                getTypeArgSymbol
+              )
+            : ImmutableArray<MinimalTypeInfo>.Empty;
+
         return new MinimalTypeInfo(
             SymbolInfoCache.GetShortTypeName(type),
             containingType,
             SymbolInfoCache.GetFullTypeName(type),
             isNullable,
             type.GetDefaultLocation()
-        ) { SpecialType = type.SpecialType };
+        ) {
+            SpecialType = type.SpecialType,
+            TypeArguments = typeArgs,
+        };
+
+        static MinimalTypeInfo getTypeArgSymbol(ITypeSymbol t) {
+            if (t.TypeKind is not TypeKind.TypeParameter)
+                return SymbolInfoCache.GetTypeInfo(t);
+
+            return new MinimalTypeInfo(
+                t.Name, null, t.Name, false, MinimalLocation.Default) {
+                SpecialType = SpecialType.None,
+                TypeArguments = ImmutableArray<MinimalTypeInfo>.Empty
+            };
+        }
     }
 }
 

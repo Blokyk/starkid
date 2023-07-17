@@ -158,13 +158,13 @@ public class ParserFinder
         if (sourceType.SpecialType == SpecialType.System_String)
             return ParserInfo.StringIdentity;
 
-        if (sourceType is not INamedTypeSymbol type) {
+        if (sourceType is not INamedTypeSymbol targetType) {
             return new ParserInfo.Invalid(Diagnostics.NotValidParserType);
         }
 
         // if this is a version of nullable (no we can't use SpecialType)
-        if (SymbolUtils.Equals(type.ConstructedFrom, CommonTypes.NULLABLE)) {
-            return FindParserForType(type.TypeArguments[0]);
+        if (SymbolUtils.Equals(targetType.ConstructedFrom, CommonTypes.NULLABLE)) {
+            return FindParserForType(targetType.TypeArguments[0]);
         }
 
         if (_implicitConversionsCache.GetValue(CommonTypes.STR, sourceType))
@@ -179,15 +179,12 @@ public class ParserFinder
         *
         * Which would be completely valid if it was "instantiated" as Wrapper<string>
         */
-        if (type.IsGenericType) { // todo(#6): restriction on generics could/should be lifted, cf above
-            return new ParserInfo.Invalid(
-                Diagnostics.NoGenericAutoParser,
-                type.GetErrorName()
-            );
+        if (targetType.IsUnboundGenericType) {
+            return new ParserInfo.Invalid(Diagnostics.GiveUp);
         }
 
-        if (type.EnumUnderlyingType is not null) {
-            var minTypeInfo = MinimalTypeInfo.FromSymbol(type);
+        if (targetType.EnumUnderlyingType is not null) {
+            var minTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
 
             // todo: replace hard-coded Enum.TryParse ParserInfo obj with a subtype
             // (this is only a temp solution because rn this is the only way
@@ -201,8 +198,8 @@ public class ParserFinder
 
         ParserInfo? parserInfo = null;
 
-        foreach (var ctor in type.Constructors) {
-            if (TryGetParserInfo(ctor, type, out parserInfo))
+        foreach (var ctor in targetType.Constructors) {
+            if (TryGetParserInfo(ctor, targetType, out parserInfo))
                 return parserInfo;
         }
 
@@ -213,7 +210,7 @@ public class ParserFinder
         ParserInfo? boolOutParseCandidate = null;
         int candidateCount = 0;
 
-        foreach (var member in type.GetMembers()) {
+        foreach (var member in targetType.GetMembers()) {
             if (member.Kind != SymbolKind.Method)
                 continue;
 
@@ -221,7 +218,7 @@ public class ParserFinder
 
             if (method.Name is "TryParse" or "Parse") {
                 candidateCount++;
-                if (TryGetParserInfo(method, type, out parserInfo)) {
+                if (TryGetParserInfo(method, targetType, out parserInfo)) {
                     // always prefer Parse methods over TryParse, since the
                     // first generally gives more info with exception
                     // messages
@@ -240,11 +237,11 @@ public class ParserFinder
 
         switch (candidateCount) {
             case 0:
-                return new ParserInfo.Invalid(Diagnostics.CouldntFindAutoParser, type.GetErrorName());
+                return new ParserInfo.Invalid(Diagnostics.CouldntFindAutoParser, targetType.GetErrorName());
             case 1:
                 return parserInfo!; // notnull: parserInfo gets set at the same time as candidateCount gets incremented
             default:
-                return new ParserInfo.Invalid(Diagnostics.NoValidAutoParser, type.GetErrorName());
+                return new ParserInfo.Invalid(Diagnostics.NoValidAutoParser, targetType.GetErrorName());
         }
     }
 
