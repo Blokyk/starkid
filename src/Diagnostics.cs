@@ -6,13 +6,23 @@ internal static class Diagnostics {
             "CLI000",
             "{0} took: {1:0}ms ({1:0.000)}",
             "{0} took: {1:0}ms ({1:0.000)}",
-            "Debug",
+            "Recline.Debug",
             DiagnosticSeverity.Info,
 #if DEBUG
             true
 #else
             false
 #endif
+        );
+
+    public static readonly DiagnosticDescriptor GiveUp
+        = new(
+            "CLI000",
+            "Recline gave up analyzing invalid code",
+            "Recline gave up analyzing invalid code",
+            "Recline.Analysis",
+            DiagnosticSeverity.Hidden,
+            false
         );
 
     public static readonly DiagnosticDescriptor TooManyRootGroups
@@ -339,7 +349,7 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor NoGenericAutoParser
         = new(
             "CLI401",
-            "Can't auto-parse generic type '{0}'",
+            "Can't auto-parse unbound generic type '{0}'",
             "Auto-parsing generic types is not supported",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
