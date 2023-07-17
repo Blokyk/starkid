@@ -207,6 +207,12 @@ internal static partial class ReclineProgram
         throw new FormatException("Couldn't understand '" + val + "' as a boolean value");
     }
 
+    private static T WrapParseEnum<T>(string str) where T : struct {
+        if (!System.Enum.TryParse<T>(str, out var val ignoreCase: true))
+            throw new FormatException($"'{str}' isn't a valid {t.Name} value");
+        return val;
+    }
+
     private static T ThrowIfNotValid<T>(T val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         var errorMessage = isValid(val);
 

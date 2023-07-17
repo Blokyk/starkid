@@ -14,13 +14,12 @@ public class ParserFinder
 
     // todo: convert this to an array and lookup by casting to numeric underlying type
     private static readonly Dictionary<SpecialType, ParserInfo> _specialTypesMap
-        = new() {
-            {
-                SpecialType.System_Boolean,
-                ParserInfo.AsBool
-            }, {
+        = new() { {
                 SpecialType.System_String,
                 ParserInfo.StringIdentity
+            }, {
+                SpecialType.System_Boolean,
+                ParserInfo.AsBool
             }, {
                 SpecialType.System_Object,
                 ParserInfo.StringIdentity
@@ -186,12 +185,8 @@ public class ParserFinder
         if (targetType.EnumUnderlyingType is not null) {
             var minTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
 
-            // todo: replace hard-coded Enum.TryParse ParserInfo obj with a subtype
-            // (this is only a temp solution because rn this is the only way
-            // a generic method could get into a parser, since we disallow generics
-            // in GetParserInfo)
-            return new ParserInfo.BoolOutMethod(
-                "System.Enum.TryParse<" + minTypeInfo.FullName + ">",
+            return new ParserInfo.DirectMethod(
+                "WrapParseEnum<" + minTypeInfo.FullName + ">",
                 minTypeInfo
             );
         }
