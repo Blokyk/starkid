@@ -279,8 +279,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor OptCantBeNamedHelp
         = new(
             "CLI200",
-            "Option can't be named \"--help\" or be aliased to '-h'.",
-            "Option can't be named \"--help\" or be aliased to '-h'.",
+            "Option can't be named \"--help\" or be aliased to '-h'",
+            "Option can't be named \"--help\" or be aliased to '-h'",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
