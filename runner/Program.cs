@@ -52,13 +52,17 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
 
     Utils.DisplaySteps(results);
 
-    foreach (var diag in results.Diagnostics) {
+    foreach (var diag in genRun.GetRunResult().Diagnostics) {
         Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
     }
 
-    var errorCount = results.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error) + (results.Exception is not null ? 1 : 0);
+    var errorCount = results.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error);
 
-    if (errorCount != 0) {
+    if (results.Exception is not null) {
+        Console.WriteLine("\x1b[31mThere was an exception: \"\x1b[1m" + results.Exception.Message + "\"\x1b[0m");
+        Console.WriteLine("Stack trace:");
+        Console.WriteLine(results.Exception.StackTrace);
+    } else if (errorCount != 0) {
         Console.WriteLine("\x1b[31mThere were " + errorCount + " errors.\x1b[0m");
     } else {
         Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
