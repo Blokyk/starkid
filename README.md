@@ -6,7 +6,7 @@ A C# source generator to create command-line apps from a simple, code-based desc
 
 Recline allows you to write code that matches perfectly your command line interface's structure, by using nesting to represent your CLI's hierarchy of verbs and subcommands.
 
-It also includes a bunch of mechanisms to make parsing and validating options/args easier, so you never have string-type anything, you can simply use the appropriate type for everything instead of writing walls of `if-then-throw`s at the start of every method.
+It also includes a bunch of mechanisms to make parsing and validating options/args easier, so you never have to string-type anything, you can simply use the appropriate type for everything instead of writing walls of `if-then-throw`s at the start of every method.
 
 ## Getting started 🚀
 
@@ -16,7 +16,7 @@ Recline is just like most other source generators and requires no additional dep
 dotnet add package Blokyk.Recline
 ```
 
-That's it! To start writing your CLI, check out [Your first app with Recline](docs/../Your%20first%20app%20with%20Recline.md), or have a quick look through the TL;DR docs below.
+That's it! For a quick tutorial, check out [Your first app with Recline](docs/Your-first-app-with-Recline.md), or have a look through the TL;DR docs below. If you want to deep-dive directly in, you can check out the [overview](docs/Recline-overview.md) and the rest of the [docs folder](docs/)
 
 ## TL;DR docs 📖
 
@@ -28,21 +28,13 @@ That's it! To start writing your CLI, check out [Your first app with Recline](do
 
 - Just like you can't have methods outside of classes, you can't have `[Command]`s outside of `[CommandGroup]`s.
 
-- Command options are declared by adding `[Option]` to a parameter. Any other parameter will be treated as an argument.
+- Command options are declared by adding `[Option]` to a parameter. Any other parameter will be treated as a mandatory argument.
 
 - Using `[Option]` on a field or property (with a set accessor) declares that option for the whole group.
 
 - An `[Option]` whose type is `bool` will be treated as a flag.
 
 For more information, check out [Your first app with Recline](docs/Your-first-app-with-Recline.md) and [Recline overview](docs/Recline-overview.md).
-
-## Known bugs & missing features 🐛
-
-- You cannot declare a custom `--help` or `-h` option.
-
-- Help texts are currently entirely generated at compile-time, which means it won't adapt to the size of the terminal; instead it uses a default column size of 80 characters.
-
-- Errors and warnings from Recline do not show up as red squiggles, and instead are only available from the `Build output` window in VS, or in the output of `dotnet build`.
 
 ## ...why tho?
 
