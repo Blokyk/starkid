@@ -6,7 +6,7 @@
     <ImplicitUsings>true</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <NoWarn>$(NoWarn),RS1024,RS2008,IDE0046,IDE1006</NoWarn>
-    <NoWarn>$(NoWarn),RS1035</NoWarn> <!-- Father forgive me, for I have sinned -->
+    <NoWarn>$(NoWarn),RS1035</NoWarn> <!-- fixme: Father forgive me, for I have sinned -->
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
@@ -62,5 +62,9 @@
   <ItemGroup>
     <None Include="$(OutputPath)netstandard2.0/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
     <None Include="../README.md" Pack="true" PackagePath="info"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Static/**/*" />
   </ItemGroup>
 </Project>

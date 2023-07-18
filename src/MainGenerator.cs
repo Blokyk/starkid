@@ -9,34 +9,14 @@ public partial class MainGenerator : IIncrementalGenerator
 {
     private static readonly string _cmdGroupAttributeName = typeof(CommandGroupAttribute).FullName!;
 
-    private const string _staticFolderPath = "/home/blokyk/csharp/recline/src/Static/";
-    private static readonly string[] _staticFilenames = new string[] {};
+    private static readonly string _reclineProgramCode;
 
-    private static readonly string _reclineProgramCode = File.ReadAllText(_staticFolderPath + "ReclineProgram.nocs");
+    static MainGenerator() {
+        _reclineProgramCode = Utils.GetStaticResource("ReclineProgram.nocs");
 
-    private static readonly string[] _attributeNames = new[] {
-        nameof(CommandAttribute),
-        nameof(OptionAttribute),
-        nameof(CommandGroupAttribute),
-        nameof(ParseWithAttribute),
-        nameof(ValidateWithAttribute)
-    };
+        var sb = new StringBuilder();
 
-    public void Initialize(IncrementalGeneratorInitializationContext context) {
-        context.RegisterPostInitializationOutput(
-            static postInitCtx => {
-                // fixme: load stuff from const strings when everything is stable
-
-                foreach (var filename in _staticFilenames) {
-                    postInitCtx.AddSource(
-                        Resources.GenNamespace + "_" + Path.ChangeExtension(filename, "g.cs"),
-                        SourceText.From(File.ReadAllText(_staticFolderPath + filename), Encoding.UTF8)
-                    );
-                }
-
-                var sb = new StringBuilder();
-
-                sb.AppendLine(@"
+        sb.AppendLine(@"
 #define GEN
 #nullable enable
 
@@ -46,16 +26,29 @@ namespace Recline;
 
 ");
 
-                foreach (var filename in _attributeNames) {
-                    sb.AppendLine(File.ReadAllText(_staticFolderPath + "Attributes/" + filename + ".cs"));
-                }
+        var attribs = new[] {
+            nameof(CommandGroupAttribute),
+            nameof(CommandAttribute),
+            nameof(OptionAttribute),
+            nameof(ParseWithAttribute),
+            nameof(ValidateWithAttribute)
+        };
 
+        foreach (var name in attribs)
+            sb.AppendLine(Utils.GetStaticResource("Attributes." + name + ".cs"));
+
+        _attributeCode = sb.ToString();
+    }
+
+    private static readonly string _attributeCode;
+
+    public void Initialize(IncrementalGeneratorInitializationContext context) {
+        context.RegisterPostInitializationOutput(
+            static postInitCtx =>
                 postInitCtx.AddSource(
                     Resources.GenNamespace + "_Attributes.g.cs",
-                    SourceText.From(sb.ToString(), Encoding.UTF8)
-                );
-            }
-        );
+                    SourceText.From(_attributeCode, Encoding.UTF8)
+                ));
 
         var langVersionSource
             = context

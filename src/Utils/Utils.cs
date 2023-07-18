@@ -1,7 +1,17 @@
+using System.IO;
+using System.Reflection;
+
 namespace Recline.Generator;
 
 internal static class Utils
 {
+    private static readonly Assembly _reclineAssembly = typeof(Utils).Assembly;
+    public static string GetStaticResource(string filePath) {
+        using var stream = _reclineAssembly.GetManifestResourceStream("Recline.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'Recline.Static." + filePath + "' was not found");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
     public static void Deconstruct<TKey, TValue>(
         this KeyValuePair<TKey, TValue> pair,
         out TKey key,
