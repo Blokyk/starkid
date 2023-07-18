@@ -161,8 +161,8 @@ public class ParserFinder
             return new ParserInfo.Invalid(Diagnostics.NotValidParserType);
         }
 
-        // if this is a version of nullable (no we can't use SpecialType)
-        if (SymbolUtils.Equals(targetType.ConstructedFrom, CommonTypes.NULLABLE)) {
+        // this will only be true for nullable *value types*, contrary to SymbolUtils.IsNullable
+        if (targetType.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T) {
             return FindParserForType(targetType.TypeArguments[0]);
         }
 

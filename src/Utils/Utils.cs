@@ -2,31 +2,6 @@ namespace Recline.Generator;
 
 internal static class Utils
 {
-    public static readonly Random Random = new();
-
-    public static bool TryGetConstantValue<T>(this SemanticModel model, SyntaxNode node, out T value) {
-        var opt = model.GetConstantValue(node);
-
-        if (!opt.HasValue || opt.Value is not T tVal) {
-            value = default(T)!;
-            return false;
-        }
-
-        value = tVal;
-        return true;
-    }
-
-    public static string GetLastNamePart(string fullStr) {
-        int lastDotIdx = 0;
-
-        for (int i = 0; i < fullStr.Length; i++) {
-            if (fullStr[i] == '.' && i + 1 < fullStr.Length)
-                lastDotIdx = i + 1;
-        }
-
-        return fullStr.Substring(lastDotIdx);
-    }
-
     public static void Deconstruct<TKey, TValue>(
         this KeyValuePair<TKey, TValue> pair,
         out TKey key,

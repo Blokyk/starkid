@@ -38,10 +38,7 @@ public sealed record MinimalTypeInfo(
         if (type.ContainingType is not null)
             containingType = SymbolInfoCache.GetTypeInfo(type.ContainingType);
 
-        bool isNullable
-            = type.IsReferenceType
-            ? type.NullableAnnotation == NullableAnnotation.Annotated
-            : type is INamedTypeSymbol { SpecialType: SpecialType.System_Nullable_T };
+        bool isNullable = SymbolUtils.IsNullable(type);
 
         var typeArgs
             = type is INamedTypeSymbol namedType

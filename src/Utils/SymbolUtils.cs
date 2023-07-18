@@ -10,7 +10,7 @@ internal static class SymbolUtils
     public static bool IsNullable(ITypeSymbol type)
         => type.IsReferenceType
         ?  type.NullableAnnotation == NullableAnnotation.Annotated
-        :  type is INamedTypeSymbol { SpecialType: SpecialType.System_Nullable_T };
+        :  type is INamedTypeSymbol { ConstructedFrom.SpecialType: SpecialType.System_Nullable_T };
 
     public static string GetRawName(ISymbol symbol) {
         if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
@@ -65,14 +65,6 @@ internal static class SymbolUtils
 
         return getNamespaceRecursive(symbol.ContainingNamespace) + "." + symbolName;
     }
-
-    public static ImmutableArray<string> GetAllUniqueUsings(INamedTypeSymbol classSymbol)
-        =>  classSymbol
-                .DeclaringSyntaxReferences
-                .Select(r => r.GetSyntax())
-                .SelectMany(n => Utils.GetUsings((n as TypeDeclarationSyntax)!))
-                .Distinct()
-                .ToImmutableArray();
 
     public static string GetErrorName(this ISymbol symbol)
         => symbol switch {
