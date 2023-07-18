@@ -208,8 +208,8 @@ internal static partial class ReclineProgram
     }
 
     private static T WrapParseEnum<T>(string str) where T : struct {
-        if (!System.Enum.TryParse<T>(str, out var val ignoreCase: true))
-            throw new FormatException($"'{str}' isn't a valid {t.Name} value");
+        if (!System.Enum.TryParse<T>(str, ignoreCase: true, out var val))
+            throw new FormatException($"'{str}' isn't a valid {typeof(T).Name} value");
         return val;
     }
 
