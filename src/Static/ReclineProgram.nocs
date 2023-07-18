@@ -171,7 +171,7 @@ internal static partial class ReclineProgram
 
     static int NonInvokableGroupAction() {
         PrintHelpString(
-            "Can't use '{0}' without a sub-command!",
+            "Can't use '{0}' without a sub-command",
             _currCmdName
         );
 
