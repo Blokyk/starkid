@@ -45,10 +45,7 @@ public sealed record MinimalTypeInfo(
 
         var typeArgs
             = type is INamedTypeSymbol namedType
-            ? ImmutableArray.CreateRange(
-                namedType.TypeArguments,
-                getTypeArgSymbol
-              )
+            ? namedType.TypeArguments.Select(getTypeArgSymbol).ToImmutableArray()
             : ImmutableArray<MinimalTypeInfo>.Empty;
 
         return new MinimalTypeInfo(
@@ -110,8 +107,8 @@ public sealed record MinimalMethodInfo(
             symbol.Name,
             SymbolInfoCache.GetTypeInfo(symbol.ContainingType),
             SymbolInfoCache.GetTypeInfo(symbol.ReturnType),
-            ImmutableArray.CreateRange(symbol.Parameters, MinimalParameterInfo.FromSymbol),
-            ImmutableArray.CreateRange(symbol.TypeArguments, MinimalTypeInfo.FromSymbol),
+            symbol.Parameters.Select(MinimalParameterInfo.FromSymbol).ToImmutableArray(),
+            symbol.TypeArguments.Select(MinimalTypeInfo.FromSymbol).ToImmutableArray(),
             symbol.GetDefaultLocation()
         );
 

@@ -59,7 +59,10 @@ internal static class Utils
             usingsSyntaxList = ns.Usings;
         }
 
-        return usingsSyntaxList.Select(u => u.Name.ToString()).ToImmutableArray();
+        return usingsSyntaxList
+            .Where(u => u.Name is not null)
+            .Select(u => u.Name!.ToString())
+            .ToImmutableArray();
     }
 
     internal static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
