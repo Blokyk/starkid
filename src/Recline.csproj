@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net7;netstandard2.0</TargetFrameworks>
-    <!-- 👇 We don't want to reference the source generator dll directly in consuming projects -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
     <Nullable>enable</Nullable>
     <ImplicitUsings>true</ImplicitUsings>
     <LangVersion>latest</LangVersion>
@@ -23,10 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Using Remove="System.IO" />
     <Using Include="System.Text" />
     <Using Include="System.Collections.Immutable" />
@@ -35,5 +29,38 @@
     <Using Include="Microsoft.CodeAnalysis.Text" />
     <Using Include="Microsoft.CodeAnalysis.CSharp" />
     <Using Include="Microsoft.CodeAnalysis.CSharp.Syntax" />
+  </ItemGroup>
+
+  <!-- Nuget info -->
+  <PropertyGroup>
+    <PackageId>Recline</PackageId>
+    <Version>0.3.2</Version>
+    <Authors>Blokyk</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/blokyk/recline</RepositoryUrl>
+    <PackageReadmeFile>info/README.md</PackageReadmeFile>
+    <PackageType>Dependency</PackageType>
+
+    <PackageTags>Source Generator; Roslyn; CLI; Command line; Command-line; AOT; AOT-friendly</PackageTags>
+    <Description>
+        A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).
+    </Description>
+  </PropertyGroup>
+
+  <!-- Packaging stuff -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn),NU5128</NoWarn> <!-- We only pack the generator for netstandard2.0 -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild> <!-- Generates the package on every build -->
+    <IncludeBuildOutput>false</IncludeBuildOutput> <!-- We don't need to generator's assembly at runtime -->
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <DevelopmentDependency>true</DevelopmentDependency> <!-- Projects referencing this won't have the package as a dependency -->
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking> <!-- We don't depend on anything after build -->
+    <PackRelease>true</PackRelease>
+    <PublishRelease>true</PublishRelease>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)netstandard2.0/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+    <None Include="../README.md" Pack="true" PackagePath="info"/>
   </ItemGroup>
 </Project>
