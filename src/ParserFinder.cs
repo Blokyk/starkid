@@ -169,15 +169,6 @@ public class ParserFinder
         if (_implicitConversionsCache.GetValue(CommonTypes.STR, sourceType))
             return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
 
-        /*
-        * This is way too strict. In reality, you could have a type like this :
-        *
-        * class Wrapper<T> {
-        *     public Wrapper(T item) { ... }
-        * }
-        *
-        * Which would be completely valid if it was "instantiated" as Wrapper<string>
-        */
         if (targetType.IsUnboundGenericType) {
             return new ParserInfo.Invalid(Diagnostics.GiveUp);
         }
