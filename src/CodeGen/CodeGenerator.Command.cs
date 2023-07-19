@@ -14,7 +14,7 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
         .AppendLine();
 
         foreach (var opt in cmd.Options) {
-            sb.AppendOptionFunction(opt, cmd);
+            AddOptionFunction(sb, opt, cmd);
         }
 
         AddOptionDictionary(sb, cmd, isFlags: false);
@@ -22,7 +22,7 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
         sb.AppendLine();
 
         foreach (var flag in cmd.Flags) {
-            sb.AppendOptionFunction(flag, cmd);
+            AddOptionFunction(sb, flag, cmd);
         }
 
         AddOptionDictionary(sb, cmd, isFlags: true);
@@ -74,6 +74,50 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
 
         sb.Append(@"
         private static __funcT _func = ").Append(method.ToString()).Append(';')
+        .AppendLine();
+    }
+
+    void AddInvokeCmdField(StringBuilder sb, Command cmd) {
+        sb.Append(@"
+        internal static readonly Func<int> _invokeCmd = ");
+
+        var isVoid = cmd.BackingMethod.ReturnsVoid;
+        var methodParams = cmd.BackingMethod.Parameters;
+
+        // if _func is already Func<int>
+        if (!isVoid && methodParams.Length == 0) {
+            sb.Append("_func");
+        } else {
+            // lambda attributes are only supported since C#10
+            if (_config.LanguageVersion >= LanguageVersion.CSharp10)
+                sb.Append("[System.Diagnostics.StackTraceHidden]");
+
+            sb.Append("() => "); // can't be static because of _params
+
+            if (isVoid)
+                sb.Append("{ ");
+
+            sb.Append("_func(");
+
+            var defArgName = new string[methodParams.Length];
+
+            for (int i = 0; i < methodParams.Length; i++) {
+                defArgName[i]
+                    = methodParams[i].IsParams
+                        ? "_params.ToArray()"
+                        : "@" + methodParams[i].Name + "!";
+            }
+
+            sb.Append(String.Join(", ", defArgName));
+
+            sb.Append(')');
+
+            if (isVoid)
+                sb.Append("; return 0; }");
+        }
+
+        sb
+        .Append(';')
         .AppendLine();
     }
 }

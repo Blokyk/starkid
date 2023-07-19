@@ -11,50 +11,6 @@ internal static class CodegenHelpers
             ? ""
             : "using " + String.Join(";\nusing ", usings) + ";\n\n";
 
-    public static StringBuilder AppendOptionFunction(this StringBuilder sb, Option opt, InvokableBase groupOrCmd) {
-        if (groupOrCmd is Command) {
-            sb
-            .Append("\t\tprivate static ")
-            .Append(opt.Type.FullName)
-            .Append(' ')
-            .Append(opt.BackingSymbol.Name);
-
-            if (opt.DefaultValueExpr is not null) {
-                sb
-                .Append(" = ")
-                .Append(opt.DefaultValueExpr);
-            }
-
-            sb
-            .Append(';')
-            .AppendLine();
-        }
-
-        var argExpr = GetParsingExpression(opt.Parser, opt.BackingSymbol.Name, opt.DefaultValueExpr);
-        var validExpr = GetValidatingExpression(argExpr, opt.Name, opt.Validator);
-
-        var fieldPrefix
-            = groupOrCmd is Group group
-            ? group.FullClassName + ".@"
-            : "@";
-
-        string expr
-            // = opt.BackingSymbol.ToString() + " = " + validExpr;
-            = fieldPrefix + opt.BackingSymbol.Name + " = " + validExpr;
-
-        // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
-        return sb
-            .Append(@"
-        internal static void ")
-            .Append(opt.BackingSymbol.Name)
-            .Append("Action(string")
-            .Append(opt is Flag ? "?" : "")
-            .Append(" __arg) => ")
-            .Append(expr)
-            .Append(';')
-            .AppendLine();
-    }
-
     public static string GetParsingExpression(ParserInfo parser, string? argName, string? defaultValueExpr) {
         if (parser == ParserInfo.AsBool) {
             var name = ParserInfo.AsBool.FullName;

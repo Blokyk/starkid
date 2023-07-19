@@ -113,7 +113,7 @@ internal sealed partial class CodeGenerator
 
         foreach (var arg in cmd.Arguments) {
             if (arg.IsParams)
-                continue; // could be break since params is always the last parameter
+                continue; // nit: could be break since params is always the last parameter
 
             sb
             .Append("\t\t\tstatic __arg => ")
@@ -123,7 +123,7 @@ internal sealed partial class CodeGenerator
                 CodegenHelpers.GetValidatingExpression(
                     CodegenHelpers.GetParsingExpression(arg.Parser, null, null),
                     arg.Name,
-                    arg.Validator
+                    arg.Validators
                 )
             )
             .Append(',')
@@ -135,61 +135,47 @@ internal sealed partial class CodeGenerator
         .AppendLine();
     }
 
-    void AddInvokeCmdField(StringBuilder sb, Group group) {
-        sb.Append(@"
-        internal static readonly Func<int> _invokeCmd = ");
+    public static void AddOptionFunction(StringBuilder sb, Option opt, InvokableBase groupOrCmd) {
+        if (groupOrCmd is Command) {
+            sb
+            .Append("\t\tprivate static ")
+            .Append(opt.Type.FullName)
+            .Append(' ')
+            .Append(opt.BackingSymbol.Name);
 
-        if (group.DefaultCommand is not null) {
-            sb.Append(group.DefaultCommand.ID).Append("CmdDesc._invokeCmd");
-        } else {
-            sb.Append("ReclineProgram.NonInvokableGroupAction");
-        }
-
-        sb.Append(';')
-        .AppendLine();
-    }
-
-    void AddInvokeCmdField(StringBuilder sb, Command cmd) {
-        sb.Append(@"
-        internal static readonly Func<int> _invokeCmd = ");
-
-        var isVoid = cmd.BackingMethod.ReturnsVoid;
-        var methodParams = cmd.BackingMethod.Parameters;
-
-        // if _func is already Func<int>
-        if (!isVoid && methodParams.Length == 0) {
-            sb.Append("_func");
-        } else {
-            // lambda attributes are only supported since C#10
-            if (_config.LanguageVersion >= LanguageVersion.CSharp10)
-                sb.Append("[System.Diagnostics.StackTraceHidden]");
-
-            sb.Append("() => "); // can't be static because of _params
-
-            if (isVoid)
-                sb.Append("{ ");
-
-            sb.Append("_func(");
-
-            var defArgName = new string[methodParams.Length];
-
-            for (int i = 0; i < methodParams.Length; i++) {
-                defArgName[i]
-                    = methodParams[i].IsParams
-                        ? "_params.ToArray()"
-                        : "@" + methodParams[i].Name + "!";
+            if (opt.DefaultValueExpr is not null) {
+                sb
+                .Append(" = ")
+                .Append(opt.DefaultValueExpr);
             }
 
-            sb.Append(String.Join(", ", defArgName));
-
-            sb.Append(')');
-
-            if (isVoid)
-                sb.Append("; return 0; }");
+            sb
+            .Append(';')
+            .AppendLine();
         }
 
+        var argExpr = CodegenHelpers.GetParsingExpression(opt.Parser, opt.BackingSymbol.Name, opt.DefaultValueExpr);
+        var validExpr = CodegenHelpers.GetValidatingExpression(argExpr, opt.Name, opt.Validators);
+
+        var fieldPrefix
+            = groupOrCmd is Group group
+            ? group.FullClassName + ".@"
+            : "@";
+
+        string expr
+            // = opt.BackingSymbol.ToString() + " = " + validExpr;
+            = fieldPrefix + opt.BackingSymbol.Name + " = " + validExpr;
+
+        // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
         sb
-        .Append(';')
-        .AppendLine();
+            .Append(@"
+        internal static void ")
+            .Append(opt.BackingSymbol.Name)
+            .Append("Action(string")
+            .Append(opt is Flag ? "?" : "")
+            .Append(" __arg) => ")
+            .Append(expr)
+            .Append(';')
+            .AppendLine();
     }
 }

@@ -17,13 +17,13 @@ private static class ").Append(group.ID).Append("CmdDesc {")
         .AppendLine();
 
         foreach (var opt in group.Options) {
-            sb.AppendOptionFunction(opt, group);
+            AddOptionFunction(sb, opt, group);
         }
 
         AddOptionDictionary(sb, group, isFlags: false);
 
         foreach (var flag in group.Flags) {
-            sb.AppendOptionFunction(flag, group);
+            AddOptionFunction(sb, flag, group);
         }
 
         AddOptionDictionary(sb, group, isFlags: true);
@@ -77,6 +77,20 @@ private static class ").Append(group.ID).Append("CmdDesc {")
 
         if (isRoot)
             AddRootFooter(sb, group);
+    }
+
+    void AddInvokeCmdField(StringBuilder sb, Group group) {
+        sb.Append(@"
+        internal static readonly Func<int> _invokeCmd = ");
+
+        if (group.DefaultCommand is not null) {
+            sb.Append(group.DefaultCommand.ID).Append("CmdDesc._invokeCmd");
+        } else {
+            sb.Append("ReclineProgram.NonInvokableGroupAction");
+        }
+
+        sb.Append(';')
+        .AppendLine();
     }
 
     void AddRootHeader(StringBuilder sb, Group rootGroup) {
