@@ -182,6 +182,9 @@ internal sealed class GroupBuilder
         };
 
         foreach (var param in method.Parameters) {
+            if (!IsParamValidForCommand(param, _addDiagnostic))
+                return false;
+
             if (!_attrListBuilder.TryGetAttributeList(param, out var paramAttrList))
                 return false;
 
@@ -411,6 +414,31 @@ internal sealed class GroupBuilder
             }
 
             curr = curr.ContainingType;
+        }
+
+        return true;
+    }
+
+    static bool IsParamValidForCommand(IParameterSymbol param, Action<Diagnostic> addDiagnostic) {
+        // we can't have ref/out/in parameters
+        if (param.RefKind != RefKind.None) {
+            addDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.CmdParamCantBeRef,
+                    param.GetDefaultLocation()
+                )
+            );
+            return false;
+        }
+
+        if (param.Type.IsRefLikeType) {
+            addDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.CmdParamTypeCantBeRefStruct,
+                    param.GetDefaultLocation()
+                )
+            );
+            return false;
         }
 
         return true;

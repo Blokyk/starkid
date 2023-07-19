@@ -258,6 +258,11 @@ public class ParserFinder
         if (method.Parameters.Length != 0) {
             var inputParam = method.Parameters[0];
 
+            if (inputParam.RefKind != RefKind.None) {
+                parser = new ParserInfo.Invalid(Diagnostics.ParserParamWrongRefKind, inputParam.RefKind);
+                return false;
+            }
+
             if (!SymbolUtils.IsStringLike(inputParam.Type)) {
                 parser = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
                 return false;

@@ -236,6 +236,26 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor CmdParamCantBeRef
+        = new(
+            "CLI109",
+            "Command method parameters cannot be marked 'ref', 'out' or 'in'",
+            "Command method parameters cannot be marked 'ref', 'out' or 'in'",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor CmdParamTypeCantBeRefStruct
+        = new(
+            "CLI110",
+            "A command method cannot have any ref struct as a parameter",
+            "A command method cannot have any ref struct as a parameter",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor EmptyOptAlias
         = new(
             "CLI200",
@@ -461,6 +481,16 @@ internal static class Diagnostics {
             "CLI412",
             "Parsing methods must have either 1 or 2 parameters",
             "Method '{0}' needs either 1 or 2 parameters to be a parser, but has '{1}' instead",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ParserParamWrongRefKind
+        = new(
+            "CLI413",
+            "A parser input (string) parameter cannot be marked 'ref', 'out' or 'in'",
+            "A parser input (string) parameter cannot be marked 'ref', 'out' or 'in'",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
