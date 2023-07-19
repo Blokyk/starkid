@@ -255,19 +255,17 @@ public class ParserFinder
             }
         }
 
+        if (method.Parameters.Length != 0) {
+            var inputParam = method.Parameters[0];
+
+            if (!SymbolUtils.IsStringLike(inputParam.Type)) {
+                parser = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
+                return false;
+            }
+        }
+
         switch (method.Parameters.Length) {
             case 1: { // $targetType Parse(string)
-                var param = method.Parameters[0];
-
-                var firstArgumentIsString
-                    =  param.Type.SpecialType == SpecialType.System_String
-                    || _implicitConversionsCache.GetValue(CommonTypes.STR, param.Type);
-
-                if (!firstArgumentIsString) {
-                    parser = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
-                    return false;
-                }
-
                 var isReturnTypeTarget
                     = isCtor
                     ? _implicitConversionsCache.GetValue(method.ContainingType, targetType)
@@ -298,18 +296,6 @@ public class ParserFinder
                 // the return type should be exactly bool
                 if (method.ReturnType.SpecialType != SpecialType.System_Boolean) {
                     parser = new ParserInfo.Invalid(Diagnostics.InvalidIndirectParserForm);
-                    return false;
-                }
-
-                var inputParam = method.Parameters[0];
-
-                // first argument should be a string or at least implicitly convertible to a string
-                var firstArgIsString
-                    = inputParam.Type.SpecialType == SpecialType.System_String // still true if string?
-                    || _implicitConversionsCache.GetValue(CommonTypes.STR, inputParam.Type);
-
-                if (!firstArgIsString) {
-                    parser = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
                     return false;
                 }
 

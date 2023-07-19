@@ -7,6 +7,20 @@ internal static class SymbolUtils
     [Obsolete("Wrong one, buddy")]
     public new static bool Equals(object _, object __) => false;
 
+    public static bool IsStringLike(ITypeSymbol type) {
+        if (type is not INamedTypeSymbol nt)
+            return false;
+
+        return nt.SpecialType == SpecialType.System_String || IsReadOnlySpanCharType(nt);
+    }
+
+    public static bool IsReadOnlySpanCharType(INamedTypeSymbol type)
+        => type is {
+            MetadataName: "ReadOnlySpan`1",
+            ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true },
+            TypeArguments: [ {SpecialType: SpecialType.System_Char} ],
+        };
+
     public static bool IsNullable(ITypeSymbol type)
         => type.IsReferenceType
         ?  type.NullableAnnotation == NullableAnnotation.Annotated
