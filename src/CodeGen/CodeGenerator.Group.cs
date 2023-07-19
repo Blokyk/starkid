@@ -159,7 +159,7 @@ private static class ").Append(group.ID).Append("CmdDesc {")
 
     void AddSubsDictionary(StringBuilder sb, Group group) {
         sb.Append(@"
-    internal static readonly Dictionary<string, CmdID> _subs = new() {");
+        internal static readonly Dictionary<string, CmdID> _subs = new() {");
 
         if (group.SubGroups.Count == 0 && group.Commands.Count == 0) {
             sb.AppendLine(" };");
