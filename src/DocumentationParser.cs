@@ -95,8 +95,10 @@ public static class DocumentationParser
         => String.Join(" ", TrimAndSplit(s));
 
     static readonly char[] __newLineArrayForSplit = new[] { '\n' };
+    static readonly bool _doesFrameworkSupportTrimOption
+        = typeof(StringSplitOptions).GetMember("TrimEntries") is not null;
     static IEnumerable<string> TrimAndSplit(string s)
-        => Environment.Version.Major >= 5
+        => _doesFrameworkSupportTrimOption
             ? s.Split(__newLineArrayForSplit, (StringSplitOptions)3) // StringSplitOptions.TrimEntries+RemoveEmptyEntries
             : s
                 .Split(
@@ -106,6 +108,6 @@ public static class DocumentationParser
                     l => l.Trim('\n', ' ', '\t')
                 )
                 .Where(
-                    s => !String.IsNullOrEmpty(s)
+                    s => s != ""
                 );
 }
