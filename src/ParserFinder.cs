@@ -166,8 +166,9 @@ public class ParserFinder
             return FindParserForType(targetType.TypeArguments[0]);
         }
 
-        if (_implicitConversionsCache.GetValue(CommonTypes.STR, sourceType))
-            return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
+        // * too costly for now
+        // if (_implicitConversionsCache.GetValue(CommonTypes.STR, sourceType))
+        //     return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
 
         if (targetType.IsUnboundGenericType) {
             return new ParserInfo.Invalid(Diagnostics.GiveUp);
