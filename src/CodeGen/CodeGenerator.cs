@@ -45,8 +45,7 @@ internal sealed partial class CodeGenerator
         string dictName = isFlags ? "_flags" : "_options";
 
         sb.Append(@"
-        internal static readonly Dictionary<string, Action<string").Append(isFlags ? "?" : "").Append(">> ").Append(dictName).Append(@" = new() {
-            { ""--help"", DisplayHelp }, { ""-h"", DisplayHelp },")
+        internal static readonly Dictionary<string, Action<string").Append(isFlags ? "?" : "").Append(">> ").Append(dictName).Append(" = new() {")
         .AppendLine();
 
         appendAllOptions(isFlags ? groupOrCmd.Flags : groupOrCmd.Options, "");
