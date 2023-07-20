@@ -67,24 +67,22 @@ internal static partial class ReclineProgram
                         continue;
                     }
 
-                    if (_displayHelp) {
-                        // fixme: we don't handle e.g. '--help=<cmd-name>' correctly
-                        // using arg here alievates the problem by at least not telling the
-                        // users that '--help' isn't an existing option, but this is still
-                        // pretty bad
-                        if (arg == "--help" || arg == "-h") {
-                            // in case --help got an argument, then treat it as trying to get
-                            // the help text fot the corresponding command; if it's a valid
-                            // command, update the parser state so that we'll display the
-                            // right help text, and fallback on the current text if it's not
-                            // a valid command
-                            if (TryGetNextArgFromArgv(ref i, args, out value)
-                            &&  _subs.TryGetValue(value, out var cmdID))
-                                TryUpdateCommand(cmdID);
+                    // fixme: we don't handle e.g. '--help=<cmd-name>' correctly
+                    // this branch alievates the problem by at least not telling the
+                    // users that '--help' isn't an existing option, but this is still
+                    // pretty bad
+                    if (arg == "--help" || arg == "-h") {
+                        // in case --help got an argument, then treat it as trying to get
+                        // the help text fot the corresponding command; if it's a valid
+                        // command, update the parser state so that we'll display the
+                        // right help text, and fallback on the current text if it's not
+                        // a valid command
+                        if (TryGetNextArgFromArgv(ref i, args, out value)
+                        &&  _subs.TryGetValue(value, out var cmdID))
+                            TryUpdateCommand(cmdID);
 
-                            DisplayHelp();
-                            return 1;
-                        }
+                        DisplayHelp();
+                        return 1;
                     } else if (_flags.TryGetValue(arg, out var actFlag)) {
                         if (!TryDoAction(actFlag, arg, value, rawArg))
                             return 1;
@@ -128,9 +126,7 @@ internal static partial class ReclineProgram
             }
 
             if (!TryAddPosArg(arg)) {
-                if (_displayHelp)
-                    continue;
-
+                // ^ already takes care of chechking _displayHelp
                 PrintHelpString("Couldn't understand '{0}' in this context", rawArg);
                 return 1;
             }
@@ -159,7 +155,7 @@ internal static partial class ReclineProgram
         }
         catch (Exception e) {
             PrintHelpString(
-                "Expression '{0}' is not valid in this context: \x1b[1m\"" + e.Message + "\"",
+                "Expression '{0}' is not valid in this context: \x1b[1m" + e.Message + "",
                 rawArg
             );
             return false;
@@ -320,9 +316,20 @@ internal static partial class ReclineProgram
     internal static int ArgSlotsLeft => _posArgActions.Length - posArgIdx;
 
     internal static bool TryAddPosArg(string arg) {
-        if (ArgSlotsLeft > 0) {
-            _posArgActions[posArgIdx++](arg);
+        if (_displayHelp)
             return true;
+
+        if (ArgSlotsLeft > 0) {
+            try {
+                _posArgActions[posArgIdx++](arg);
+                return true;
+            } catch (Exception e) {
+                PrintHelpString(
+                    "Expression '{0}' is not a valid value for this argument: \x1b[1m" + e.Message + "\x1b[22m",
+                    arg
+                );
+                return false;
+            }
         } else {
             if (!_hasParams)
                 return false;
