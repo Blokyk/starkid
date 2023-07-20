@@ -181,6 +181,38 @@ internal class AttributeListBuilder
             return false;
         }
 
+        if (name.StartsWith('-')) {
+            if (!name.StartsWith("--")) {
+                _addDiagnostic(
+                    Diagnostic.Create(
+                            Diagnostics.NameCantStartWithDash,
+                            location
+                    )
+                );
+            } else { // if it's exactly '--'
+                if (name.Length == 2) {
+                    _addDiagnostic(
+                        Diagnostic.Create(
+                            Diagnostics.DashDashForbiddenName,
+                            location
+                        )
+                    );
+                } else {
+                    _addDiagnostic(
+                        Diagnostic.Create(
+                            isForCommands
+                                ? Diagnostics.CmdNameCantBeginWithDashDash
+                                : Diagnostics.OptNameCantBeginWithDashDash,
+                            location,
+                            name.Substring(2)
+                        )
+                    );
+                }
+            }
+
+            return false;
+        }
+
         var nameIsValid
             = name.All(
                 c => Utils.IsAsciiLetter(c)

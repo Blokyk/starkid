@@ -115,6 +115,26 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor DashDashForbiddenName
+        = new(
+            "CLI008",
+            "The name '--' is forbidden for commands and options",
+            "The name '--' is forbidden for commands and options",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor NameCantStartWithDash
+        = new(
+            "CLI008",
+            "Option/command names can't start with '-'",
+            "Option/command names can't start with '-'",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor GroupClassMustNotBeGeneric
         = new(
             "CLI100",
@@ -225,6 +245,16 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor CmdNameCantBeginWithDashDash
+        = new(
+            "CLI107",
+            "Command names cannot begin with '--'",
+            "Command names cannot begin with '--', as that would clash with options",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor UselessSpecialCmdName
         = new(
             "CLI108",
@@ -301,6 +331,16 @@ internal static class Diagnostics {
             "CLI200",
             "Option can't be named \"--help\" or be aliased to '-h'",
             "Option can't be named \"--help\" or be aliased to '-h'",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor OptNameCantBeginWithDashDash
+        = new(
+            "CLI200",
+            "Option names shouldn't include '--' at the beginning",
+            "Option names shouldn't include '--' at the beginning, just give the name directly (for example: '{0}')",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true

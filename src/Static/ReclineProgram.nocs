@@ -53,7 +53,7 @@ internal static partial class ReclineProgram
             string arg;
             string? value = null;
 
-            if (eqIdx < 0 || eqIdx == rawArg.Length - 1) {
+            if (eqIdx < 0) {
                 arg = rawArg;
             } else {
                 arg = rawArg.Substring(0, eqIdx);
@@ -61,49 +61,51 @@ internal static partial class ReclineProgram
             }
 
             if (!onlyArgs) {
-                if (_flags.TryGetValue(arg, out var actFlag)) {
-                    if (!TryDoAction(actFlag, arg, value, rawArg))
-                        return 1;
-                    continue;
-                }
-
-                if (_options.TryGetValue(arg, out var actOpt)) {
-                    if (value is null) {
-                        if (!TryGetNextArgFromArgv(ref i, args, out value)) {
-                            PrintHelpString("Option {0} needs an argument", arg);
-                            return 1;
-                        }
-
-                        rawArg += " " + value;
-                    }
-
-                    if (!TryDoAction(actOpt!, arg, value, rawArg))
-                        return 1;
-                    continue;
-                }
-
-                if (_subs.TryGetValue(arg, out var subCmdID)) {
-                    if (!TryUpdateCommand(subCmdID)) {
-                        return 1;
-                    }
-
-                    continue;
-                }
-
-                if (arg[0] == '-') {
-                    // if we get here, it means arg isn't a valid flag, so the only valid interpretation
-                    // of it is as POSIX-style 'argument separator' -- anything after it should only
-                    // be treated as pure arguments and never as options or subcommands
+                if (arg.Length > 1 && arg[0] == '-') {
                     if (arg.Length == 2 && arg[1] == '-') {
                         onlyArgs = true;
+                        continue;
+                    }
+
+                    if (_flags.TryGetValue(arg, out var actFlag)) {
+                        if (!TryDoAction(actFlag, arg, value, rawArg))
+                            return 1;
+                        continue;
+                    }
+
+                    if (_options.TryGetValue(arg, out var actOpt)) {
+                        if (value is null) {
+                            if (!TryGetNextArgFromArgv(ref i, args, out value)) {
+                                PrintHelpString("Option {0} needs an argument", arg);
+                                return 1;
+                            }
+
+                            rawArg += " " + value;
+                        }
+
+                        if (!TryDoAction(actOpt!, arg, value, rawArg))
+                            return 1;
                         continue;
                     }
 
                     if (_displayHelp)
                         continue;
 
-                    PrintHelpString("Couldn't understand '{0}' in this context", rawArg);
+                    PrintHelpString("Command " + _currCmdName + " doesn't have any option named '{0}'", arg);
                     return 1;
+                }
+
+                if (_subs.TryGetValue(arg, out var subCmdID)) {
+                    if (!_displayHelp && value is not null) {
+                        PrintHelpString("Can't assign a value to subcommand {0}", arg);
+                        return 1;
+                    }
+
+                    if (!TryUpdateCommand(subCmdID)) {
+                        return 1;
+                    }
+
+                    continue;
                 }
             }
 
