@@ -519,24 +519,23 @@ internal sealed class GroupBuilder
     }
 
     static string? GetDefaultValueForSymbol(ISymbol symbol) {
-        if (symbol is IParameterSymbol parameterSymbol) {
-            if (!parameterSymbol.HasExplicitDefaultValue)
-                return null;
+        if (symbol is not IParameterSymbol parameterSymbol)
+            return null;
 
-            var defaultVal = parameterSymbol.ExplicitDefaultValue;
+        if (!parameterSymbol.HasExplicitDefaultValue)
+            return null;
 
-            if (defaultVal is null)
-                return null;
+        var defaultVal = parameterSymbol.ExplicitDefaultValue;
 
-            return defaultVal switch {
-                string s => '"' + s + '"',
-                char c => "'" + c + "'",
-                bool b => b ? "true" : "false",
-                _ => defaultVal.ToString() // fixme(#2): this could break cause of culture
-            };
-        }
+        if (defaultVal is null)
+            return null;
 
-        return null;
+        return defaultVal switch {
+            string s => '"' + s + '"',
+            char c => "'" + c + "'",
+            bool b => b ? "true" : "false",
+            _ => defaultVal.ToString() // fixme(#2): this could break cause of culture
+        };
     }
 
     static DocumentationInfo? GetDocInfo(ISymbol symbol) {
