@@ -84,7 +84,7 @@ internal static partial class ReclineProgram
                         DisplayHelp();
                         return 1;
                     } else if (_flags.TryGetValue(arg, out var actFlag)) {
-                        if (!TryDoAction(actFlag, arg, value, rawArg))
+                        if (!TryDoOptionAction(actFlag, arg, value, rawArg))
                             return 1;
                         continue;
                     }
@@ -99,7 +99,7 @@ internal static partial class ReclineProgram
                             rawArg += " " + value;
                         }
 
-                        if (!TryDoAction(actOpt!, arg, value, rawArg))
+                        if (!TryDoOptionAction(actOpt!, arg, value, rawArg))
                             return 1;
                         continue;
                     }
@@ -143,21 +143,29 @@ internal static partial class ReclineProgram
         return _invokeCmd();
     }
 
-    static bool TryDoAction(Action<string?> act, string arg1, string? arg2, string rawArg) {
+    static bool TryDoOptionAction(Action<string?> act, string optName, string? arg, string rawArg) {
         // we don't want to potentially cause any errors if the user just wants to see the help
         // text
         if (_displayHelp)
             return true;
 
         try {
-            act(arg2);
+            act(arg);
             return true;
         }
         catch (Exception e) {
-            PrintHelpString(
-                "Expression '{0}' is not valid in this context: \x1b[1m" + e.Message + "",
-                rawArg
-            );
+            if (arg is null) {
+                // arg is only null when it's a flag (although we could get a flag with a non-null arg)
+                PrintHelpString(
+                    "Using the '{0}' flag isn't valid in this context: \x1b[1m" + e.Message,
+                    optName
+                );
+            } else {
+                PrintHelpString(
+                    "Expression '{0}' is not a valid value for option '" + optName + "': \x1b[1m" + e.Message,
+                    arg
+                );
+            }
             return false;
         }
     }
