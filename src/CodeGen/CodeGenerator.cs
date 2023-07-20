@@ -84,7 +84,7 @@ internal sealed partial class CodeGenerator
             sb
             .Append("\t\tprivate static ")
             .Append(arg.Type.FullName + (arg.Type.IsNullable ? "?" : ""))
-            .Append(' ')
+            .Append(" @")
             .Append(arg.BackingSymbol.Name);
 
             if (arg.DefaultValueExpr is not null) {
@@ -115,7 +115,7 @@ internal sealed partial class CodeGenerator
                 continue; // nit: could be break since params is always the last parameter
 
             sb
-            .Append("\t\t\tstatic __arg => ")
+            .Append("\t\t\tstatic __arg => @")
             .Append(arg.BackingSymbol.Name)
             .Append(" = ")
             .Append(
@@ -135,11 +135,11 @@ internal sealed partial class CodeGenerator
     }
 
     public static void AddOptionFunction(StringBuilder sb, Option opt, InvokableBase groupOrCmd) {
-        if (groupOrCmd is Command) {
+        if (groupOrCmd is not Group) {
             sb
             .Append("\t\tprivate static ")
             .Append(opt.Type.FullName)
-            .Append(' ')
+            .Append(" @")
             .Append(opt.BackingSymbol.Name);
 
             if (opt.DefaultValueExpr is not null) {
@@ -158,11 +158,10 @@ internal sealed partial class CodeGenerator
 
         var fieldPrefix
             = groupOrCmd is Group group
-            ? group.FullClassName + ".@"
+            ? "@" + group.FullClassName + ".@"
             : "@";
 
         string expr
-            // = opt.BackingSymbol.ToString() + " = " + validExpr;
             = fieldPrefix + opt.BackingSymbol.Name + " = " + validExpr;
 
         // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
