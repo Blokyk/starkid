@@ -132,7 +132,7 @@ private static class ").Append(group.ID).Append("CmdDesc {")
             """
             private static bool TryUpdateCommand(CmdID subCmdID) {
                 if (!_displayHelp && ArgCount != 0) {
-                    PrintHelpString("Can't invoke sub-command '{0}' with arguments for the '" + _prevCmdName + "' command", _currCmdName);
+                    ExitWithError("Can't invoke sub-command '{0}' with arguments for the '" + _prevCmdName + "' command", _currCmdName);
                     return false;
                 }
 

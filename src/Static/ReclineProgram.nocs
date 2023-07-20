@@ -92,7 +92,7 @@ internal static partial class ReclineProgram
                     if (_options.TryGetValue(arg, out var actOpt)) {
                         if (value is null) {
                             if (!TryGetNextArgFromArgv(ref i, args, out value)) {
-                                PrintHelpString("Option {0} needs an argument", arg);
+                                ExitWithError("Option {0} needs an argument", 1, arg);
                                 return 1;
                             }
 
@@ -107,13 +107,13 @@ internal static partial class ReclineProgram
                     if (_displayHelp)
                         continue;
 
-                    PrintHelpString("Command " + _currCmdName + " doesn't have any option named '{0}'", arg);
+                    PrintHelpString("Command '" + _currCmdName + "' doesn't have any option named '{0}'", arg);
                     return 1;
                 }
 
                 if (_subs.TryGetValue(arg, out var subCmdID)) {
                     if (!_displayHelp && value is not null) {
-                        PrintHelpString("Can't assign a value to subcommand {0}", arg);
+                        ExitWithError("'{0}' is trying to assign a value to a command", 1, rawArg);
                         return 1;
                     }
 
@@ -136,7 +136,7 @@ internal static partial class ReclineProgram
             return DisplayHelp();
 
         if (ArgSlotsLeft > 0) {
-            PrintHelpString("Expected at least {0} arguments, but only got " + argCount, (ArgSlotsLeft + argCount).ToString());
+            ExitWithError("Expected at least {0} arguments, but only got {1}", ArgSlotsLeft + argCount, argCount);
             return 1;
         }
 
@@ -156,14 +156,14 @@ internal static partial class ReclineProgram
         catch (Exception e) {
             if (arg is null) {
                 // arg is only null when it's a flag (although we could get a flag with a non-null arg)
-                PrintHelpString(
-                    "Using the '{0}' flag isn't valid in this context: \x1b[1m" + e.Message,
-                    optName
+                ExitWithError(
+                    "Using the '" + optName + "' flag isn't valid in this context: {0}",
+                    e.Message
                 );
             } else {
-                PrintHelpString(
-                    "Expression '{0}' is not a valid value for option '" + optName + "': \x1b[1m" + e.Message,
-                    arg
+                ExitWithError(
+                    "Expression '{0}' is not a valid value for option '" + optName + "': {1}",
+                    arg, e.Message
                 );
             }
             return false;
@@ -205,16 +205,24 @@ internal static partial class ReclineProgram
     static string InRed(string msg)
         => "\x1b[31m" + msg + "\x1b[0m";
 
-    static string FormatError(string reason, object obj1)
-        => InRed(string.Format(reason, "\x1b[1m" + obj1.ToString() + "\x1b[22m"));
+    static string FormatError(string reason, params object[] objs)
+        => InRed(string.Format(reason, objs.Select(obj => "\x1b[1m" + obj.ToString() + "\x1b[22m").ToArray()));
+
+    public static void ExitWithError(string msg) {
+        Console.Error.WriteLine(InRed(msg));
+        Environment.Exit(1);
+    }
+
+    public static void ExitWithError(string fmt, params object[] objs)
+        => ExitWithError(FormatError(fmt, objs));
 
     public static void PrintHelpString(string reason) {
         Console.Error.WriteLine(InRed(reason));
         DisplayHelp();
     }
 
-    public static void PrintHelpString(string reason, string argName)
-        => PrintHelpString(FormatError(reason, argName));
+    public static void PrintHelpString(string reason, params object[] objs)
+        => PrintHelpString(FormatError(reason, objs));
 
     private static bool AsBool(string? val) => AsBool(val, true);
 
@@ -238,7 +246,7 @@ internal static partial class ReclineProgram
     }
 
     private static void ThrowOptionAlreadySpecified(string optName)
-        => PrintHelpString("Option '{0}' has already been specified", optName);
+        => ExitWithError("Option '{0}' has already been specified", optName);
 
     private static T ThrowIfNotValid<T>(T val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         var errorMessage = isValid(val);
@@ -335,9 +343,9 @@ internal static partial class ReclineProgram
                 _posArgActions[posArgIdx++](arg);
                 return true;
             } catch (Exception e) {
-                PrintHelpString(
-                    "Expression '{0}' is not a valid value for this argument: \x1b[1m" + e.Message + "\x1b[22m",
-                    arg
+                ExitWithError(
+                    "Expression '{0}' is not a valid value for this argument: {1}",
+                    arg, e.Message
                 );
                 return false;
             }
