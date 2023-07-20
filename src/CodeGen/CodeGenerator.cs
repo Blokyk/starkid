@@ -164,16 +164,28 @@ internal sealed partial class CodeGenerator
         string expr
             = fieldPrefix + opt.BackingSymbol.Name + " = " + validExpr;
 
-        // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
+        var actionName = opt.BackingSymbol.Name + "Action";
+        var argType = opt is Flag ? "string?" : "string";
+
         sb
             .Append(@"
-        internal static void ")
-            .Append(opt.BackingSymbol.Name)
-            .Append("Action(string")
-            .Append(opt is Flag ? "?" : "")
-            .Append(" __arg) => ")
-            .Append(expr)
+        private static bool has").Append(actionName).AppendLine("BeenTriggered;");
+
+        // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
+        _ = sb
+            .Append(@"
+        internal static void ").Append(actionName).Append('(').Append(argType).Append(" __arg) {")
+            .Append(@"
+            if (has").Append(actionName).Append("BeenTriggered)")
+            .Append(@"
+                ThrowOptionAlreadySpecified(""").Append(opt.Name).Append("\");")
+            .Append(@"
+            has").Append(actionName).Append("BeenTriggered = true;")
+            .Append(@"
+            ").Append(expr)
             .Append(';')
-            .AppendLine();
+            .AppendLine()
+            .AppendLine(@"
+        }");
     }
 }

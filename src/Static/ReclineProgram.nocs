@@ -237,6 +237,9 @@ internal static partial class ReclineProgram
         return val;
     }
 
+    private static void ThrowOptionAlreadySpecified(string optName)
+        => PrintHelpString("Option '{0}' has already been specified", optName);
+
     private static T ThrowIfNotValid<T>(T val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         var errorMessage = isValid(val);
 
