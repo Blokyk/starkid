@@ -13,7 +13,7 @@ public partial class MainGenerator
     public const string COLUMN_LENGTH_PROP_NAME = "ReclineHelpColumnLength";
     public const string HELP_EXIT_CODE_PROP_NAME = "ReclineHelpExitCode";
 
-    public const int DEFAULT_COLUMN_LENGTH = 40, DEFAULT_HELP_EXIT_CODE = 1;
+    public const int DEFAULT_COLUMN_LENGTH = 80, DEFAULT_HELP_EXIT_CODE = 1;
 
     static ReclineConfig ParseConfig(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, SourceProductionContext spc) {
         int columnLength
