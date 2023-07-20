@@ -388,6 +388,23 @@ that a file exists before, you could do the following:
 public static DirectoryInfo logDir;
 ```
 
+Additionally, you can specify multiple validators for a single
+operand. They will be applied in series, in the same order as their
+corresponding attribute.
+
+```csharp
+[Option("save-file")]
+[ValidateWith(nameof(FileHasSaveExtension), "Save files must end in either .sav or .dat")]
+[ValidateWith(nameof(FileInfo.Exists))]
+public static FileInfo savefile;
+
+public static bool FileIsAbsolute(FileInfo f)
+    => Path.GetExtension(f.Name) is ".dat" or ".sav";
+```
+
+This will first check if it ends with the right extension, and then
+whether it exists or not.
+
 In terms of restrictions, validators have mostly the same limitations
 as manual parsers (in addition to [Recline's general restrictions](#restrictions))
 

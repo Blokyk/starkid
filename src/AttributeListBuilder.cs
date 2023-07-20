@@ -41,7 +41,7 @@ internal class AttributeListBuilder
         // past this point, we are trying to figure out why this wasn't valid
 
         // we don't care about group because it will never be with the other attributes for a valid symbol
-        var (_, cmd, opt, parseWith, validateWith, isOnParam) = attrList;
+        var (_, cmd, opt, parseWith, validateWithList, isOnParam) = attrList;
 
         if (opt is null) {
             Debug.Assert(!isOnParam);
@@ -56,7 +56,7 @@ internal class AttributeListBuilder
                 );
             }
 
-            if (validateWith is not null) {
+            if (validateWithList.Length == 0) {
                 _addDiagnostic(
                     Diagnostic.Create(
                         Diagnostics.ValidateOnNonOptOrArg,
@@ -84,12 +84,12 @@ internal class AttributeListBuilder
         var (group, cmd, opt, parse, valid, isOnParam) = attrList;
 
         return
-            (isOnParam,    group,      cmd,      opt,    parse,    valid) switch {
-            (    false,     null,     null,     null,     null,     null) => CLIMemberKind.None,
-            (    false, not null,     null,     null,     null,     null) => CLIMemberKind.Group,
-            (    false,     null, not null,     null,     null,     null) => CLIMemberKind.Command,
-            (        _,     null,     null, not null,        _,        _) => CLIMemberKind.Option,
-            (     true,     null,     null,     null,        _,        _) => CLIMemberKind.Argument,
+            (isOnParam,    group,      cmd,      opt,    parse,       valid) switch {
+            (    false,     null,     null,     null,     null, {Length: 0}) => CLIMemberKind.None,
+            (    false, not null,     null,     null,     null, {Length: 0}) => CLIMemberKind.Group,
+            (    false,     null, not null,     null,     null, {Length: 0}) => CLIMemberKind.Command,
+            (        _,     null,     null, not null,        _,           _) => CLIMemberKind.Option,
+            (     true,     null,     null,     null,        _,           _) => CLIMemberKind.Argument,
             _ => CLIMemberKind.Invalid,
         };
     }
@@ -110,7 +110,7 @@ internal class AttributeListBuilder
         CommandAttribute? cmd = null;
         OptionAttribute? opt = null;
         ParseWithAttribute? parseWith = null;
-        ValidateWithAttribute? validateWith = null;
+        var validateWithList = ImmutableArray.CreateBuilder<ValidateWithAttribute>(attrs.Length);
 
         bool isValid = true;
 
@@ -156,15 +156,16 @@ internal class AttributeListBuilder
                         return error();
                     break;
                 case Resources.ValidateWithAttribName:
-                    if (!_parser.TryParseValidateAttrib(attr, out validateWith))
+                    if (!_parser.TryParseValidateAttrib(attr, out var validateWith))
                         return error();
+                    validateWithList.Add(validateWith);
                     break;
                 default:
                     continue;
             }
         }
 
-        attribList = new(group, cmd, opt, parseWith, validateWith, symbol is IParameterSymbol);
+        attribList = new(group, cmd, opt, parseWith, validateWithList.ToImmutable(), symbol is IParameterSymbol);
 
         return (isValid, attribList);
     }

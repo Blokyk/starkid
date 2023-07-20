@@ -5,5 +5,5 @@ public record Option(MinimalTypeInfo Type, string Name, char Alias, string ArgNa
 
     public MinimalLocation GetLocation() => BackingSymbol.Location;
 
-    public ValidatorInfo? Validator { get; set; }
+    public ImmutableArray<ValidatorInfo> Validators { get; set; }
 }

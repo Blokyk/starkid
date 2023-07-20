@@ -42,34 +42,40 @@ internal static class CodegenHelpers
         return expr;
     }
 
-    public static string GetValidatingExpression(string argExpr, string argName, ValidatorInfo? validator) {
-        if (validator is null)
+    public static string GetValidatingExpression(string argExpr, string argName, ImmutableArray<ValidatorInfo> validators) {
+        if (validators.Length == 0)
             return argExpr;
 
-        string funcExpr;
-        string exprStr;
+        var currExpr = argExpr;
 
-        switch (validator) {
-            case ValidatorInfo.Method method:
-                funcExpr = method.FullName;
-                exprStr = method.MethodInfo.Name + "(" + argName + ")";
-                break;
-            case ValidatorInfo.Property prop:
-                funcExpr = "(arg) => arg." + prop.PropertyName;
-                exprStr = argName + "." + prop.PropertyName;
-                break;
-            default:
-                throw new Exception(validator.GetType().Name + " is not a supported ValidatorInfo type.");
+        foreach (var validator in validators) {
+            string funcExpr;
+            string exprStr;
+
+            switch (validator) {
+                case ValidatorInfo.Method method:
+                    funcExpr = method.FullName;
+                    exprStr = method.MethodInfo.Name + "(" + argName + ")";
+                    break;
+                case ValidatorInfo.Property prop:
+                    funcExpr = "static (arg) => arg." + prop.PropertyName;
+                    exprStr = argName + "." + prop.PropertyName;
+                    break;
+                default:
+                    throw new Exception(validator.GetType().Name + " is not a supported ValidatorInfo type.");
+            }
+
+            currExpr =
+                "ThrowIfNotValid(" +
+                    $"{currExpr}, " +
+                    $"{funcExpr}, " +
+                    $"\"{argName}\", " +
+                    $"{(validator.Message is null ? "null" : SyntaxFactory.Literal(validator.Message))}, " +
+                    $"\"{exprStr}\"" +
+                ")";
         }
 
-        return
-            "ThrowIfNotValid(" +
-                $"{argExpr}, " +
-                $"{funcExpr}, " +
-                $"\"{argName}\", " +
-                $"{(validator.Message is null ? "null" : SyntaxFactory.Literal(validator.Message))}, " +
-                $"\"{exprStr}\"" +
-            ")";
+        return currExpr;
     }
 
     public static StringBuilder AppendDictEntry(this StringBuilder sb, string key, string value)

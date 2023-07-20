@@ -240,18 +240,10 @@ internal sealed class GroupBuilder
         // todo(#4): special-case arrays/lists to be "repeatable" options
         var type = GetTypeForSymbol(symbol);
 
-        ParserInfo? parser;
-        ValidatorInfo? validator = null;
+        if (!TryGetParser(attrInfo.ParseWith, type, symbol, out var parser))
+            return false;
 
-        if (attrInfo.ParseWith is null) {
-            if (!_parserFinder.TryFindParserForType(type, symbol.GetDefaultLocation(), out parser))
-                return false;
-        } else {
-            if (!_parserFinder.TryGetParserFromName(attrInfo.ParseWith, type, out parser))
-                return false;
-        }
-
-        if (attrInfo.ValidateWith is not null && !_validatorFinder.TryGetValidator(attrInfo.ValidateWith, type, out validator))
+        if (!TryGetValidators(attrInfo.ValidateWithList, type, symbol, out var validators))
             return false;
 
         var typeMinInfo = MinimalTypeInfo.FromSymbol(type);
@@ -266,7 +258,7 @@ internal sealed class GroupBuilder
                 backingSymbol,
                 defaultValStr
             ) {
-                Validator = validator,
+                Validators = validators,
                 Description = docInfo?.Summary
             };
 
@@ -283,7 +275,7 @@ internal sealed class GroupBuilder
             backingSymbol,
             defaultValStr
         ) {
-            Validator = validator,
+            Validators = validators,
             Description = docInfo?.Summary
         };
 
@@ -307,24 +299,24 @@ internal sealed class GroupBuilder
 
         bool isParams = param.IsParams;
 
-        // todo(#3): allow custom 'params' args (e.g. params FileInfo[] files)
-        // doesn't really matter rn, but it'd be nice to be able to use any type for params,
-        // because i'd really like to just say 'params FileInfo[] files' instead of having
-        // to transform/validate it myself
-        if (isParams && (param.Type is not IArrayTypeSymbol paramArrayType || paramArrayType.ElementType.SpecialType != SpecialType.System_String)) {
-            _addDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.ParamsHasToBeString,
-                    param.GetDefaultLocation(),
-                    param.Type.GetErrorName()
-                )
-            );
-        }
-
         ParserInfo? parser;
-        ValidatorInfo? validator = null;
+        var validators = ImmutableArray<ValidatorInfo>.Empty;
 
         if (isParams) {
+            // todo(#3): allow custom 'params' args (e.g. params FileInfo[] files)
+            // doesn't really matter rn, but it'd be nice to be able to use any type for params,
+            // because i'd really like to just say 'params FileInfo[] files' instead of having
+            // to transform/validate it myself
+            if (param.Type is not IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_String }) {
+                _addDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.ParamsHasToBeString,
+                        param.GetDefaultLocation(),
+                        param.Type.GetErrorName()
+                    )
+                );
+            }
+
             if (attrList.ParseWith is not null) {
                 _addDiagnostic(
                     Diagnostic.Create(
@@ -334,7 +326,7 @@ internal sealed class GroupBuilder
                 );
             }
 
-            if (attrList.ValidateWith is not null) {
+            if (attrList.ValidateWithList.Length != 0) {
                 _addDiagnostic(
                     Diagnostic.Create(
                         Diagnostics.ParamsCantBeValidated,
@@ -345,15 +337,9 @@ internal sealed class GroupBuilder
 
             parser = ParserInfo.StringIdentity;
         } else {
-            if (attrList.ParseWith is null) {
-                if (!_parserFinder.TryFindParserForType(param.Type, param.GetDefaultLocation(), out parser))
-                    return false;
-            } else {
-                if (!_parserFinder.TryGetParserFromName(attrList.ParseWith, param.Type, out parser))
-                    return false;
-            }
-
-            if (attrList.ValidateWith is not null && !_validatorFinder.TryGetValidator(attrList.ValidateWith, param.Type, out validator))
+            if (!TryGetParser(attrList.ParseWith, param.Type, param, out parser))
+                return false;
+            if (!TryGetValidators(attrList.ValidateWithList, param.Type, param, out validators))
                 return false;
         }
 
@@ -366,9 +352,45 @@ internal sealed class GroupBuilder
             paramMinInfo,
             defaultVal
         ) {
-            Validator = validator,
+            Validators = validators,
         };
 
+        return true;
+    }
+
+    private bool TryGetParser(
+        ParseWithAttribute? attr,
+        ITypeSymbol type,
+        ISymbol symbol,
+        [NotNullWhen(true)] out ParserInfo? parser
+    ) {
+        if (attr is null) {
+            if (!_parserFinder.TryFindParserForType(type, symbol.GetDefaultLocation(), out parser))
+                return false;
+        } else {
+            if (!_parserFinder.TryGetParserFromName(attr, type, out parser))
+                return false;
+        }
+
+        return true;
+    }
+
+    private bool TryGetValidators(
+        ImmutableArray<ValidateWithAttribute> attrs,
+        ITypeSymbol type,
+        ISymbol _,
+        out ImmutableArray<ValidatorInfo> validators
+    ) {
+        validators = ImmutableArray<ValidatorInfo>.Empty;
+        var builder = ImmutableArray.CreateBuilder<ValidatorInfo>(attrs.Length);
+
+        for (int i = 0; i < attrs.Length; i++) {
+            if (!_validatorFinder.TryGetValidator(attrs[i], type, out var validator))
+                return false;
+            builder.Add(validator);
+        }
+
+        validators = builder.MoveToImmutable();
         return true;
     }
 

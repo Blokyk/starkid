@@ -5,7 +5,7 @@ internal readonly struct AttributeListInfo {
     public readonly CommandAttribute? Command { get; } = null;
     public readonly OptionAttribute? Option { get; } = null;
     public readonly ParseWithAttribute? ParseWith { get; } = null;
-    public readonly ValidateWithAttribute? ValidateWith { get; } = null;
+    public readonly ImmutableArray<ValidateWithAttribute> ValidateWithList { get; } = ImmutableArray<ValidateWithAttribute>.Empty;
     public readonly bool IsOnParameter { get; } = false;
 
     public AttributeListInfo(
@@ -13,14 +13,14 @@ internal readonly struct AttributeListInfo {
         CommandAttribute? command,
         OptionAttribute? option,
         ParseWithAttribute? parseWith,
-        ValidateWithAttribute? validateWith,
+        ImmutableArray<ValidateWithAttribute> validateWithList,
         bool isOnParameter = false
     ) {
         CommandGroup = commandGroup;
         Command = command;
         Option = option;
         ParseWith = parseWith;
-        ValidateWith = validateWith;
+        ValidateWithList = validateWithList;
         IsOnParameter = isOnParameter;
     }
 
@@ -29,7 +29,7 @@ internal readonly struct AttributeListInfo {
         && Command is null
         && Option is null
         && ParseWith is null
-        && ValidateWith is null
+        && ValidateWithList.Length == 0
         ;
 
     internal CLIMemberKind Kind => AttributeListBuilder.CategorizeAttributeList(this);
@@ -39,14 +39,14 @@ internal readonly struct AttributeListInfo {
         out CommandAttribute? command,
         out OptionAttribute? option,
         out ParseWithAttribute? parseWith,
-        out ValidateWithAttribute? validateWith,
+        out ImmutableArray<ValidateWithAttribute> validateWithList,
         out bool isOnParameter
     ) {
         commandGroup = CommandGroup;
         command = Command;
         option = Option;
         parseWith = ParseWith;
-        validateWith = ValidateWith;
+        validateWithList = ValidateWithList;
         isOnParameter = IsOnParameter;
     }
 }

@@ -7,5 +7,5 @@ public sealed record Argument(MinimalTypeInfo Type, string Name, ParserInfo Pars
 
     public bool IsParams => BackingSymbol.IsParams;
 
-    public ValidatorInfo? Validator { get; set; }
+    public ImmutableArray<ValidatorInfo> Validators { get; set; }
 }

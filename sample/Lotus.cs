@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.IO;
 
 using Recline;
@@ -11,10 +12,17 @@ public static class Lotus
 
     public static void PrintIsVerbose() => Console.WriteLine(canBeVerbose);
 
+    public static bool NotEmpty(string s) => !String.IsNullOrWhiteSpace(s);
+    public static bool IsValidGlob(string s)
+        => s.All(c => Char.IsAsciiLetterOrDigit(c) || c == '*');
+
     [Command("clean")]
     public static int Clean(
+        [ValidateWith(nameof(NotEmpty))]
+        [ValidateWith(nameof(IsValidGlob), "Cleaning globs can only contain ASCII letters/digits and '*'")]
         string globFilter
     ) {
+        Console.WriteLine("Cleaning everything that matches '" + globFilter + "'");
         PrintIsVerbose();
         return 0;
     }

@@ -48,9 +48,12 @@ public static partial class Lotus
 
     internal static int? ParseInt(string? arg) => arg is null ? 0 : Int32.Parse(arg);
 
+    public static bool FeelLikeIt(Stuff _) => Random.Shared.Next() % 2 == 0;
+
     [Option("log-level")]
     [ParseWith(nameof(ParseStuff))]
     [ValidateWith(nameof(Stuff.IsPositive))]
+    [ValidateWith(nameof(FeelLikeIt), "Welp, looks like the oracle didn't like your value")]
     public static Stuff? logLevel = new(5);
 
     private static FileInfo? _outputFile;
