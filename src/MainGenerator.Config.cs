@@ -21,7 +21,7 @@ public partial class MainGenerator
                 COLUMN_LENGTH_PROP_NAME,
                 DEFAULT_COLUMN_LENGTH,
                 Int32.TryParse,
-                static columnLength => columnLength is not -1 and < 20,
+                static columnLength => columnLength is -1 or > 40,
                 analyzerConfig,
                 spc
             );
