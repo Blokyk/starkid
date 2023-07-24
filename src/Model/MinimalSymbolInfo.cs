@@ -28,9 +28,9 @@ public sealed record MinimalTypeInfo(
     public override string ToString() => FullName;
 
     public required SpecialType SpecialType { get; init; }
-    public required ImmutableArray<MinimalTypeInfo> TypeArguments { get; init; }
+    public ImmutableArray<MinimalTypeInfo> TypeArguments { get; init; } = ImmutableArray<MinimalTypeInfo>.Empty;
 
-    public bool IsGeneric => TypeArguments.Length == 0;
+    public bool IsGeneric => TypeArguments.Length != 0;
 
     public static MinimalTypeInfo FromSymbol(ITypeSymbol type) {
         MinimalTypeInfo? containingType = null;
