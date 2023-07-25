@@ -25,6 +25,9 @@ public sealed class MinimalLocation
     public override bool Equals(object? obj)
         => Equals(obj as MinimalLocation);
 
+    public override string ToString()
+        => "MinimalLocation { FilePath = " + FilePath + ", TextSpan = " + TextSpan + ", LineSpan = " + LineSpan + " }";
+
     public override int GetHashCode()
         => Utils.CombineHashCodes(
             FilePath.GetHashCode(),

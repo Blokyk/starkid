@@ -24,7 +24,6 @@ public partial class MainGenerator
             SourceText.From(_reclineProgramCode, Encoding.UTF8)
         );
 
-        CommonTypes.Reset();
         SymbolInfoCache.FullReset();
     }
 }

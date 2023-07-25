@@ -27,7 +27,7 @@ public sealed record MinimalTypeInfo(
 ) : MinimalSymbolInfo(Name, ContainingType, Location) {
     public override string ToString() => FullName;
 
-    public required SpecialType SpecialType { get; init; }
+    public SpecialType SpecialType { get; init; } = SpecialType.None;
     public ImmutableArray<MinimalTypeInfo> TypeArguments { get; init; } = ImmutableArray<MinimalTypeInfo>.Empty;
 
     public bool IsGeneric => TypeArguments.Length != 0;

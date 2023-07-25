@@ -27,31 +27,31 @@ public class ParserFinder
                 SpecialType.System_Char,
                 new ParserInfo.DirectMethod(
                     "System.Char.Parse",
-                    CommonTypes.CHARMinInfo
+                    CommonTypes.CHAR
                 )
             }, {
                 SpecialType.System_Int32,
                 new ParserInfo.DirectMethod(
                     "System.Int32.Parse",
-                    CommonTypes.INT32MinInfo
+                    CommonTypes.INT32
                 )
             }, {
                 SpecialType.System_Double,
                 new ParserInfo.BoolOutMethod(
                     "System.Double.TryParse",
-                    CommonTypes.DOUBLEMinInfo
+                    CommonTypes.DOUBLE
                 )
             }, {
                 SpecialType.System_Single,
                 new ParserInfo.DirectMethod(
                     "System.Single.Parse",
-                    CommonTypes.SINGLEMinInfo
+                    CommonTypes.SINGLE
                 )
             }, {
                 SpecialType.System_DateTime,
                 new ParserInfo.DirectMethod(
                     "System.DateTime.Parse",
-                    CommonTypes.DATE_TIMEMinInfo
+                    CommonTypes.DATE_TIME
                 )
             }
         };

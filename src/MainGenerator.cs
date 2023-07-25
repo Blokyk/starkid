@@ -53,7 +53,7 @@ using System;
             = context
                 .CompilationProvider
                 .Select(
-                    (comp, _) => (comp as CSharpCompilation) ?.LanguageVersion ?? LanguageVersion.Default
+                    (comp, _) => (comp as CSharpCompilation)?.LanguageVersion ?? LanguageVersion.Default
                 );
 
     #if DEBUG
@@ -170,12 +170,10 @@ using System;
 
     static Group? CreateGroup(GeneratorAttributeSyntaxContext ctx, Action<Diagnostic> addDiagnostic) {
         var model = ctx.SemanticModel;
-        CommonTypes.Refresh(model.Compilation, force: false);
 
         var attrListBuilder = new AttributeListBuilder(addDiagnostic);
 
         static Group? bail() {
-            CommonTypes.Reset();
             SymbolInfoCache.FullReset();
             return null;
         }
