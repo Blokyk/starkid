@@ -11,37 +11,15 @@ internal static class Utils
            })
          + $"m{diag.Severity.ToString()[0]}\x1b[0m: ";
 
-    public static void DisplaySteps(GeneratorRunResult results) {
-        var maxLength = 0;
-
-        var steps = results.TrackedSteps.Where(kv => kv.Key.StartsWith("recline_")).ToDictionary(kv => kv.Key, kv => kv.Value);
-
-        if (results.TrackedOutputSteps.Any(s => s.Key == "ImplementationSourceOutput")) {
-            steps.Add(
-                "recline_output",
-                results.TrackedOutputSteps.Single(s => s.Key == "ImplementationSourceOutput").Value
-            );
-        } else {
-            Console.WriteLine("\x1b[2m-- no output --\x1b[0m");
-        }
-
-        if (steps.Count == 0) {
-            Console.WriteLine("No recline steps were run.");
-            return;
-        }
-
-        foreach (var (stepName, _) in steps) {
-            // - 8 for the "recline_" prefix
-            if (maxLength < stepName.Length - 8)
-                maxLength = stepName.Length - 8;
-        }
+    private static void DisplayTimes(Dictionary<string, IEnumerable<TimeSpan>> namedTimes) {
+        var maxLength = namedTimes.Max(kv => kv.Key.Length);
 
         var lineSeparator = new string('-', maxLength + 25);
         var spacing = new string(' ', maxLength + 4);
 
-        foreach (var (stepName, step) in steps) {
-            var name = stepName[8..];
-            var runtime = step[0].ElapsedTime;
+        foreach (var (stepName, stepTimes) in namedTimes) {
+            var name = stepName;
+            var runtime = stepTimes.Aggregate((t1, t2) => t1 + t2);
 
             Console.Write("\x1b[2m");
             Console.WriteLine(lineSeparator);
@@ -55,5 +33,35 @@ internal static class Utils
         }
 
         Console.WriteLine(lineSeparator);
+    }
+
+    public static void DisplayAllSteps(GeneratorRunResult results) =>
+        DisplayTimes(
+            results.TrackedSteps
+                .ToDictionary(
+                    kv => kv.Key,
+                    kv => kv.Value.Select(s => s.ElapsedTime)
+                )
+        );
+
+    public static void DisplayReclineSteps(GeneratorRunResult results) {
+        var steps = results.TrackedSteps.Where(kv => kv.Key.StartsWith("recline_")).ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        if (results.TrackedOutputSteps.TryGetValue("ImplementationSourceOutput", out var outputStep)) {
+            steps.Add(
+                "recline_output",
+                outputStep
+            );
+        } else {
+            Console.WriteLine("\x1b[2m-- no output --\x1b[0m");
+        }
+
+        if (steps.Count == 0) {
+            Console.WriteLine("No recline steps were run.");
+            return;
+        }
+
+        // [8..] to remove the "recline_" prefix
+        DisplayTimes(steps.ToDictionary(kv => kv.Key[8..], kv => kv.Value.Select(s => s.ElapsedTime)));
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Immutable;
+using System.IO;
 using Recline.Generator;
 
 var sampleDir = "../sample/";
@@ -17,22 +18,23 @@ var lotusTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + lotusPat
 
 var generator = new MainGenerator();
 
-var unit = CSharpCompilation.Create(
-    "Tests",
-    syntaxTrees: new[] { parsexTree },
-    references: new[] {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
-    },
-    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-);
-
-var driver = CSharpGeneratorDriver.Create(
+GeneratorDriver driver = CSharpGeneratorDriver.Create(
     new[] { generator.AsSourceGenerator() },
     driverOptions: new GeneratorDriverOptions(
         disabledOutputs: IncrementalGeneratorOutputKind.None,
         trackIncrementalGeneratorSteps: true
     )
 );
+
+var unit = createCompUnit("Parsex", parsexTree);
+var dotnetUnit = createCompUnit("Dotnet", dotnetTree);
+var lotusUnit = createCompUnit("Lotus", lotusTree);
+
+runDriver("init", parsexPath, unit);
+runDriver("edit", parsex2Path, unit.ReplaceSyntaxTree(parsexTree, parsex2Tree));
+runDriver("paste", dotnetPath, unit.ReplaceSyntaxTree(parsexTree, dotnetTree));
+runDriver("new", lotusPath, lotusUnit);
+runDriver("redo", lotusPath, lotusUnit);
 
 /// <summary>
 /// Runs the generator in the given unit, and, if filename doesn't
@@ -47,12 +49,12 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
         Console.CursorTop -= 2; // go back to the previous lines, so that we'll erase the message
     }
 
-    var genRun = driver.RunGenerators(unit);
-    var results = genRun.GetRunResult().Results[0];
+    driver = driver.RunGenerators(unit);
+    var results = driver.GetRunResult().Results[0];
 
-    Utils.DisplaySteps(results);
+    Utils.DisplayReclineSteps(results);
 
-    foreach (var diag in genRun.GetRunResult().Diagnostics) {
+    foreach (var diag in driver.GetRunResult().Diagnostics) {
         Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());
     }
 
@@ -68,7 +70,7 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
         Console.WriteLine("Successfully generated " + results.GeneratedSources.Length + " files.");
 
         if (filename[^4..] != ".old") {
-            foreach (var path in Directory.EnumerateFiles(testDir).Where(name => name.EndsWith(".g.cs")))
+            foreach (var path in Directory.EnumerateFiles(testDir, "*.g.cs"))
                 File.Delete(path);
 
             File.Copy(sampleDir + filename, testDir + "Main.cs", true);
@@ -81,7 +83,7 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
         }
     }
 
-    Console.WriteLine($"Total: {genRun.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
+    Console.WriteLine($"Total: {driver.GetTimingInfo().GeneratorTimes[0].ElapsedTime.TotalMilliseconds:0.00} ms");
     Console.WriteLine();
 }
 
@@ -95,12 +97,3 @@ static CSharpCompilation createCompUnit(string assemblyName, SyntaxTree tree) {
         options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
     );
 }
-
-var dotnetUnit = createCompUnit("Dotnet", dotnetTree);
-var lotusUnit = createCompUnit("Lotus", lotusTree);
-
-runDriver("init", parsexPath, unit);
-runDriver("edit", parsex2Path, unit.ReplaceSyntaxTree(parsexTree, parsex2Tree));
-runDriver("paste", dotnetPath, unit.ReplaceSyntaxTree(parsexTree, dotnetTree));
-runDriver("new", lotusPath, lotusUnit);
-runDriver("redo", lotusPath, lotusUnit);
