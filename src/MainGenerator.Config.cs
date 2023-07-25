@@ -54,8 +54,17 @@ public partial class MainGenerator
     private static T GetProp<T>(string key, T defaultVal, TryParser<T> parse, AnalyzerConfigOptions config, SourceProductionContext spc)
         => GetProp(key, defaultVal, parse, (_) => true, config, spc);
     private static T GetProp<T>(string key, T defaultVal, TryParser<T> parse, Func<T, bool> validate, AnalyzerConfigOptions config, SourceProductionContext spc) {
-        if (!config.TryGetValue("build_property." + key, out var str))
+        if (!config.TryGetValue("build_property." + key, out var str)) {
+            spc.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.ConfigPropNotVisible,
+                    Location.None,
+                    key
+                )
+            );
+
             return defaultVal;
+        }
 
         if (!parse(str, out var res) || !validate(res)) {
             spc.ReportDiagnostic(

@@ -10,4 +10,10 @@
         <CompilerVisibleProperty Include="Recline_Help_ExitCode" />
         <CompilerVisibleProperty Include="Recline_AllowRepeatingOptions" />
     </ItemGroup>
+
+    <PropertyGroup>
+        <Recline_Help_MaxCharsPerLine Condition="$(Recline_Help_MaxCharsPerLine) == ''">80</Recline_Help_MaxCharsPerLine>
+        <Recline_Help_ExitCode Condition="$(Recline_Help_ExitCode) == ''">1</Recline_Help_ExitCode>
+        <Recline_AllowRepeatingOptions Condition="$(Recline_AllowRepeatingOptions) == ''">true</Recline_AllowRepeatingOptions>
+    </PropertyGroup>
 </Project>

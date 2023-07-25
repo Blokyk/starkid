@@ -115,6 +115,16 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor ConfigPropNotVisible
+        = new(
+            "CLI007",
+            "Recline cannot read configuration/build property '{0}', which shouldn't happen",
+            "Property '{0}' should be visible to Recline's source generator. Check that you installed the package correctly.",
+            "Recline.Config",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor DashDashForbiddenName
         = new(
             "CLI008",
