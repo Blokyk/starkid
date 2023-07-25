@@ -1,0 +1,13 @@
+<Project>
+    <Target Name="_ReclineRoslynVersionCheck" BeforeTargets="GenerateMSBuildEditorConfigFile">
+        <Warning Code="CLI000"
+            Text="Recline requires Roslyn/Compiler API 4.3.0 or greater."
+            Condition="$([MSBuild]::VersionLessThan('$(CompilerApiVersion.Substring(6))', '4.3.0'))" />
+    </Target>
+
+    <ItemGroup>
+        <CompilerVisibleProperty Include="Recline_Help_MaxCharsPerLine" />
+        <CompilerVisibleProperty Include="Recline_Help_ExitCode" />
+        <CompilerVisibleProperty Include="Recline_AllowRepeatingOptions" />
+    </ItemGroup>
+</Project>

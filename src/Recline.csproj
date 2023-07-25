@@ -30,6 +30,10 @@
     <Using Include="Microsoft.CodeAnalysis.CSharp.Syntax" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Static/**/*" />
+  </ItemGroup>
+
   <!-- Nuget info -->
   <PropertyGroup>
     <PackageId>Recline</PackageId>
@@ -63,7 +67,9 @@
     <None Include="../README.md" Pack="true" PackagePath="info"/>
   </ItemGroup>
 
+  <!-- Make sure the .props file (with the <CompilerVisible...> stuff) is included in the package -->
   <ItemGroup>
-    <EmbeddedResource Include="Static/**/*" />
+    <None Include="Recline.props" Pack="true" PackagePath="build" Condition="Exists('./Recline.props')" />
+    <None Include="Recline.targets" Pack="true" PackagePath="build" Condition="Exists('./Recline.targets')" />
   </ItemGroup>
 </Project>

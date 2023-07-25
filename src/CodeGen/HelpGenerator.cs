@@ -30,6 +30,9 @@ internal sealed partial class CodeGenerator
 
             // fixme(#1): if DefaultCommand is hidden, then add its opts+args in usage and in the help text
 
+            // todo: if there's no description at all in a certain category, then we might be able
+            // to shorten it (especially args and subcmds, don't know about options tho)
+
             var builder = new HelpTextBuilder(padSize, _maxLineLength);
 
             if (groupOrCmd is Command cmd) {

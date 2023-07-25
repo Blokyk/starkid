@@ -5,15 +5,18 @@ namespace Recline.Generator;
 public record ReclineConfig(
     int ColumnLength,
     int HelpExitCode,
+    bool AllowRepeatingOptions,
     LanguageVersion LanguageVersion
 );
 
 public partial class MainGenerator
 {
-    public const string COLUMN_LENGTH_PROP_NAME = "ReclineHelpColumnLength";
-    public const string HELP_EXIT_CODE_PROP_NAME = "ReclineHelpExitCode";
+    public const string COLUMN_LENGTH_PROP_NAME = "Recline_Help_MaxCharsPerLine";
+    public const string HELP_EXIT_CODE_PROP_NAME = "Recline_Help_ExitCode";
+    public const string REPEATED_OPT_PROP_NAME = "Recline_AllowRepeatingOptions";
 
     public const int DEFAULT_COLUMN_LENGTH = 80, DEFAULT_HELP_EXIT_CODE = 1;
+    public const bool DEFAULT_REPEATED_OPT = false;
 
     static ReclineConfig ParseConfig(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, SourceProductionContext spc) {
         int columnLength
@@ -35,7 +38,16 @@ public partial class MainGenerator
                 spc
             );
 
-        return new(columnLength, helpExitCode, langVersion);
+        bool allowRepeatingOptions
+            = GetProp(
+                REPEATED_OPT_PROP_NAME,
+                DEFAULT_REPEATED_OPT,
+                Boolean.TryParse,
+                analyzerConfig,
+                spc
+            );
+
+        return new(columnLength, helpExitCode, allowRepeatingOptions, langVersion);
     }
 
     delegate bool TryParser<T>(string str, out T val);

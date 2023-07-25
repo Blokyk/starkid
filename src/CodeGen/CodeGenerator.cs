@@ -134,7 +134,7 @@ internal sealed partial class CodeGenerator
         .AppendLine();
     }
 
-    public static void AddOptionFunction(StringBuilder sb, Option opt, InvokableBase groupOrCmd) {
+    public void AddOptionFunction(StringBuilder sb, Option opt, InvokableBase groupOrCmd) {
         if (groupOrCmd is not Group) {
             sb
             .Append("\t\tprivate static ")
@@ -167,25 +167,36 @@ internal sealed partial class CodeGenerator
         var actionName = opt.BackingSymbol.Name + "Action";
         var argType = opt is Flag ? "string?" : "string";
 
-        sb
+        if (!_config.AllowRepeatingOptions) {
+            sb
             .Append(@"
         private static bool has").Append(actionName).AppendLine("BeenTriggered;");
+        }
 
-        // internal static void {optName}Action(string[?] __arg) => Validate(Parse(__arg));
-        _ = sb
+        // internal static void {optName}Action(string[?] __arg) {
+        //     if (has{optName}ActionBeenTriggered)
+        //         ThrowOptionAlreadySpecified("{optName}");
+        //     has{optName}ActionBeenTriggered = true;
+        //     Validate(Parse(__arg));
+        // }
+
+        sb
             .Append(@"
-        internal static void ").Append(actionName).Append('(').Append(argType).Append(" __arg) {")
-            .Append(@"
+        internal static void ").Append(actionName).Append('(').Append(argType).Append(" __arg) {");
+
+        if (!_config.AllowRepeatingOptions) {
+            sb
+                .Append(@"
             if (has").Append(actionName).Append("BeenTriggered)")
+                .Append(@"
+                ThrowOptionAlreadySpecified(""--").Append(opt.Name).Append("\");")
+                .Append(@"
+            has").Append(actionName).Append("BeenTriggered = true;");
+        }
+
+        sb
             .Append(@"
-                ThrowOptionAlreadySpecified(""").Append(opt.Name).Append("\");")
-            .Append(@"
-            has").Append(actionName).Append("BeenTriggered = true;")
-            .Append(@"
-            ").Append(expr)
-            .Append(';')
-            .AppendLine()
-            .AppendLine(@"
+            ").Append(expr).AppendLine(@";
         }");
     }
 }
