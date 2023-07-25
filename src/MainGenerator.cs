@@ -114,12 +114,11 @@ using System;
 
         var groupTreeSource
             = groupsSource
-                .Select((w, _) => w.Data)
                 .Collect()
                 .Select(
                     (groups, _) => {
                         var wrapper = new DataAndDiagnostics<Group?>();
-                        wrapper.Data = BindGroups(groups, wrapper.AddDiagnostic);
+                        wrapper.Data = BindGroups(groups.Select(g => g.Data), wrapper.AddDiagnostic);
                         return wrapper;
                     }
                 )
@@ -127,12 +126,9 @@ using System;
 
         var globalConfigSource = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
 
-        var groupTreeOnlySource
-            = groupTreeSource.Select((w, _) => w.Data);
-
         // todo: add custom comparers for each
         var combinedValueProvider
-            = groupTreeOnlySource
+            = groupTreeSource
                 .Combine(usingsSource)
             .Combine(globalConfigSource.Combine(langVersionSource));
 
@@ -141,7 +137,7 @@ using System;
             combinedValueProvider,
             static (spc, groupTreeAndConfig)
                 => GenerateFromData(
-                        groupTreeAndConfig.Left.Left,   // root group
+                        groupTreeAndConfig.Left.Left.Data,   // root group
                         groupTreeAndConfig.Left.Right,  // usings
                         groupTreeAndConfig.Right.Left,  // config
                         groupTreeAndConfig.Right.Right, // langVersion
@@ -187,11 +183,8 @@ using System;
         return group;
     }
 
-    static Group? BindGroups(ImmutableArray<Group?> groups, Action<Diagnostic> addDiagnostic) {
-        if (groups.IsDefaultOrEmpty)
-            return null;
-
-        var classNames = new Dictionary<string, Group>(groups.Length);
+    static Group? BindGroups(IEnumerable<Group?> groups, Action<Diagnostic> addDiagnostic) {
+        var classNames = new Dictionary<string, Group>(8); // ¯\_(ツ)_/¯
 
         // collect the names of the each group's class
         foreach (var group in groups) {

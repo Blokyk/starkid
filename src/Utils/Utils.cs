@@ -5,6 +5,9 @@ namespace Recline.Generator;
 
 internal static class Utils
 {
+    // polyfill for netstandard2.0
+    public static bool StartsWith(this string s, char c) => s.Length >= 1 && s[0] == c;
+
     private static readonly Assembly _reclineAssembly = typeof(Utils).Assembly;
     public static string GetStaticResource(string filePath) {
         using var stream = _reclineAssembly.GetManifestResourceStream("Recline.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'Recline.Static." + filePath + "' was not found");
