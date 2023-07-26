@@ -34,5 +34,11 @@ public static class Lotus
         string projectName,
         [ValidateWith(nameof(FileInfo.Exists))] FileInfo? outputDir = null,
         [Option("framework")] string framework = "latest"
-    ) { return 0; }
+    ) {
+        Console.WriteLine("Verbose: " + canBeVerbose);
+        Console.WriteLine("projectName: " + projectName);
+        Console.WriteLine("outputDir: " + outputDir);
+        Console.WriteLine("framework: " + framework);
+        return 0;
+    }
 }

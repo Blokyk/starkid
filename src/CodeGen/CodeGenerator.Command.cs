@@ -17,7 +17,7 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
             AddOptionFunction(sb, opt, cmd);
         }
 
-        AddOptionDictionary(sb, cmd, isFlags: false);
+        AddOptionLookup(sb, cmd, isFlags: false);
 
         sb.AppendLine();
 
@@ -25,15 +25,15 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
             AddOptionFunction(sb, flag, cmd);
         }
 
-        AddOptionDictionary(sb, cmd, isFlags: true);
+        AddOptionLookup(sb, cmd, isFlags: true);
 
         sb.AppendLine();
 
         sb.Append(@"
-        // needed to simplify recline's codegen
-        internal static readonly Dictionary<string, CmdID> _subs = new();");
+        internal static bool TryUpdateCommand(string _) => false;");
 
-        sb.AppendLine();
+        AddActivateFunc(sb);
+
         sb.AppendLine();
 
         AddHasParamsField(sb, cmd);

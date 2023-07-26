@@ -80,13 +80,4 @@ internal static class CodegenHelpers
 
     public static StringBuilder AppendDictEntry(this StringBuilder sb, string key, string value)
         => sb.Append("\t\t\t{ \"").Append(key).Append("\", ").Append(value).Append(" },");
-
-    public static StringBuilder AppendOptDictionaryLine(this StringBuilder sb, string longName, char shortName, string methodName) {
-        sb.AppendDictEntry("--" + longName, methodName);
-
-        if (shortName is not '\0')
-            sb.AppendLine().AppendDictEntry("-" + shortName, methodName);
-
-        return sb.AppendLine();
-    }
 }

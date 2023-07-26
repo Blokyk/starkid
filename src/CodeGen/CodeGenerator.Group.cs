@@ -1,5 +1,7 @@
 #pragma warning disable RCS1197 // Optimize StringBuilder call
 
+using System.Linq;
+
 using Recline.Generator.Model;
 
 namespace Recline.Generator;
@@ -20,17 +22,21 @@ private static class ").Append(group.ID).Append("CmdDesc {")
             AddOptionFunction(sb, opt, group);
         }
 
-        AddOptionDictionary(sb, group, isFlags: false);
+        AddOptionLookup(sb, group, isFlags: false);
 
         foreach (var flag in group.Flags) {
             AddOptionFunction(sb, flag, group);
         }
 
-        AddOptionDictionary(sb, group, isFlags: true);
+        AddOptionLookup(sb, group, isFlags: true);
 
         sb.AppendLine();
 
-        AddSubsDictionary(sb, group);
+        AddSubsLookup(sb, group);
+
+        sb.AppendLine();
+
+        AddActivateFunc(sb);
 
         sb.AppendLine();
 
@@ -62,7 +68,7 @@ private static class ").Append(group.ID).Append("CmdDesc {")
         sb.AppendLine();
 
         sb.Append(@"
-    internal const string _name = """).Append(group.Name).Append("\";")
+        internal const string _name = """).Append(group.Name).Append("\";")
         .AppendLine();
 
         sb.AppendLine().Append("\t}").AppendLine();
@@ -94,102 +100,49 @@ private static class ").Append(group.ID).Append("CmdDesc {")
     }
 
     void AddRootHeader(StringBuilder sb, Group rootGroup) {
-        static IEnumerable<string> GetCmdIDs(Group group) {
-            yield return group.ID;
+        sb.AppendLine(Resources.GenFileHeader);
 
-            foreach (var cmd in group.Commands)
-                yield return cmd.ID;
-
-            foreach (var sub in group.SubGroups) {
-                foreach (var id in GetCmdIDs(sub)) {
-                    yield return id;
-                }
-            }
-        }
-
-        sb.Append(
-            $$"""
-        {{Resources.GenFileHeader}}
-
-        internal static partial class {{Resources.ProgClassName}}
-        {
-            private enum CmdID {
-
-        """
-        );
-
-        var cmdIDs = GetCmdIDs(rootGroup);
-
-        foreach (var id in cmdIDs)
-            sb.Append("\t\t").Append(id).Append(',').AppendLine();
-
-        sb
-        .Append("\t}")  // enum CmdID
-        .AppendLine()
-        .AppendLine();
-
-        sb.AppendLine(
-            """
-            private static bool TryUpdateCommand(CmdID subCmdID) {
-                if (!_displayHelp && ArgCount != 0) {
-                    ExitWithError("Can't invoke sub-command '{0}' with arguments for the '" + _prevCmdName + "' command", _currCmdName);
-                    return false;
-                }
-
-                _prevCmdName = _currCmdName;
-
-                switch (subCmdID) {
-        """
-        );
-
-        foreach (var id in cmdIDs) {
-            sb.Append("\t\t\tcase CmdID.").Append(id).AppendLine(":");
-            sb.Append("\t\t\t\t_options = ").Append(id).AppendLine("CmdDesc._options;");
-            sb.Append("\t\t\t\t_flags = ").Append(id).AppendLine("CmdDesc._flags;");
-            sb.Append("\t\t\t\t_subs = ").Append(id).AppendLine("CmdDesc._subs;");
-            sb.Append("\t\t\t\t_hasParams = ").Append(id).AppendLine("CmdDesc._hasParams;");
-            sb.Append("\t\t\t\t_posArgActions = ").Append(id).AppendLine("CmdDesc._posArgActions;");
-            sb.Append("\t\t\t\t_invokeCmd = ").Append(id).AppendLine("CmdDesc._invokeCmd;");
-            sb.Append("\t\t\t\t_helpString = ").Append(id).AppendLine("CmdDesc._helpText;");
-            sb.Append("\t\t\t\t_currCmdName = ").Append(id).AppendLine("CmdDesc._name;");
-            sb.Append("\t\t\t\tbreak;");
-            sb.AppendLine();
-        }
-
-        sb.AppendLine(
-            """
-                    default:
-                        throw new ArgumentException($"Recline internal error: CmdID '{subCmdID}' is unknown!", nameof(subCmdID));
-                }
-
-                return true;
-            }
-        """
-        );
+        sb.Append("internal static partial class ").Append(Resources.ProgClassName).Append(@"
+{
+#pragma warning disable CS8618
+    static ReclineProgram() {
+        ").Append(rootGroup.ID).AppendLine(@"CmdDesc.Activate();
+    }
+#pragma warning restore CS8618");
     }
 
     void AddRootFooter(StringBuilder sb, Group _)
         => sb.AppendLine("}"); // class Program
 
-    void AddSubsDictionary(StringBuilder sb, Group group) {
+    void AddSubsLookup(StringBuilder sb, Group group) {
         sb.Append(@"
-        internal static readonly Dictionary<string, CmdID> _subs = new() {");
+        internal static bool TryUpdateCommand(string cmdName) {");
 
         if (group.SubGroups.Count == 0 && group.Commands.Count == 0) {
-            sb.AppendLine(" };");
+            sb.AppendLine(" return false; }");
             return;
         }
 
-        sb.AppendLine();
+        sb.Append("""
 
-        foreach (var sub in group.SubGroups)
-            sb.AppendDictEntry(sub.Name, "CmdID." + sub.ID).AppendLine();
+            if (!_displayHelp && ArgCount != 0) {
+                ExitWithError("Can't invoke sub-command '{0}' with arguments for the '" + _prevCmdName + "' command", _currCmdName);
+                return false;
+            }
 
-        foreach (var cmd in group.Commands)
-            sb.AppendDictEntry(cmd.Name, "CmdID." + cmd.ID).AppendLine();
+            switch (cmdName) {
+""");
+        foreach (var sub in group.SubGroups.Concat((IEnumerable<InvokableBase>)group.Commands)) {
+            sb.Append(@"
+                case """).Append(sub.Name).Append(@""":
+                    ").Append(sub.ID).Append(@"CmdDesc.Activate();
+                    return true;");
+        }
 
-        sb
-        .Append("\t\t};")
-        .AppendLine();
+        sb.AppendLine(@"
+                default:
+                    return false;
+            }
+        }");
     }
 }

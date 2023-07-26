@@ -22,44 +22,99 @@ internal sealed partial class CodeGenerator
         return sb.ToString();
     }
 
-    void AddOptionDictionary(StringBuilder sb, InvokableBase groupOrCmd, bool isFlags) {
-        void appendAllOptions(IEnumerable<Option> options, string prefix) {
-            foreach (var opt in options) {
-                sb
-                .AppendOptDictionaryLine(
-                    opt.Name,
-                    opt.Alias,
-                    prefix + opt.BackingSymbol.Name + "Action"
-                );
-            }
-        }
-
-        void appendGroupOptions(Group group) {
-            IEnumerable<Option> groupOpts = isFlags ? group.Flags : group.Options;
-            appendAllOptions(groupOpts.Where(opt => opt.IsGlobal), group.ID + "CmdDesc.");
-
-            if (group.ParentGroup is not null)
-                appendGroupOptions(group.ParentGroup);
-        }
-
-        string dictName = isFlags ? "_flags" : "_options";
+    void AddOptionLookup(StringBuilder sb, InvokableBase groupOrCmd, bool isFlags) {
+        string funcName = isFlags ? "TryExecFlagAction" : "TryExecOptionAction";
 
         sb.Append(@"
-        internal static readonly Dictionary<string, Action<string").Append(isFlags ? "?" : "").Append(">> ").Append(dictName).Append(" = new() {")
-        .AppendLine();
+        internal static bool ").Append(funcName).Append("(string optName, string? arg, bool onlyAllowGlobal) {");
 
-        appendAllOptions(isFlags ? groupOrCmd.Flags : groupOrCmd.Options, "");
-        if (groupOrCmd.ParentGroup is not null)
-            appendGroupOptions(groupOrCmd.ParentGroup);
+        // if we didn't find the option here, it might be global, so we ask the parent group
+        var defaultReturn
+            = groupOrCmd.ParentGroup is null
+            ? "false"
+            : groupOrCmd.ParentGroup.ID + "CmdDesc." + funcName + "(optName, arg, true)";
 
-        sb
-        .Append("\t\t};")
-        .AppendLine();
+        IEnumerable<Option> opts = isFlags ? groupOrCmd.Flags : groupOrCmd.Options;
+        // if there's no options, just return false
+        if (!opts.Any()) {
+            sb.Append(" return ").Append(defaultReturn).AppendLine("; }");
+            return;
+        }
+
+        if (!isFlags) {
+            sb.Append("""
+            void updateArg() {
+                if (arg is null && !TryGetNextArgFromArgv(out arg))
+                    ExitWithError("Option {0} needs an argument", 1, optName);
+            }
+""");
+        }
+
+        sb.Append(@"
+            if (_displayHelp)
+                return true;
+
+            try {
+                switch (optName) {");
+
+        foreach (var opt in opts) {
+            sb.Append(@"
+                case ""--").Append(opt.Name).AppendLine("\":");
+            if (opt.Alias != '\0') {
+                sb.Append(@"
+                case ""-").Append(opt.Alias).AppendLine("\":");
+            }
+
+            if (!opt.IsGlobal) {
+                // add a guard against using this option globally
+                //
+                // it's fine to exit early because there can't be a
+                // parent global option with the same name anyway
+                sb.Append(@"
+                    if (onlyAllowGlobal) return false;");
+            }
+
+            if (opt is not Flag) {
+                sb.Append(@"
+                    updateArg();");
+            }
+
+            sb.Append(@"
+                    ").Append(opt.BackingSymbol.Name).AppendLine(@"Action(arg!);
+                    return true;");
+        }
+
+        sb.Append(@"
+                    default:
+                        return ").Append(defaultReturn).Append(';');
+        sb.Append("""
+                }
+            } catch (Exception e) {
+                if (_displayHelp)
+                    return true;
+
+                if (arg is null) {
+                    // arg is only null when it's a flag (although we could get a flag with a non-null arg)
+                    ExitWithError(
+                        "Using the '" + optName + "' flag isn't valid in this context: {0}",
+                        e.Message
+                    );
+                } else {
+                    ExitWithError(
+                        "Expression '{0}' is not a valid value for option '" + optName + "': {1}",
+                        arg, e.Message
+                    );
+                }
+
+                return false;
+            }
+        }
+""");
     }
 
     void AddHasParamsField(StringBuilder sb, Command? cmd)
          => sb.Append(@"
-        internal static readonly bool _hasParams = ").Append((cmd?.HasParams ?? false) ? "true" : "false").Append(';')
+        internal const bool _hasParams = ").Append((cmd?.HasParams ?? false) ? "true" : "false").Append(';')
          .AppendLine();
 
     void AddPosArgActions(StringBuilder sb, Group group) {
@@ -199,4 +254,18 @@ internal sealed partial class CodeGenerator
             ").Append(expr).AppendLine(@";
         }");
     }
+
+    void AddActivateFunc(StringBuilder sb) =>
+        sb.Append(@"
+        internal static void Activate() {
+            ReclineProgram._prevCmdName = _currCmdName;
+            ReclineProgram._tryExecOption = TryExecOptionAction;
+            ReclineProgram._tryExecFlag = TryExecFlagAction;
+            ReclineProgram._tryUpdateCmd = TryUpdateCommand;
+            ReclineProgram._hasParams = _hasParams;
+            ReclineProgram._posArgActions = _posArgActions;
+            ReclineProgram._invokeCmd = _invokeCmd;
+            ReclineProgram._helpString = _helpText;
+            ReclineProgram._currCmdName = _name;
+        }");
 }
