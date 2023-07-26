@@ -95,5 +95,6 @@ static CSharpCompilation createCompUnit(string assemblyName, SyntaxTree tree) {
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
         },
         options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                    .WithSpecificDiagnosticOptions(new[] {KeyValuePair.Create("CLI008", ReportDiagnostic.Suppress)})
     );
 }
