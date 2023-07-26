@@ -117,17 +117,17 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor ConfigPropNotVisible
         = new(
-            "CLI007",
-            "Recline cannot read configuration/build property '{0}', which shouldn't happen",
-            "Property '{0}' should be visible to Recline's source generator. Check that you installed the package correctly.",
+            "CLI008",
+            "Recline cannot read configuration/build property '{0}'",
+            "Build property '{0}' should be visible to Recline's source generator. Check that you installed the package correctly.",
             "Recline.Config",
-            DiagnosticSeverity.Error,
+            DiagnosticSeverity.Warning,
             true
         );
 
     public static readonly DiagnosticDescriptor DashDashForbiddenName
         = new(
-            "CLI008",
+            "CLI009",
             "The name '--' is forbidden for commands and options",
             "The name '--' is forbidden for commands and options",
             "Recline.Analysis",
@@ -137,7 +137,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NameCantStartWithDash
         = new(
-            "CLI008",
+            "CLI009",
             "Option/command names can't start with '-'",
             "Option/command names can't start with '-'",
             "Recline.Analysis",
