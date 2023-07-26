@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Recline.Generator.Model;
 
 public abstract record MinimalSymbolInfo(
@@ -69,13 +71,14 @@ public sealed record MinimalTypeInfo(
     }
 }
 
+[DebuggerDisplay("{ContainingType!.ToString(),nq} . {SymbolUtils.GetSafeName(Name),nq}")]
 public record MinimalMemberInfo(
     string Name,
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo Type,
     MinimalLocation Location
 ) : MinimalSymbolInfo(Name, ContainingType, Location) {
-    public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
+    public override string ToString() => ContainingType!.ToString() + ".@" + Name;
 
     public static MinimalMemberInfo FromSymbol(ISymbol symbol) {
         if (symbol is IPropertySymbol propSymbol)
@@ -97,8 +100,6 @@ public sealed record MinimalMethodInfo(
     ImmutableArray<MinimalTypeInfo> TypeArguments,
     MinimalLocation Location
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
-    public override string ToString() => ContainingType!.ToString() + "." + SymbolUtils.GetSafeName(Name);
-
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
         => new(
             symbol.Name,
@@ -128,6 +129,7 @@ public sealed record MinimalMethodInfo(
     public bool IsGeneric => TypeArguments.Length > 0;
 }
 
+[DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
 public sealed record MinimalParameterInfo(
     string Name, // need the name cause the help text might change otherwise
     MinimalTypeInfo Type,

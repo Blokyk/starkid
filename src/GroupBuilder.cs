@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Recline.Generator.Model;
 
 namespace Recline.Generator;
@@ -534,7 +536,7 @@ internal sealed class GroupBuilder
             string s => '"' + s + '"',
             char c => "'" + c + "'",
             bool b => b ? "true" : "false",
-            _ => defaultVal.ToString() // fixme(#2): this could break cause of culture
+            _ => defaultVal.ToString()
         };
     }
 

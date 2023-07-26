@@ -32,6 +32,7 @@ public static class Lotus
     [Command("new")]
     public static int SetupNewProject(
         string projectName,
+        float f = 0.1f,
         [ValidateWith(nameof(FileInfo.Exists))] FileInfo? outputDir = null,
         [Option("framework")] string framework = "latest"
     ) {

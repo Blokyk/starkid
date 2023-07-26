@@ -45,6 +45,9 @@ internal static class SymbolUtils
             return GetRawName(symbol);
     }
 
+    // note: this only needs to be used for debug purposes,
+    // otherwise it's always safe to add a '@' prefix to an
+    // identifier
     public static string GetSafeName(string name) {
         if (SyntaxFacts.IsKeywordKind(SyntaxFacts.GetKeywordKind(name)))
             return '@' + name;
