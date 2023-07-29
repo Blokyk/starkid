@@ -29,6 +29,9 @@ public partial class MainGenerator
                 spc
             );
 
+        // special case: -1 disables the limit entirely
+        if (columnLength == -1) columnLength = Int32.MaxValue;
+
         int helpExitCode
             = GetProp(
                 HELP_EXIT_CODE_PROP_NAME,
