@@ -55,12 +55,8 @@ internal static class SymbolUtils
         return name;
     }
 
-    public static Location GetDefaultLocation(this ISymbol symbol) {
-        if (symbol.Locations.IsDefaultOrEmpty)
-            return Location.None;
-        else
-            return symbol.Locations[0];
-    }
+    public static Location GetDefaultLocation(this ISymbol symbol)
+        => symbol.Locations.FirstOrDefault(l => l.IsInSource, Location.None);
 
     public static string GetFullNameBad(ISymbol symbol) {
         static string getFullNameRecursive(ISymbol symbol)

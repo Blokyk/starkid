@@ -25,7 +25,7 @@ internal static class Utils
     }
 
     public static Location GetLocation(this SyntaxReference syntaxRef)
-        => Location.Create(syntaxRef.SyntaxTree, syntaxRef.Span);
+        => syntaxRef.SyntaxTree.GetLocation(syntaxRef.Span);
 
     public static Location GetApplicationLocation(AttributeData attr)
         => attr.ApplicationSyntaxReference?.GetLocation() ?? Location.None;
@@ -52,6 +52,17 @@ internal static class Utils
             .Select(u => u.Name!.ToString())
             .ToImmutableArray();
     }
+
+#if NETSTANDARD2_0
+    internal static T FirstOrDefault<T>(this IEnumerable<T> coll, Func<T, bool> condition, T defaultVal) {
+        foreach (var item in coll) {
+            if (condition(item))
+                return item;
+        }
+
+        return defaultVal;
+    }
+#endif // NETSTANDARD2_0
 
     internal static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
 
