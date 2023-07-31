@@ -287,17 +287,7 @@ internal sealed class GroupBuilder
     bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
         arg = null;
 
-        string? defaultVal = null;
-
-        foreach (var synRef in param.DeclaringSyntaxReferences) {
-            if (synRef.GetSyntax() is not ParameterSyntax paramDec)
-                return false;
-
-            if (paramDec.Default is not null) {
-                defaultVal = paramDec.Default.Value.ToString();
-                break;
-            }
-        }
+        var defaultVal = GetDefaultValueForSymbol(param);
 
         bool isParams = param.IsParams;
 
