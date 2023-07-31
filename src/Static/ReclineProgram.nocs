@@ -70,12 +70,16 @@ internal static partial class ReclineProgram
                 value = rawArg.Substring(eqIdx + 1); // eqIdx + 1 ignores the '='
             }
 
+            bool mightBeOpt = false;
+
             if (!onlyArgs) {
                 if (arg.Length > 1 && arg[0] == '-') {
                     if (arg.Length == 2 && arg[1] == '-') {
                         onlyArgs = true;
                         continue;
                     }
+
+                    mightBeOpt = true;
 
                     if (_displayHelp && (arg == "--help" || arg == "-h")) {
                         // in case --help got an argument, then treat it as trying to get
@@ -97,11 +101,8 @@ internal static partial class ReclineProgram
 
                     if (_displayHelp)
                         continue;
-
-                    return PrintHelpString("Command '" + _currCmdName + "' doesn't have any option named '{0}'", arg);
                 }
-
-                if (_tryUpdateCmd(arg)) {
+                else if (_tryUpdateCmd(arg)) {
                     if (!_displayHelp && value is not null)
                         return ExitWithError("'{0}' is trying to assign a value to a command", 1, rawArg);
                     continue;
@@ -110,6 +111,8 @@ internal static partial class ReclineProgram
 
             if (TryAddPosArg(arg))
                 argCount++;
+            else if (mightBeOpt)
+                return PrintHelpString("Command '" + _currCmdName + "' doesn't have any option named '{0}'", arg);
             else
                 return PrintHelpString("Couldn't understand '{0}' in this context", rawArg);
         }
