@@ -24,7 +24,7 @@ public abstract record MinimalSymbolInfo(
 }
 
 [DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
-public sealed record MinimalTypeInfo(
+public record MinimalTypeInfo(
     string Name,
     MinimalTypeInfo? ContainingType,
     string FullName,
@@ -39,6 +39,9 @@ public sealed record MinimalTypeInfo(
     public bool IsGeneric => TypeArguments.Length != 0;
 
     public static MinimalTypeInfo FromSymbol(ITypeSymbol type) {
+        if (type is IArrayTypeSymbol arrType)
+            return MinimalArrayTypeInfo.FromSymbol(arrType);
+
         MinimalTypeInfo? containingType = null;
 
         if (type.ContainingType is not null)
@@ -73,6 +76,27 @@ public sealed record MinimalTypeInfo(
             };
         }
     }
+}
+
+[DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
+public sealed record MinimalArrayTypeInfo(
+    MinimalTypeInfo ElementType,
+    bool IsNullable,
+    MinimalLocation Location
+) : MinimalTypeInfo(ElementType.Name + "[]", null, ElementType.FullName + "[]", IsNullable, Location) {
+    public override string ToString() => base.ToString(); // required to prevent auto-gen'd ToString
+
+    public static MinimalArrayTypeInfo FromSymbol(IArrayTypeSymbol type) {
+        var elementType = SymbolInfoCache.GetTypeInfo(type.ElementType);
+        bool isNullable = SymbolUtils.IsNullable(type);
+
+        return new MinimalArrayTypeInfo(
+            elementType,
+            isNullable,
+            type.GetDefaultLocation()
+        );
+    }
+
 }
 
 [DebuggerDisplay("{ContainingType!.ToString(),nq} . {SymbolUtils.GetSafeName(Name),nq}")]
