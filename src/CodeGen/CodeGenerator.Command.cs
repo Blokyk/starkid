@@ -10,7 +10,7 @@ internal sealed partial class CodeGenerator
         sb.Append(@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625
-private static class ").Append(cmd.ID).Append("CmdDesc {")
+    private static class ").Append(cmd.ID).Append("CmdDesc {")
         .AppendLine();
 
         foreach (var opt in cmd.Options) {
