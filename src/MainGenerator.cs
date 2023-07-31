@@ -1,5 +1,3 @@
-using System.IO;
-
 using Recline.Generator.Model;
 
 namespace Recline.Generator;
@@ -147,20 +145,13 @@ using System;
 
         var reclineDiagnosticSource
             = groupsSource
-                .Select((w, _)
-                    => w.GetDiagnostics()
-                )
-                .Combine(groupTreeSource.Select((w, _) => w.GetDiagnostics()))
-                .WithTrackingName("recline_collect_diagnostics");
+                .Append(groupTreeSource)
+                .SelectMany((w, _) => w.GetDiagnostics())
+                .Where(diag => diag.Id != Diagnostics.GiveUp.Id);
 
         context.RegisterSourceOutput(
             reclineDiagnosticSource,
-            static (spc, diagsTuple) => {
-                foreach (var diag in diagsTuple.Left)
-                    spc.ReportDiagnostic(diag);
-                foreach (var diag in diagsTuple.Right)
-                    spc.ReportDiagnostic(diag);
-            }
+            static (spc, diag) => spc.ReportDiagnostic(diag)
         );
     }
 
