@@ -173,13 +173,7 @@ internal sealed partial class CodeGenerator
             .Append("\t\t\tstatic __arg => @")
             .Append(arg.BackingSymbol.Name)
             .Append(" = ")
-            .Append(
-                CodegenHelpers.GetValidatingExpression(
-                    CodegenHelpers.GetParsingExpression(arg.Parser, null, null),
-                    arg.Name,
-                    arg.Validators
-                )
-            )
+            .Append(CodegenHelpers.GetFullExpression(arg))
             .Append(',')
             .AppendLine();
         }
@@ -208,16 +202,13 @@ internal sealed partial class CodeGenerator
             .AppendLine();
         }
 
-        var argExpr = CodegenHelpers.GetParsingExpression(opt.Parser, opt.BackingSymbol.Name, opt.DefaultValueExpr);
-        var validExpr = CodegenHelpers.GetValidatingExpression(argExpr, opt.Name, opt.Validators);
-
         var fieldPrefix
             = groupOrCmd is Group group
             ? "@" + group.FullClassName + ".@"
             : "@";
 
         string expr
-            = fieldPrefix + opt.BackingSymbol.Name + " = " + validExpr;
+            = fieldPrefix + opt.BackingSymbol.Name + " = " + CodegenHelpers.GetFullExpression(opt);
 
         var actionName = opt.BackingSymbol.Name + "Action";
         var argType = opt is Flag ? "string?" : "string";

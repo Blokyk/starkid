@@ -11,7 +11,21 @@ internal static class CodegenHelpers
             ? ""
             : "using " + String.Join(";\nusing ", usings) + ";\n\n";
 
-    public static string GetParsingExpression(ParserInfo parser, string? argName, string? defaultValueExpr) {
+    public static string GetFullExpression(Argument arg)
+        => GetValidatingExpression(
+            GetParsingExpression(arg.Parser, arg.DefaultValueExpr),
+            arg.Name,
+            arg.Validators
+        );
+
+    public static string GetFullExpression(Option opt)
+        => GetValidatingExpression(
+            GetParsingExpression(opt.Parser, opt.DefaultValueExpr),
+            opt.Name,
+            opt.Validators
+        );
+
+    public static string GetParsingExpression(ParserInfo parser, string? defaultValueExpr) {
         if (parser == ParserInfo.AsBool) {
             var name = ParserInfo.AsBool.FullName;
             if (defaultValueExpr is null)
@@ -29,7 +43,7 @@ internal static class CodegenHelpers
         }
 
         expr += parser switch {
-            ParserInfo.Identity => "__arg" + (argName is null ? "" : " ?? " + argName),
+            ParserInfo.Identity => "__arg",
             ParserInfo.DirectMethod dm => "ThrowIfParseError<" + targetType.FullName + ">(" + dm.FullName + ", __arg ?? \"\")",
             ParserInfo.Constructor ctor => "new " + ctor.TargetType.FullName + "(__arg ?? \"\")",
             ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + targetType.FullName + ">(" + bom.FullName + ", __arg ?? \"\")",
