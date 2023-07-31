@@ -521,7 +521,7 @@ internal sealed class GroupBuilder
         var defaultVal = parameterSymbol.ExplicitDefaultValue;
 
         if (defaultVal is null)
-            return null;
+            return "null";
 
         return defaultVal switch {
             string s => '"' + s + '"',
