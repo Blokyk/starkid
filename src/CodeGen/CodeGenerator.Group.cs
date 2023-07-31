@@ -145,17 +145,18 @@ internal sealed partial class CodeGenerator
     }
 
     void AddPosArgActions(StringBuilder sb, Group group) {
-        sb.Append(@"
-        internal static readonly Action<string>[] _posArgActions = ");
-
         var defaultCmd = group.DefaultCommand;
-        if (defaultCmd is not null)
-            sb.Append(defaultCmd.ID).Append("CmdDesc._posArgActions");
-        else
-            sb.Append("Array.Empty<Action<string>>()");
 
-        sb.Append(';')
-        .AppendLine();
+        if (defaultCmd is null) {
+            sb.Append(@"
+        internal const int _requiredArgCount = 0;
+        internal static readonly Action<string>[] _posArgActions = Array.Empty<Action<string>>();").AppendLine();
+            return;
+        }
+
+        sb.Append(@"
+        internal const int _requiredArgCount = ").Append(defaultCmd.ID).Append(@"CmdDesc._requiredArgCount;
+        internal static readonly Action<string>[] _posArgActions = ").Append(defaultCmd.ID).Append("CmdDesc._posArgActions;").AppendLine();
     }
 
     void AddCommandName(StringBuilder sb, Group group)

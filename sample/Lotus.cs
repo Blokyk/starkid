@@ -38,6 +38,7 @@ public static class Lotus
     ) {
         Console.WriteLine("Verbose: " + canBeVerbose);
         Console.WriteLine("projectName: " + projectName);
+        Console.WriteLine("f: " + f);
         Console.WriteLine("outputDir: " + outputDir);
         Console.WriteLine("framework: " + framework);
         return 0;

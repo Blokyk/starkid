@@ -18,7 +18,8 @@ internal static partial class ReclineProgram
     private static string _currCmdName = "";
     private static string _prevCmdName = "";
 
-    private static Action<string>[] _posArgActions = Array.Empty<Action<string>>();
+    private static Action<string>[] _posArgActions;
+    private static int _requiredArgsMissing;
     private static List<string> _params = new();
 
     public static bool _hasParams;
@@ -116,8 +117,8 @@ internal static partial class ReclineProgram
         if (_displayHelp)
             return DisplayHelp();
 
-        if (ArgSlotsLeft > 0)
-            return ExitWithError("Expected at least {0} arguments, but only got {1}", ArgSlotsLeft + argCount, argCount);
+        if (_requiredArgsMissing > 0)
+            return ExitWithError("Expected at least {0} arguments, but only got {1}", _requiredArgsMissing + argCount, argCount);
 
         return _invokeCmd();
     }
@@ -321,6 +322,7 @@ internal static partial class ReclineProgram
         if (ArgSlotsLeft > 0) {
             try {
                 _posArgActions[posArgIdx++](arg);
+                _requiredArgsMissing--;
                 return true;
             } catch (Exception e) {
                 ExitWithError(
