@@ -15,6 +15,7 @@ internal static class CodegenHelpers
         => GetValidatingExpression(
             GetParsingExpression(arg.Parser, arg.DefaultValueExpr),
             arg.Name,
+            arg.Type.IsNullable,
             arg.Validators
         );
 
@@ -22,6 +23,7 @@ internal static class CodegenHelpers
         => GetValidatingExpression(
             GetParsingExpression(opt.Parser, opt.DefaultValueExpr),
             opt.Name,
+            opt.Type.IsNullable,
             opt.Validators
         );
 
@@ -56,7 +58,7 @@ internal static class CodegenHelpers
         return expr;
     }
 
-    public static string GetValidatingExpression(string argExpr, string argName, ImmutableArray<ValidatorInfo> validators) {
+    public static string GetValidatingExpression(string argExpr, string argName, bool isNullable, ImmutableArray<ValidatorInfo> validators) {
         if (validators.Length == 0)
             return argExpr;
 
@@ -79,8 +81,10 @@ internal static class CodegenHelpers
                     throw new Exception(validator.GetType().Name + " is not a supported ValidatorInfo type.");
             }
 
+            var throwFunc = isNullable ? "ThrowIfNotValidNullable(" : "ThrowIfNotValid(";
+
             currExpr =
-                "ThrowIfNotValid(" +
+                throwFunc +
                     $"{currExpr}, " +
                     $"{funcExpr}, " +
                     $"\"{argName}\", " +

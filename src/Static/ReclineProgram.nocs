@@ -224,6 +224,36 @@ internal static partial class ReclineProgram
         return val;
     }
 
+    private static T? ThrowIfNotValidNullable<T>(T? val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
+        if (val is null)
+            return val;
+
+        var errorMessage = isValid(val);
+
+        if (!String.IsNullOrEmpty(errorMessage))
+            throw new Exception(errorMessage);
+
+        return val;
+    }
+
+    private static T? ThrowIfNotValidNullable<T>(T? val, Action<T> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
+        try {
+            if (val is not null)
+                isValid(val);
+        } catch (Exception) when (message != null) {
+            throw new Exception(message);
+        }
+
+        return val;
+    }
+
+    private static T? ThrowIfNotValidNullable<T>(T? val, Func<T, bool> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcExpr = "") {
+        if (val is not null && !isValid(val))
+            throw new Exception(message ?? "'" + funcExpr + "' returned false");
+
+        return val;
+    }
+
     private delegate bool BoolOut<T>(string arg, out T t);
 
     private static T ThrowIfTryParseNotTrue<T>(BoolOut<T> tryParse, string arg) {
