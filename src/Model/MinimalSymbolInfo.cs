@@ -23,6 +23,7 @@ public abstract record MinimalSymbolInfo(
         || (other is not null && other.GetHashCode() == GetHashCode());
 }
 
+[DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
 public sealed record MinimalTypeInfo(
     string Name,
     MinimalTypeInfo? ContainingType,
@@ -30,7 +31,7 @@ public sealed record MinimalTypeInfo(
     bool IsNullable,
     MinimalLocation Location
 ) : MinimalSymbolInfo(Name, ContainingType, Location) {
-    public override string ToString() => FullName;
+    public override string ToString() => '@' + FullName;
 
     public SpecialType SpecialType { get; init; } = SpecialType.None;
     public ImmutableArray<MinimalTypeInfo> TypeArguments { get; init; } = ImmutableArray<MinimalTypeInfo>.Empty;
