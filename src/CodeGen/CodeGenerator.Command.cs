@@ -52,9 +52,9 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
 
         AddHelpTextLine(sb, cmd);
 
-        sb.Append(@"
-        internal const string _name = """).Append(cmd.Name).Append("\";")
-        .AppendLine();
+        sb.AppendLine();
+
+        AddCommandName(sb, cmd);
 
         sb.Append("\t}").AppendLine();
     }
@@ -118,6 +118,14 @@ private static class ").Append(cmd.ID).Append("CmdDesc {")
 
         sb
         .Append(';')
+        .AppendLine();
+    }
+
+    void AddCommandName(StringBuilder sb, Command cmd) {
+        var name = cmd.IsHiddenCommand ? cmd.ParentGroup.Name : cmd.Name;
+
+        sb.Append(@"
+        internal const string _name = """).Append(name).Append("\";")
         .AppendLine();
     }
 }

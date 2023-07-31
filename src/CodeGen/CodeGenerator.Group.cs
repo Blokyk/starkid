@@ -67,9 +67,7 @@ private static class ").Append(group.ID).Append("CmdDesc {")
 
         sb.AppendLine();
 
-        sb.Append(@"
-        internal const string _name = """).Append(group.Name).Append("\";")
-        .AppendLine();
+        AddCommandName(sb, group);
 
         sb.AppendLine().Append("\t}").AppendLine();
 
@@ -145,4 +143,8 @@ private static class ").Append(group.ID).Append("CmdDesc {")
             }
         }");
     }
+
+    void AddCommandName(StringBuilder sb, Group group)
+        => sb.Append(@"
+        internal const string _name = """).Append(group.Name).Append("\";").AppendLine();
 }

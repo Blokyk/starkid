@@ -7,7 +7,7 @@ public sealed record Command : InvokableBase, IEquatable<Command> {
     public Command(string name, Group parentGroup, MinimalMethodInfo backingMethod) : base(name) {
         if (name == "#") {
             IsHiddenCommand = true;
-            Name = "";
+            Name = "_";
         } else {
             Name = name;
         }
