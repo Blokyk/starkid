@@ -16,12 +16,12 @@ public sealed record Command : InvokableBase, IEquatable<Command> {
         BackingMethod = backingMethod;
     }
 
+#pragma warning disable CS8765 // nullability mismatch
     public override Group ParentGroup {
         get => base.ParentGroup!;
-#pragma warning disable CS8765 // nullability mismatch
         set => base.ParentGroup = value;
-#pragma warning restore CS8765
     }
+#pragma warning restore CS8765
 
     public bool IsHiddenCommand { get; } = false;
 
