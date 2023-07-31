@@ -7,7 +7,10 @@ public abstract record MinimalSymbolInfo(
     MinimalTypeInfo? ContainingType,
     MinimalLocation Location
 ) : IEquatable<MinimalSymbolInfo> {
-    public override string ToString() => ContainingType?.ToString() + (ContainingType is null ? "" : ".") + Name;
+    public override string ToString()
+        => ContainingType is null
+            ? Name
+            : ContainingType.ToString() + '.' + Name;
 
     public override int GetHashCode()
         => Utils.CombineHashCodes(
@@ -100,6 +103,8 @@ public sealed record MinimalMethodInfo(
     ImmutableArray<MinimalTypeInfo> TypeArguments,
     MinimalLocation Location
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
+    public override string ToString() => ContainingType!.ToString() + ".@" + Name;
+
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
         => new(
             symbol.Name,
