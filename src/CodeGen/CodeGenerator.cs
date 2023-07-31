@@ -18,7 +18,9 @@ internal sealed partial class CodeGenerator
     public static string ToSourceCode(Group rootGroup, ReclineConfig config) {
         var generator = new CodeGenerator(config);
         var sb = new StringBuilder();
-        generator.AddSourceCode(sb, rootGroup, true);
+        generator.AddRootHeader(sb, rootGroup);
+        generator.AddSourceCode(sb, rootGroup);
+        generator.AddRootFooter(sb, rootGroup);
         return sb.ToString();
     }
 
@@ -110,77 +112,6 @@ internal sealed partial class CodeGenerator
             }
         }
 """);
-    }
-
-    void AddHasParamsField(StringBuilder sb, Command? cmd)
-         => sb.Append(@"
-        internal const bool _hasParams = ").Append((cmd?.HasParams ?? false) ? "true" : "false").Append(';')
-         .AppendLine();
-
-    void AddPosArgActions(StringBuilder sb, Group group) {
-        sb.Append(@"
-        internal static readonly Action<string>[] _posArgActions = ");
-
-        var defaultCmd = group.DefaultCommand;
-        if (defaultCmd is not null)
-            sb.Append(defaultCmd.ID).Append("CmdDesc._posArgActions");
-        else
-            sb.Append("Array.Empty<Action<string>>()");
-
-        sb.Append(';')
-        .AppendLine();
-    }
-
-    void AddPosArgActions(StringBuilder sb, Command cmd) {
-        foreach (var arg in cmd.Arguments) {
-            if (arg.IsParams)
-                continue; // cf above
-
-            sb
-            .Append("\t\tprivate static ")
-            .Append(arg.Type.FullName + (arg.Type.IsNullable ? "?" : ""))
-            .Append(" @")
-            .Append(arg.BackingSymbol.Name);
-
-            if (arg.DefaultValueExpr is not null) {
-                sb
-                .Append(" = ")
-                .Append(arg.DefaultValueExpr);
-            }
-
-            sb.AppendLine(";");
-        }
-
-        sb.Append(@"
-        internal static readonly Action<string>[] _posArgActions = ");
-
-        if (cmd.Arguments.Count == 0) {
-            sb
-            .Append("Array.Empty<Action<string>>();")
-            .AppendLine();
-            return;
-        }
-
-        sb
-        .Append("new Action<string>[] {")
-        .AppendLine();
-
-        foreach (var arg in cmd.Arguments) {
-            if (arg.IsParams)
-                continue; // nit: could be break since params is always the last parameter
-
-            sb
-            .Append("\t\t\tstatic __arg => @")
-            .Append(arg.BackingSymbol.Name)
-            .Append(" = ")
-            .Append(CodegenHelpers.GetFullExpression(arg))
-            .Append(',')
-            .AppendLine();
-        }
-
-        sb
-        .Append("\t\t};")
-        .AppendLine();
     }
 
     public void AddOptionFunction(StringBuilder sb, Option opt, InvokableBase groupOrCmd) {

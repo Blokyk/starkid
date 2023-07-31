@@ -8,15 +8,21 @@ namespace Recline.Generator;
 
 internal sealed partial class CodeGenerator
 {
-    void AddSourceCode(StringBuilder sb, Group group, bool isRoot) {
-        if (isRoot)
-            AddRootHeader(sb, group);
-
+    void AddSourceCode(StringBuilder sb, Group group) {
         sb.Append(@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625
     private static class ").Append(group.ID).Append("CmdDesc {")
         .AppendLine();
+
+        // --- On the subject of options in default commands ---
+        //
+        // After a bit of reflection and experimentation, I've
+        //    decided it best not to handle default command
+        //   options at all, which means that, although they
+        //  are allowed in the command definition, they won't
+        //     be "available" unless you specify the actual
+        //       command name instead of defaulting to it
 
         foreach (var opt in group.Options) {
             AddOptionFunction(sb, opt, group);
@@ -40,18 +46,7 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        // --- On the subject of options in default commands ---
-        //
-        // After a bit of reflection and experimentation, I've
-        //    decided it best not to handle default command
-        //   options at all, which means that, although they
-        //  are allowed in the command definition, they won't
-        //     be "available" unless you specify the actual
-        //       command name instead of defaulting to it
-
-        var defaultCmd = group.DefaultCommand;
-
-        AddHasParamsField(sb, defaultCmd);
+        AddHasParamsField(sb, group);
 
         sb.AppendLine();
 
@@ -72,15 +67,12 @@ internal sealed partial class CodeGenerator
         sb.AppendLine().Append("\t}").AppendLine();
 
         foreach (var sub in group.SubGroups) {
-            AddSourceCode(sb, sub, false);
+            AddSourceCode(sb, sub);
         }
 
         foreach (var cmd in group.Commands) {
             AddSourceCode(sb, cmd);
         }
-
-        if (isRoot)
-            AddRootFooter(sb, group);
     }
 
     void AddInvokeCmdField(StringBuilder sb, Group group) {
@@ -108,9 +100,6 @@ internal sealed partial class CodeGenerator
     }
 #pragma warning restore CS8618");
     }
-
-    void AddRootFooter(StringBuilder sb, Group _)
-        => sb.AppendLine("}"); // class Program
 
     void AddSubsLookup(StringBuilder sb, Group group) {
         sb.Append(@"
@@ -144,7 +133,35 @@ internal sealed partial class CodeGenerator
         }");
     }
 
+    void AddHasParamsField(StringBuilder sb, Group group) {
+        if (group.DefaultCommand is not { IsHiddenCommand: true }) {
+            sb.Append(@"
+        internal const bool _hasParams = false;").AppendLine();
+            return;
+        }
+
+        sb.Append(@"
+        internal const bool _hasParams = true;").AppendLine();
+    }
+
+    void AddPosArgActions(StringBuilder sb, Group group) {
+        sb.Append(@"
+        internal static readonly Action<string>[] _posArgActions = ");
+
+        var defaultCmd = group.DefaultCommand;
+        if (defaultCmd is not null)
+            sb.Append(defaultCmd.ID).Append("CmdDesc._posArgActions");
+        else
+            sb.Append("Array.Empty<Action<string>>()");
+
+        sb.Append(';')
+        .AppendLine();
+    }
+
     void AddCommandName(StringBuilder sb, Group group)
         => sb.Append(@"
         internal const string _name = """).Append(group.Name).Append("\";").AppendLine();
+
+    void AddRootFooter(StringBuilder sb, Group _)
+        => sb.AppendLine("}"); // class Program
 }

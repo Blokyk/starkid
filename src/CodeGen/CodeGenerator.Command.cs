@@ -59,6 +59,68 @@ internal sealed partial class CodeGenerator
         sb.Append("\t}").AppendLine();
     }
 
+    void AddHasParamsField(StringBuilder sb, Command cmd) {
+        if (cmd.HasParams) {
+            sb.Append(@"
+        internal const bool _hasParams = true;").AppendLine();
+        } else {
+            sb.Append(@"
+        internal const bool _hasParams = false;").AppendLine();
+        }
+    }
+
+    void AddPosArgActions(StringBuilder sb, Command cmd) {
+        foreach (var arg in cmd.Arguments) {
+            if (arg.IsParams)
+                continue; // cf above
+
+            sb
+            .Append("\t\tprivate static ")
+            .Append(arg.Type.FullName + (arg.Type.IsNullable ? "?" : ""))
+            .Append(" @")
+            .Append(arg.BackingSymbol.Name);
+
+            if (arg.DefaultValueExpr is not null) {
+                sb
+                .Append(" = ")
+                .Append(arg.DefaultValueExpr);
+            }
+
+            sb.AppendLine(";");
+        }
+
+        sb.Append(@"
+        internal static readonly Action<string>[] _posArgActions = ");
+
+        if (cmd.Arguments.Count == 0) {
+            sb
+            .Append("Array.Empty<Action<string>>();")
+            .AppendLine();
+            return;
+        }
+
+        sb
+        .Append("new Action<string>[] {")
+        .AppendLine();
+
+        foreach (var arg in cmd.Arguments) {
+            if (arg.IsParams)
+                continue; // nit: could be break since params is always the last parameter
+
+            sb
+            .Append("\t\t\tstatic __arg => @")
+            .Append(arg.BackingSymbol.Name)
+            .Append(" = ")
+            .Append(CodegenHelpers.GetFullExpression(arg))
+            .Append(',')
+            .AppendLine();
+        }
+
+        sb
+        .Append("\t\t};")
+        .AppendLine();
+    }
+
     void AddCommandFunc(StringBuilder sb, MinimalMethodInfo method) {
         var typeName
             = method.ReturnsVoid
