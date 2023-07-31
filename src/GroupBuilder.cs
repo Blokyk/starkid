@@ -521,6 +521,7 @@ internal sealed class GroupBuilder
     }
 
     static string? GetDefaultValueForSymbol(ISymbol symbol) {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         if (symbol is not IParameterSymbol parameterSymbol)
             return null;
 
@@ -536,6 +537,8 @@ internal sealed class GroupBuilder
             string s => '"' + s + '"',
             char c => "'" + c + "'",
             bool b => b ? "true" : "false",
+            float f => f.ToString() + 'f',
+            decimal dm => dm.ToString() + 'm',
             _ => defaultVal.ToString()
         };
     }
