@@ -161,7 +161,7 @@ internal sealed partial class CodeGenerator
 
     void AddCommandName(StringBuilder sb, Group group)
         => sb.Append(@"
-        internal const string _name = """).Append(group.Name).Append("\";").AppendLine();
+        internal const string __name = """).Append(group.Name).Append("\";").AppendLine();
 
     void AddRootFooter(StringBuilder sb, Group _)
         => sb.AppendLine("}"); // class Program

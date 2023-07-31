@@ -136,7 +136,7 @@ internal sealed partial class CodeGenerator
         sb.Append(");\n");
 
         sb.Append(@"
-        private static __funcT _func = ").Append(method.ToString()).Append(';')
+        private static __funcT __func = ").Append(method.ToString()).Append(';')
         .AppendLine();
     }
 
@@ -149,7 +149,7 @@ internal sealed partial class CodeGenerator
 
         // if _func is already Func<int>
         if (!isVoid && methodParams.Length == 0) {
-            sb.Append("_func");
+            sb.Append("__func");
         } else {
             // lambda attributes are only supported since C#10
             if (_config.LanguageVersion >= LanguageVersion.CSharp10)
@@ -160,7 +160,7 @@ internal sealed partial class CodeGenerator
             if (isVoid)
                 sb.Append("{ ");
 
-            sb.Append("_func(");
+            sb.Append("__func(");
 
             var defArgName = new string[methodParams.Length];
 
@@ -188,7 +188,7 @@ internal sealed partial class CodeGenerator
         var name = cmd.IsHiddenCommand ? cmd.ParentGroup.Name : cmd.Name;
 
         sb.Append(@"
-        internal const string _name = """).Append(name).Append("\";")
+        internal const string __name = """).Append(name).Append("\";")
         .AppendLine();
     }
 }

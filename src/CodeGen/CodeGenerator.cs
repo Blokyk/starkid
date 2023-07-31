@@ -189,6 +189,6 @@ internal sealed partial class CodeGenerator
             ReclineProgram._requiredArgsMissing = _requiredArgCount;
             ReclineProgram._invokeCmd = _invokeCmd;
             ReclineProgram._helpString = _helpText;
-            ReclineProgram._currCmdName = _name;
+            ReclineProgram._currCmdName = __name;
         }");
 }
