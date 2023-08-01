@@ -46,7 +46,7 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        AddHasParamsField(sb, group);
+        AddParamsFields(sb, group);
 
         sb.AppendLine();
 
@@ -133,15 +133,15 @@ internal sealed partial class CodeGenerator
         }");
     }
 
-    void AddHasParamsField(StringBuilder sb, Group group) {
-        if (group.DefaultCommand is not { IsHiddenCommand: true }) {
+    void AddParamsFields(StringBuilder sb, Group group) {
+        if (group.DefaultCommand is null) {
             sb.Append(@"
+        internal static readonly Action<string> _addParams = DefaultParamsAdd;
         internal const bool _hasParams = false;").AppendLine();
             return;
         }
 
-        sb.Append(@"
-        internal const bool _hasParams = true;").AppendLine();
+        AddParamsFields(sb, group.DefaultCommand);
     }
 
     void AddPosArgActions(StringBuilder sb, Group group) {

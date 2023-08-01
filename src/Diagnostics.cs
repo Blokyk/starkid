@@ -65,41 +65,11 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor ParamsCantBeParsed
-        = new(
-            "CLI004",
-            "[ParseWith] cannot be used on params arguments",
-            "[ParseWith] cannot be used on params arguments",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor ParamsCantBeValidated
-        = new(
-            "CLI004",
-            "[ValidateWith] cannot be used on params arguments",
-            "[ValidateWith] cannot be used on params arguments",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
     public static readonly DiagnosticDescriptor ParamsCantBeOption
         = new(
-            "CLI005",
+            "CLI004",
             "Parameter '{0}' cannot be used as options because it's a 'params' argument",
             "Parameter '{0}' cannot be used as options because it's a 'params' argument",
-            "Recline.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor ParamsHasToBeString
-        = new(
-            "CLI006",
-            "Can't use type '{0}' for params argument for commands",
-            "'params' arguments for commands must be of type string[]",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -107,7 +77,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor InvalidValueForProjectProperty
         = new(
-            "CLI007",
+            "CLI005",
             "Invalid value for property '{0}' in project settings",
             "Invalid value for property '{0}' in project settings",
             "Recline.Config",
@@ -117,7 +87,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor ConfigPropNotVisible
         = new(
-            "CLI008",
+            "CLI006",
             "Recline cannot read configuration/build property '{0}'",
             "Build property '{0}' should be visible to Recline's source generator. Check that you installed the package correctly.",
             "Recline.Config",
@@ -127,7 +97,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor DashDashForbiddenName
         = new(
-            "CLI009",
+            "CLI007",
             "The name '--' is forbidden for commands and options",
             "The name '--' is forbidden for commands and options",
             "Recline.Analysis",
@@ -137,7 +107,7 @@ internal static class Diagnostics {
 
     public static readonly DiagnosticDescriptor NameCantStartWithDash
         = new(
-            "CLI009",
+            "CLI007",
             "Option/command names can't start with '-'",
             "Option/command names can't start with '-'",
             "Recline.Analysis",

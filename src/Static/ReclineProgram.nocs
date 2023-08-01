@@ -19,8 +19,8 @@ internal static partial class ReclineProgram
     private static string _prevCmdName = "";
 
     private static Action<string>[] _posArgActions;
+    private static Action<string> _addParams;
     private static int _requiredArgsMissing;
-    private static List<string> _params = new();
 
     public static bool _hasParams;
     private static string _helpString;
@@ -149,10 +149,15 @@ internal static partial class ReclineProgram
         return true;
     }
 
-    static Func<int> NonInvokableGroupAction = () =>
+    static readonly Func<int> NonInvokableGroupAction = () =>
         PrintHelpString(
             "Can't use '{0}' without a sub-command",
             _currCmdName
+        );
+
+    static readonly Action<string> DefaultParamsAdd = _ =>
+        throw new InvalidOperationException(
+            "Something went wrong while trying to understand your command line. Please fill a report at https://github.com/blokyk/recline/issues/new"
         );
 
     static string InRed(string msg)
@@ -315,7 +320,8 @@ internal static partial class ReclineProgram
     }
 
     private static int posArgIdx = 0;
-    internal static int ArgCount => posArgIdx + _params.Count;
+    private static int _paramsCount = 0;
+    internal static int ArgCount => posArgIdx + _paramsCount;
     internal static int ArgSlotsLeft => _posArgActions.Length - posArgIdx;
 
     internal static bool TryAddPosArg(string arg) {
@@ -338,7 +344,8 @@ internal static partial class ReclineProgram
             if (!_hasParams)
                 return false;
 
-            _params.Add(arg);
+            _addParams(arg);
+            _paramsCount++;
             return true;
         }
     }

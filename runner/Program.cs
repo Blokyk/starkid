@@ -8,12 +8,13 @@ var testDir = "../raw-sample/";
 string  parsexPath = "Parsex.cs",
         parsex2Path = "Parsex-2.cs",
         dotnetPath = "Dotnet.cs",
-        lotusPath = "Lotus.cs"
-        ;
+        stuffPath = "Stuff.cs",
+        lotusPath = "Lotus.cs";
 
 var parsexTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsexPath));
 var parsex2Tree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + parsex2Path));
 var dotnetTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + dotnetPath));
+var stuffTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + stuffPath));
 var lotusTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + lotusPath));
 
 var generator = new MainGenerator();
@@ -28,11 +29,13 @@ GeneratorDriver driver = CSharpGeneratorDriver.Create(
 
 var unit = createCompUnit("Parsex", parsexTree);
 var dotnetUnit = createCompUnit("Dotnet", dotnetTree);
+var stuffUnit = createCompUnit("Stuff", stuffTree);
 var lotusUnit = createCompUnit("Lotus", lotusTree);
 
 runDriver("init", parsexPath, unit);
 runDriver("edit", parsex2Path, unit.ReplaceSyntaxTree(parsexTree, parsex2Tree));
 runDriver("paste", dotnetPath, unit.ReplaceSyntaxTree(parsexTree, dotnetTree));
+runDriver("stuff", stuffPath, stuffUnit);
 runDriver("new", lotusPath, lotusUnit);
 runDriver("redo", lotusPath, lotusUnit);
 
@@ -92,9 +95,10 @@ static CSharpCompilation createCompUnit(string assemblyName, SyntaxTree tree) {
         assemblyName,
         syntaxTrees: new[] { tree },
         references: new[] {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(FileInfo).Assembly.Location)
         },
-        options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+        options: new CSharpCompilationOptions(OutputKind.ConsoleApplication)
                     .WithSpecificDiagnosticOptions(new[] {KeyValuePair.Create("CLI008", ReportDiagnostic.Suppress)})
     );
 }

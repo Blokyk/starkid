@@ -289,51 +289,16 @@ internal sealed class GroupBuilder
 
         var defaultVal = GetDefaultValueForSymbol(param);
 
-        bool isParams = param.IsParams;
+        var parserTargetType
+            = param.IsParams
+            ? (param.Type as IArrayTypeSymbol)!.ElementType
+            : param.Type;
 
-        ParserInfo? parser;
-        var validators = ImmutableArray<ValidatorInfo>.Empty;
+        if (!TryGetParser(attrList.ParseWith, parserTargetType, param, out var parser))
+            return false;
 
-        if (isParams) {
-            // todo(#3): allow custom 'params' args (e.g. params FileInfo[] files)
-            // doesn't really matter rn, but it'd be nice to be able to use any type for params,
-            // because i'd really like to just say 'params FileInfo[] files' instead of having
-            // to transform/validate it myself
-            if (param.Type is not IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_String }) {
-                _addDiagnostic(
-                    Diagnostic.Create(
-                        Diagnostics.ParamsHasToBeString,
-                        param.GetDefaultLocation(),
-                        param.Type.GetErrorName()
-                    )
-                );
-            }
-
-            if (attrList.ParseWith is not null) {
-                _addDiagnostic(
-                    Diagnostic.Create(
-                        Diagnostics.ParamsCantBeParsed,
-                        param.GetDefaultLocation()
-                    )
-                );
-            }
-
-            if (attrList.ValidateWithList.Length != 0) {
-                _addDiagnostic(
-                    Diagnostic.Create(
-                        Diagnostics.ParamsCantBeValidated,
-                        param.GetDefaultLocation()
-                    )
-                );
-            }
-
-            parser = ParserInfo.StringIdentity;
-        } else {
-            if (!TryGetParser(attrList.ParseWith, param.Type, param, out parser))
-                return false;
-            if (!TryGetValidators(attrList.ValidateWithList, param.Type, param, out validators))
-                return false;
-        }
+        if (!TryGetValidators(attrList.ValidateWithList, param.Type, param, out var validators))
+            return false;
 
         var paramMinInfo = MinimalParameterInfo.FromSymbol(param);
 

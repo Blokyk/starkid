@@ -34,12 +34,15 @@ public sealed record Command : InvokableBase, IEquatable<Command> {
 
     public void AddArg(Argument arg) {
         if (arg.IsParams)
-            HasParams = true;
-
-        _args.Add(arg);
+            ParamsArg = arg;
+        else
+            _args.Add(arg);
     }
 
-    public bool HasParams { get; private set; }
+    public Argument? ParamsArg { get; private set; }
+
+    [MemberNotNullWhen(true, nameof(ParamsArg))]
+    public bool HasParams => ParamsArg is not null;
 
     public override int GetHashCode()
         => Utils.CombineHashCodes(
@@ -49,8 +52,8 @@ public sealed record Command : InvokableBase, IEquatable<Command> {
                 Utils.CombineHashCodes(
                     Utils.SequenceComparer<Argument>.Instance.GetHashCode(_args),
                     Utils.CombineHashCodes(
-                        IsHiddenCommand ? 1 : 0,
-                        HasParams ? 0 : 1
+                        ParamsArg?.GetHashCode() ?? 0,
+                        IsHiddenCommand ? 1 : 0
                     )
                 )
             )

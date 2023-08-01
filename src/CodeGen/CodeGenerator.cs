@@ -184,6 +184,7 @@ internal sealed partial class CodeGenerator
             ReclineProgram._tryExecOption = TryExecOptionAction;
             ReclineProgram._tryExecFlag = TryExecFlagAction;
             ReclineProgram._tryUpdateCmd = TryUpdateCommand;
+            ReclineProgram._addParams = _addParams;
             ReclineProgram._hasParams = _hasParams;
             ReclineProgram._posArgActions = _posArgActions;
             ReclineProgram._requiredArgsMissing = _requiredArgCount;

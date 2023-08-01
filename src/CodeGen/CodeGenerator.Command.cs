@@ -36,7 +36,7 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        AddHasParamsField(sb, cmd);
+        AddParamsFields(sb, cmd);
 
         sb.AppendLine();
 
@@ -59,21 +59,26 @@ internal sealed partial class CodeGenerator
         sb.Append("\t}").AppendLine();
     }
 
-    void AddHasParamsField(StringBuilder sb, Command cmd) {
-        if (cmd.HasParams) {
+    void AddParamsFields(StringBuilder sb, Command cmd) {
+        if (!cmd.HasParams) {
             sb.Append(@"
-        internal const bool _hasParams = true;").AppendLine();
-        } else {
-            sb.Append(@"
+        internal static readonly Action<string> _addParams = DefaultParamsAdd;
         internal const bool _hasParams = false;").AppendLine();
+            return;
         }
+
+        var arg = cmd.ParamsArg;
+        var argType = (arg.Type as MinimalArrayTypeInfo)!;
+
+        sb.Append(@"
+        private static readonly List<").Append(argType.ElementType).Append(@"> _params = new();
+        internal static readonly Action<string> _addParams = static __arg => _params.Add(")
+            .Append(CodegenHelpers.GetFullExpression(arg)).Append(@");
+        internal const bool _hasParams = true;").AppendLine();
     }
 
     void AddPosArgActions(StringBuilder sb, Command cmd) {
         foreach (var arg in cmd.Arguments) {
-            if (arg.IsParams)
-                continue; // cf above
-
             sb
             .Append("\t\tprivate static ")
             .Append(arg.Type.FullName + (arg.Type.IsNullable ? "?" : ""))
@@ -105,9 +110,6 @@ internal sealed partial class CodeGenerator
         .AppendLine();
 
         foreach (var arg in cmd.Arguments) {
-            if (arg.IsParams)
-                continue; // nit: could be break since params is always the last parameter
-
             sb
             .Append("\t\t\tstatic __arg => @")
             .Append(arg.BackingSymbol.Name)
