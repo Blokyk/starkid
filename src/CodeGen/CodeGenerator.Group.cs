@@ -119,7 +119,7 @@ internal sealed partial class CodeGenerator
 
             switch (cmdName) {
 """);
-        foreach (var sub in group.SubGroups.Concat((IEnumerable<InvokableBase>)group.Commands)) {
+        foreach (var sub in group.SubGroups.Concat((IEnumerable<InvokableBase>)group.Commands.Where(cmd => !cmd.IsHiddenCommand))) {
             sb.Append(@"
                 case """).Append(sub.Name).Append(@""":
                     ").Append(sub.ID).Append(@"CmdDesc.Activate();
