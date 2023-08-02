@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.IO;
 using Recline.Generator;
 
@@ -99,6 +99,6 @@ static CSharpCompilation createCompUnit(string assemblyName, SyntaxTree tree) {
                 MetadataReference.CreateFromFile(typeof(FileInfo).Assembly.Location)
         },
         options: new CSharpCompilationOptions(OutputKind.ConsoleApplication)
-                    .WithSpecificDiagnosticOptions(new[] {KeyValuePair.Create("CLI008", ReportDiagnostic.Suppress)})
+                    .WithSpecificDiagnosticOptions(new[] {KeyValuePair.Create("CLI006", ReportDiagnostic.Suppress)})
     );
 }
