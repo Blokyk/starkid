@@ -7,7 +7,7 @@ public sealed record Group(
     string FullClassName,
     string? ParentClassFullName,
     MinimalTypeInfo BackingClass
-) : InvokableBase(Name), IEquatable<Group> {
+) : InvokableBase(Name, BackingClass.Name), IEquatable<Group> {
     public override MinimalLocation Location => BackingClass.Location;
 
     private readonly List<Command> _cmds = new();

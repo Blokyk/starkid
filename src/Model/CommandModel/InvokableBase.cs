@@ -3,16 +3,23 @@ using System.Collections.ObjectModel;
 namespace Recline.Generator.Model;
 
 [System.Diagnostics.DebuggerDisplay("{ID,nq}")]
-public abstract record InvokableBase(string Name) : IEquatable<InvokableBase> {
+public abstract record InvokableBase : IEquatable<InvokableBase> {
+    public string Name { get; init; }
     public DescriptionInfo? Description { get; set; }
     public abstract MinimalLocation Location { get; }
 
+    protected InvokableBase(string name, string symbolName) {
+        Name = name;
+        _symbolName = symbolName;
+    }
+
+    private readonly string _symbolName;
     protected string? _id;
     public string ID
         => _id
             ??= ParentGroup is null
-              ? Name
-              : ParentGroup.ID + "_" + Name;
+              ? _symbolName
+              : ParentGroup.ID + "_" + _symbolName;
 
     private Group? _parent;
     public virtual Group? ParentGroup {

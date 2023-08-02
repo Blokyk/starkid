@@ -4,7 +4,7 @@ namespace Recline.Generator.Model;
 
 [System.Diagnostics.DebuggerDisplay("<{Name,nq}>")]
 public sealed record Command : InvokableBase, IEquatable<Command> {
-    public Command(string name, Group parentGroup, MinimalMethodInfo backingMethod) : base(name) {
+    public Command(string name, Group parentGroup, MinimalMethodInfo backingMethod) : base(name, backingMethod.Name) {
         if (name == "#") {
             IsHiddenCommand = true;
             Name = parentGroup.Name;

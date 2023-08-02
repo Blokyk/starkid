@@ -4,7 +4,7 @@ using System.IO;
 
 using Recline;
 
-[CommandGroup("upject")]
+[CommandGroup("upject-cli")]
 public static class Lotus
 {
     [Option("verbose", 'V', IsGlobal = true)]
