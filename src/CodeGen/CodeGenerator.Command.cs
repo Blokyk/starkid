@@ -186,11 +186,7 @@ internal sealed partial class CodeGenerator
         .AppendLine();
     }
 
-    void AddCommandName(StringBuilder sb, Command cmd) {
-        var name = cmd.IsHiddenCommand ? cmd.ParentGroup.Name : cmd.Name;
-
-        sb.Append(@"
-        internal const string __name = """).Append(name).Append("\";")
-        .AppendLine();
-    }
+    void AddCommandName(StringBuilder sb, Command cmd)
+        => sb.Append(@"
+        internal const string __name = """).Append(cmd.Name).Append("\";").AppendLine();
 }
