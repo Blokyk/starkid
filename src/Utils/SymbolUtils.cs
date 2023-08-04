@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Recline.Generator;
 
 internal static class SymbolUtils
@@ -93,5 +95,35 @@ internal static class SymbolUtils
 
         // if we exited early, then it will be null
         return current is not null;
+    }
+
+    public static string? GetDefaultValue(ISymbol symbol) {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        if (symbol is not IParameterSymbol parameterSymbol)
+            return null;
+
+        if (!parameterSymbol.HasExplicitDefaultValue)
+            return null;
+
+        var defaultVal = parameterSymbol.ExplicitDefaultValue;
+
+        if (defaultVal is null)
+            return "null";
+
+        return defaultVal switch {
+            string s => '"' + s + '"',
+            char c => "'" + c + "'",
+            bool b => b ? "true" : "false",
+            float f => f.ToString() + 'f',
+            decimal dm => dm.ToString() + 'm',
+            _ => defaultVal.ToString()
+        };
+    }
+
+    public static DocumentationInfo? GetDocInfo(ISymbol symbol) {
+        var xml = symbol.GetDocumentationCommentXml(preferredCulture: System.Globalization.CultureInfo.InvariantCulture, expandIncludes: true);
+        return xml is null
+            ? null
+            : DocumentationParser.ParseDocumentationInfoFrom(xml);
     }
 }

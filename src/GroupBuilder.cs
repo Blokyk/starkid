@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using Recline.Generator.Model;
 
 namespace Recline.Generator;
@@ -38,7 +36,7 @@ internal sealed class GroupBuilder
         if (attrList.CommandGroup is null)
             return false;
 
-        var docInfo = GetDocInfo(classSymbol);
+        var docInfo = SymbolUtils.GetDocInfo(classSymbol);
 
         var (name, defaultCmdName, shortDesc) = attrList.CommandGroup;
         var minClassSymbol = MinimalTypeInfo.FromSymbol(classSymbol);
@@ -139,7 +137,7 @@ internal sealed class GroupBuilder
         if (attrList.Command is null)
             return false;
 
-        var docInfo = GetDocInfo(method);
+        var docInfo = SymbolUtils.GetDocInfo(method);
 
         var minMethodSymbol = MinimalMethodInfo.FromSymbol(method);
 
@@ -223,11 +221,11 @@ internal sealed class GroupBuilder
         char shortName = attrInfo.Option!.Alias;
         string? argName = attrInfo.Option!.ArgName;
         bool isGlobal = attrInfo.Option!.IsGlobal;
-        var docInfo = GetDocInfo(symbol);
+        var docInfo = SymbolUtils.GetDocInfo(symbol);
 
         bool isValid = IsSymbolValidForOption(symbol, _addDiagnostic);
 
-        var defaultValStr = GetDefaultValueForSymbol(symbol);
+        var defaultValStr = SymbolUtils.GetDefaultValue(symbol);
 
         if (!isValid)
             return false;
@@ -285,7 +283,7 @@ internal sealed class GroupBuilder
     bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
         arg = null;
 
-        var defaultVal = GetDefaultValueForSymbol(param);
+        var defaultVal = SymbolUtils.GetDefaultValue(param);
 
         var parserTargetType
             = param.IsParams
@@ -471,36 +469,6 @@ internal sealed class GroupBuilder
         }
 
         return true;
-    }
-
-    static string? GetDefaultValueForSymbol(ISymbol symbol) {
-        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-        if (symbol is not IParameterSymbol parameterSymbol)
-            return null;
-
-        if (!parameterSymbol.HasExplicitDefaultValue)
-            return null;
-
-        var defaultVal = parameterSymbol.ExplicitDefaultValue;
-
-        if (defaultVal is null)
-            return "null";
-
-        return defaultVal switch {
-            string s => '"' + s + '"',
-            char c => "'" + c + "'",
-            bool b => b ? "true" : "false",
-            float f => f.ToString() + 'f',
-            decimal dm => dm.ToString() + 'm',
-            _ => defaultVal.ToString()
-        };
-    }
-
-    static DocumentationInfo? GetDocInfo(ISymbol symbol) {
-        var xml = symbol.GetDocumentationCommentXml(preferredCulture: System.Globalization.CultureInfo.InvariantCulture, expandIncludes: true);
-        return xml is null
-            ? null
-            : DocumentationParser.ParseDocumentationInfoFrom(xml);
     }
 
     static void TryBindChildDocInfo(ref Option option, DocumentationInfo? docInfo) {
