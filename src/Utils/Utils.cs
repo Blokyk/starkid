@@ -30,29 +30,6 @@ internal static class Utils
     public static Location GetApplicationLocation(AttributeData attr)
         => attr.ApplicationSyntaxReference?.GetLocation() ?? Location.None;
 
-    public static ImmutableArray<string> GetUsings(TypeDeclarationSyntax classDec) {
-        SyntaxNode? parent = classDec.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
-
-        var usingsSyntaxList = new SyntaxList<UsingDirectiveSyntax>();
-
-        if (parent is null) {
-            var unit = classDec.FirstAncestorOrSelf<CompilationUnitSyntax>();
-
-            if (unit is null)
-                return ImmutableArray<string>.Empty;
-
-            usingsSyntaxList = unit.Usings;
-        } else {
-            var ns = (BaseNamespaceDeclarationSyntax)parent;
-            usingsSyntaxList = ns.Usings;
-        }
-
-        return usingsSyntaxList
-            .Where(u => u.Name is not null)
-            .Select(u => u.Name!.ToString())
-            .ToImmutableArray();
-    }
-
 #if NETSTANDARD2_0
     internal static T FirstOrDefault<T>(this IEnumerable<T> coll, Func<T, bool> condition, T defaultVal) {
         foreach (var item in coll) {
