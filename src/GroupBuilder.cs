@@ -66,8 +66,6 @@ internal sealed class GroupBuilder
                     if (!groupBuilder.TryCreateOptionFrom(member, optAttrInfo, out var option))
                         return false;
 
-                    TryBindChildDocInfo(ref option, docInfo);
-
                     group.AddOption(option);
                     break;
 
