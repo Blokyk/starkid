@@ -104,7 +104,7 @@ using System;
                     (node, _) => node is ClassDeclarationSyntax,
                     (ctx, _) => {
                         var wrapper = new DataAndDiagnostics<Group?>();
-                        wrapper.Data = CreateGroup(ctx, wrapper.AddDiagnostic);
+                        wrapper.Data = CreateGroup((INamedTypeSymbol)ctx.TargetSymbol, ctx.SemanticModel, wrapper.AddDiagnostic);
                         return wrapper;
                     }
                 )
@@ -155,9 +155,7 @@ using System;
         );
     }
 
-    static Group? CreateGroup(GeneratorAttributeSyntaxContext ctx, Action<Diagnostic> addDiagnostic) {
-        var model = ctx.SemanticModel;
-
+    internal static Group? CreateGroup(INamedTypeSymbol classSymbol, SemanticModel model, Action<Diagnostic> addDiagnostic) {
         var attrListBuilder = new AttributeListBuilder(addDiagnostic);
 
         static Group? bail() {
@@ -165,16 +163,13 @@ using System;
             return null;
         }
 
-        if (ctx.TargetSymbol is not INamedTypeSymbol classSymbol)
-            return bail();
-
         if (!GroupBuilder.TryCreateGroupFrom(classSymbol, attrListBuilder, model, addDiagnostic, out var group))
             return bail();
 
         return group;
     }
 
-    static Group? BindGroups(IEnumerable<Group?> groups, Action<Diagnostic> addDiagnostic) {
+    internal static Group? BindGroups(IEnumerable<Group?> groups, Action<Diagnostic> addDiagnostic) {
         var classNames = new Dictionary<string, Group>(8); // ¯\_(ツ)_/¯
 
         // collect the names of the each group's class
@@ -235,7 +230,7 @@ using System;
         return rootGroup;
     }
 
-    static void ValidateOptionTree(Group rootGroup, Action<Diagnostic> addDiagnostic) {
+    internal static void ValidateOptionTree(Group rootGroup, Action<Diagnostic> addDiagnostic) {
         void validate(Group group, HashSet<string> names, HashSet<char> aliases) {
             var groupOptions = group.OptionsAndFlags;
             var commandOptions = group.Commands.SelectMany(cmd => cmd.OptionsAndFlags);
@@ -289,7 +284,7 @@ using System;
     /// Traverse a syntax node's ancestors to figure out the reachable namespaces
     /// from its position, either through using directives or namespace declarations.
     /// </summary>
-    static ImmutableArray<string> GetReachableNamespaceNames(SyntaxNode classDec) {
+    internal static ImmutableArray<string> GetReachableNamespaceNames(SyntaxNode classDec) {
         SyntaxNode? parent = classDec.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
 
         var usings = new List<UsingDirectiveSyntax>();

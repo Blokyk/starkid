@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Recline.Tests"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Remove="System.IO" />
     <Using Include="System.Text" />
     <Using Include="System.Collections.Immutable" />
