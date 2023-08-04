@@ -5,7 +5,7 @@ internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
     public T? Data { get; set; }
 
     private readonly HashSet<Diagnostic> _diags;
-    public int DiagnosticsCount => _diags.Count;
+    public readonly int DiagnosticsCount => _diags.Count;
 
     public readonly ImmutableArray<Diagnostic> GetDiagnostics()
         => _diags.ToImmutableArray();
