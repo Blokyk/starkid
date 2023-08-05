@@ -69,13 +69,13 @@ internal static class SymbolUtils
                         + (symbol is ITypeSymbol typeSymbol ? GetNameWithNull(typeSymbol) : symbol.Name);
 
         static string getNamespaceRecursive(INamespaceSymbol ns)
-            => ns.ContainingNamespace?.IsGlobalNamespace != false
+            => ns.ContainingNamespace is null or { IsGlobalNamespace: true }
                     ? ns.Name
                     : getNamespaceRecursive(ns.ContainingNamespace) + "." + ns.Name;
 
         var symbolName = getFullNameRecursive(symbol);
 
-        if (symbol.ContainingNamespace?.IsGlobalNamespace != false)
+        if (symbol.ContainingNamespace is null or { IsGlobalNamespace: true })
             return symbolName;
 
         return getNamespaceRecursive(symbol.ContainingNamespace) + "." + symbolName;
