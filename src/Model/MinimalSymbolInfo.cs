@@ -76,6 +76,18 @@ public record MinimalTypeInfo(
             };
         }
     }
+
+    public override int GetHashCode() =>
+        Utils.CombineHashCodes(
+            base.GetHashCode(),
+            Utils.CombineHashCodes(
+                Utils.CombineHashCodes(
+                    SpecialType.GetHashCode(),
+                    TypeArguments.GetHashCode()
+                ),
+                IsNullable ? 0 : 1
+            )
+        );
 }
 
 [DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
@@ -97,6 +109,7 @@ public sealed record MinimalArrayTypeInfo(
         );
     }
 
+    public override int GetHashCode() => Utils.CombineHashCodes(base.GetHashCode(), ElementType.GetHashCode());
 }
 
 [DebuggerDisplay("{ContainingType!.ToString(),nq} . {SymbolUtils.GetSafeName(Name),nq}")]
@@ -118,6 +131,8 @@ public record MinimalMemberInfo(
 
         throw new ArgumentException("Trying to create a MemberInfo from symbol type '" + symbol.GetType().Name + "'.", nameof(symbol));
     }
+
+    public override int GetHashCode() => Utils.CombineHashCodes(base.GetHashCode(), Type.GetHashCode());
 }
 
 public sealed record MinimalMethodInfo(
@@ -129,6 +144,9 @@ public sealed record MinimalMethodInfo(
     MinimalLocation Location
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
     public override string ToString() => ContainingType!.ToString() + ".@" + Name;
+
+    public bool ReturnsVoid => ReturnType.Name == "Void";
+    public bool IsGeneric => TypeArguments.Length > 0;
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
         => new(
@@ -144,8 +162,8 @@ public sealed record MinimalMethodInfo(
         => Utils.CombineHashCodes(
             base.GetHashCode(),
             Utils.CombineHashCodes(
-                Utils.SequenceComparer<MinimalParameterInfo>.Instance.GetHashCode(Parameters),
-                Utils.SequenceComparer<MinimalTypeInfo>.Instance.GetHashCode(TypeArguments)
+                Parameters.GetHashCode(),
+                TypeArguments.GetHashCode()
             )
         );
 
@@ -154,9 +172,6 @@ public sealed record MinimalMethodInfo(
         => base.Equals(other)
         && Parameters.AsSpan().SequenceEqual(other.Parameters.AsSpan())
         && TypeArguments.AsSpan().SequenceEqual(other.TypeArguments.AsSpan());
-
-    public bool ReturnsVoid => ReturnType.Name == "Void";
-    public bool IsGeneric => TypeArguments.Length > 0;
 }
 
 [DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
@@ -177,4 +192,13 @@ public sealed record MinimalParameterInfo(
         );
 
     public override string ToString() => SymbolUtils.GetSafeName(Name);
+
+    public override int GetHashCode() =>
+        Utils.CombineHashCodes(
+            base.GetHashCode(),
+            Utils.CombineHashCodes(
+                Type.GetHashCode(),
+                (IsNullable ? 0 : 1) + (IsParams ? 2 : 3)
+            )
+        );
 }
