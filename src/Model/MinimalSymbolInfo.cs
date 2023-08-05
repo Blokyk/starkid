@@ -41,6 +41,8 @@ public record MinimalTypeInfo(
     public static MinimalTypeInfo FromSymbol(ITypeSymbol type) {
         if (type is IArrayTypeSymbol arrType)
             return MinimalArrayTypeInfo.FromSymbol(arrType);
+        if (type is ITypeParameterSymbol paramType)
+            return MinimalTypeParameterInfo.FromSymbol(paramType);
 
         MinimalTypeInfo? containingType = null;
 
@@ -112,6 +114,20 @@ public sealed record MinimalArrayTypeInfo(
     public override int GetHashCode() => Utils.CombineHashCodes(base.GetHashCode(), ElementType.GetHashCode());
 }
 
+[DebuggerDisplay("`{Name,nq}")]
+public sealed record MinimalTypeParameterInfo(
+    string Name,
+    bool IsNullable,
+    MinimalLocation Location
+) : MinimalTypeInfo(Name, null, Name, IsNullable, Location) {
+    public override string ToString() => base.ToString(); // wouldn't wanna break codegen
+
+    public static MinimalTypeParameterInfo FromSymbol(ITypeParameterSymbol type)
+        => new(type.Name, SymbolUtils.IsNullable(type), type.GetDefaultLocation());
+
+    public override int GetHashCode() => Utils.CombineHashCodes(Name.GetHashCode(), IsNullable ? 0 : 1);
+}
+
 [DebuggerDisplay("{ContainingType!.ToString(),nq} . {SymbolUtils.GetSafeName(Name),nq}")]
 public record MinimalMemberInfo(
     string Name,
@@ -140,13 +156,13 @@ public sealed record MinimalMethodInfo(
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo ReturnType,
     ImmutableArray<MinimalParameterInfo> Parameters,
-    ImmutableArray<MinimalTypeInfo> TypeArguments,
+    ImmutableArray<MinimalTypeInfo> TypeParameters,
     MinimalLocation Location
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
     public override string ToString() => ContainingType!.ToString() + ".@" + Name;
 
     public bool ReturnsVoid => ReturnType.Name == "Void";
-    public bool IsGeneric => TypeArguments.Length > 0;
+    public bool IsGeneric => TypeParameters.Length > 0;
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)
         => new(
@@ -163,7 +179,7 @@ public sealed record MinimalMethodInfo(
             base.GetHashCode(),
             Utils.CombineHashCodes(
                 Parameters.GetHashCode(),
-                TypeArguments.GetHashCode()
+                TypeParameters.GetHashCode()
             )
         );
 
@@ -171,7 +187,7 @@ public sealed record MinimalMethodInfo(
     public bool Equals(MinimalMethodInfo? other)
         => base.Equals(other)
         && Parameters.AsSpan().SequenceEqual(other.Parameters.AsSpan())
-        && TypeArguments.AsSpan().SequenceEqual(other.TypeArguments.AsSpan());
+        && TypeParameters.AsSpan().SequenceEqual(other.TypeParameters.AsSpan());
 }
 
 [DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
