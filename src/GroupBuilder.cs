@@ -299,8 +299,6 @@ internal sealed class GroupBuilder
         var paramMinInfo = MinimalParameterInfo.FromSymbol(param);
 
         arg = new Argument(
-            paramMinInfo.Type,
-            param.Name,
             parser,
             paramMinInfo,
             defaultVal
