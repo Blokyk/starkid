@@ -1,6 +1,6 @@
 namespace Recline
 {
-    [System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public class CommandAttribute : System.Attribute
     {
         public string CmdName { get; }

@@ -6,8 +6,8 @@ namespace Recline
     /// <remarks>
     /// The parsing function must take a single string parameter, and returns either the target type, or any of: <see cref="void" />, <see cref="System.Boolean" />, <see cref="System.Int32" />, <see cref="System.String" />? or <see cref="System.Exception" />?.
     /// </remarks>
-    [System.AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
-    public sealed class ParseWithAttribute : System.Attribute, IEquatable<ParseWithAttribute>
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+    public sealed class ParseWithAttribute : System.Attribute, System.IEquatable<ParseWithAttribute>
     {
         public string ParserName { get; }
 

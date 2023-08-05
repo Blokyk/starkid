@@ -6,8 +6,8 @@ namespace Recline
     /// <remarks>
     /// The validating function must take a single parameter of this symbol's type and return <see cref="System.Boolean"/> or <see cref="System.Exception"/>.
     /// </remarks>
-    [System.AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = true)]
-    public sealed class ValidateWithAttribute : System.Attribute, IEquatable<ValidateWithAttribute>
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = true)]
+    public sealed class ValidateWithAttribute : System.Attribute, System.IEquatable<ValidateWithAttribute>
     {
         public string ValidatorName { get; }
         public string? ErrorMessage { get; set; }

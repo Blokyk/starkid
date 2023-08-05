@@ -1,6 +1,6 @@
 namespace Recline
 {
-    [System.AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
     public sealed class OptionAttribute : System.Attribute
     {
         public string LongName { get; }

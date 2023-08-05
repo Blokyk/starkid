@@ -1,6 +1,6 @@
 namespace Recline
 {
-    [System.AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class CommandGroupAttribute : System.Attribute
     {
         public string GroupName { get; }
