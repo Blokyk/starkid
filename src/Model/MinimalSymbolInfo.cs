@@ -56,10 +56,20 @@ public record MinimalTypeInfo(
             ? namedType.TypeArguments.Select(getTypeArgSymbol).ToImmutableArray()
             : ImmutableArray<MinimalTypeInfo>.Empty;
 
+        var fullName = SymbolInfoCache.GetFullTypeName(type);
+        string shortName;
+
+        if (fullName == "System.Void") {
+            fullName = "void";
+            shortName = "void";
+        } else {
+            shortName = SymbolInfoCache.GetShortTypeName(type);
+        }
+
         return new MinimalTypeInfo(
-            SymbolInfoCache.GetShortTypeName(type),
+            shortName,
             containingType,
-            SymbolInfoCache.GetFullTypeName(type),
+            fullName,
             isNullable,
             type.GetDefaultLocation()
         ) {
