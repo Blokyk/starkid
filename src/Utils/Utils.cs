@@ -6,7 +6,18 @@ namespace Recline.Generator;
 internal static class Utils
 {
     // polyfill for netstandard2.0
+#if NETSTANDARD2_0
     public static bool StartsWith(this string s, char c) => s.Length >= 1 && s[0] == c;
+
+    internal static T FirstOrDefault<T>(this IEnumerable<T> coll, Func<T, bool> condition, T defaultVal) {
+        foreach (var item in coll) {
+            if (condition(item))
+                return item;
+        }
+
+        return defaultVal;
+    }
+#endif // NETSTANDARD2_0
 
     private static readonly Assembly _reclineAssembly = typeof(Utils).Assembly;
     public static string GetStaticResource(string filePath) {
@@ -29,17 +40,6 @@ internal static class Utils
 
     public static Location GetApplicationLocation(AttributeData attr)
         => attr.ApplicationSyntaxReference?.GetLocation() ?? Location.None;
-
-#if NETSTANDARD2_0
-    internal static T FirstOrDefault<T>(this IEnumerable<T> coll, Func<T, bool> condition, T defaultVal) {
-        foreach (var item in coll) {
-            if (condition(item))
-                return item;
-        }
-
-        return defaultVal;
-    }
-#endif // NETSTANDARD2_0
 
     internal static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
 
