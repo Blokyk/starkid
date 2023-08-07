@@ -50,10 +50,10 @@ internal static class CommonTypes
         Location.None
     ) { SpecialType = SpecialType.None };
     internal static MinimalTypeInfo NULLABLE = new(
-        "Nullable<T>?",
+        "Nullable<T>",
         null,
         "System.Nullable<T>",
-        false,
+        true,
         Location.None
     ) { SpecialType = SpecialType.System_Nullable_T };
     internal static MinimalTypeInfo ENUM = new(
