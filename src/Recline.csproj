@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Recline.Tests"/>
+    <InternalsVisibleTo Include="Recline.UnitTests"/>
   </ItemGroup>
 
   <ItemGroup>
