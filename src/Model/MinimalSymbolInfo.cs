@@ -171,7 +171,7 @@ public sealed record MinimalMethodInfo(
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
     public override string ToString() => ContainingType!.ToString() + ".@" + Name;
 
-    public bool ReturnsVoid => ReturnType.Name == "Void";
+    public bool ReturnsVoid => ReturnType.SpecialType is SpecialType.System_Void;
     public bool IsGeneric => TypeParameters.Length > 0;
 
     public static MinimalMethodInfo FromSymbol(IMethodSymbol symbol)

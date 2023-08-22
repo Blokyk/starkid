@@ -144,14 +144,12 @@ internal sealed class GroupBuilder
 
         var minMethodSymbol = MinimalMethodInfo.FromSymbol(method);
 
-        bool hasExitCode = !minMethodSymbol.ReturnsVoid;
-
         string cmdName = attrList.Command.CmdName;
         string? desc = attrList.Command.ShortDesc;
 
         bool isValid = true;
 
-        if (hasExitCode && minMethodSymbol.ReturnType.SpecialType != SpecialType.System_Int32) {
+        if (minMethodSymbol.ReturnType.SpecialType is not (SpecialType.System_Int32 or SpecialType.System_Void)) {
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.CmdMustBeVoidOrInt,
