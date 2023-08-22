@@ -6,7 +6,6 @@
     <ImplicitUsings>false</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <ReclineHelpExitCode>21</ReclineHelpExitCode>
   </PropertyGroup>
 
   <ItemGroup>

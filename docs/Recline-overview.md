@@ -226,6 +226,10 @@ Hello, Emily!
 > todo: params
 > todo: optional args
 
+### Global options
+
+### Custom argument/option value names
+
 ### Default commands
 
 #### Bonus: Using default commands to write a single-command app
