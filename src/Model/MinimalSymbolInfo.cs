@@ -204,7 +204,6 @@ public sealed record MinimalMethodInfo(
 public sealed record MinimalParameterInfo(
     string Name, // need the name cause the help text might change otherwise
     MinimalTypeInfo Type,
-    bool IsNullable,
     bool IsParams,
     MinimalLocation Location
 ) : MinimalSymbolInfo(Name, null, Location) {
@@ -212,19 +211,20 @@ public sealed record MinimalParameterInfo(
         => new(
             symbol.Name,
             SymbolInfoCache.GetTypeInfo(symbol.Type),
-            symbol.NullableAnnotation == NullableAnnotation.Annotated,
             symbol.IsParams,
             symbol.GetDefaultLocation()
         );
 
     public override string ToString() => SymbolUtils.GetSafeName(Name);
 
+    public bool IsNullable => Type.IsNullable;
+
     public override int GetHashCode() =>
         Utils.CombineHashCodes(
             base.GetHashCode(),
             Utils.CombineHashCodes(
                 Type.GetHashCode(),
-                (IsNullable ? 0 : 1) + (IsParams ? 2 : 3)
+                IsParams ? 0 : 1
             )
         );
 }
