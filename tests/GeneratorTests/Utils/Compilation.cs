@@ -21,4 +21,6 @@ internal static class Compilation
         },
         options: options
     );
+
+    public static SemanticModel GetDefaultSemanticModel(this CSharpCompilation comp) => comp.GetSemanticModel(comp.SyntaxTrees[0], false);
 }

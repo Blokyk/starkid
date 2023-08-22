@@ -13,8 +13,8 @@ internal sealed class GroupBuilder
 
     private readonly Action<Diagnostic> _addDiagnostic;
 
-    // todo: switch to completely static with a ResetCache method
-    private GroupBuilder(AttributeListBuilder attrListBuilder, SemanticModel model, Action<Diagnostic> addDiagnostic) {
+    // protected because test project inherits to instantiate it
+    internal GroupBuilder(AttributeListBuilder attrListBuilder, SemanticModel model, Action<Diagnostic> addDiagnostic) {
         _attrListBuilder = attrListBuilder;
         _model = model;
         _addDiagnostic = addDiagnostic;
@@ -81,6 +81,9 @@ internal sealed class GroupBuilder
 
                     // if the cmd's "real name" is '#'
                     if (cmd.IsHiddenCommand) {
+                        // since right now we don't allow any other hidden command than '#',
+                        // if this group has a "normal" command as default, this is command
+                        // is useless
                         if (defaultCmdName != "#") {
                             addDiagnostic(
                                 Diagnostic.Create(
@@ -280,7 +283,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
+    private bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
         arg = null;
 
         var defaultVal = SymbolUtils.GetDefaultValue(param);
