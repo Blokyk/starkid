@@ -11,7 +11,7 @@ public partial class MainGenerator
 
         var config = ParseConfig(analyzerConfig, langVersion, spc);
 
-        var usingsCode = CodegenHelpers.GenerateUsingsHeaderCode(usings);
+        var usingsCode = CodegenHelpers.GenerateUsingsHeaderCode(usings.Distinct());
         var cmdDescCode = CodeGenerator.ToSourceCode(rootGroup, config);
 
         spc.AddSource(

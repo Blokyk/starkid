@@ -6,8 +6,8 @@ namespace Recline.Generator;
 
 internal static class CodegenHelpers
 {
-    public static string GenerateUsingsHeaderCode(ImmutableArray<string> usings) =>
-        usings.IsDefaultOrEmpty
+    public static string GenerateUsingsHeaderCode(IEnumerable<string> usings) =>
+        !usings.Any()
             ? ""
             : "using " + String.Join(";\nusing ", usings) + ";\n\n";
 
