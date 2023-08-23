@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.IO;
+
 using Recline.Generator;
 
 var sampleDir = "../sample/";
@@ -51,6 +52,8 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
         Console.ReadKey(intercept: true);
         Console.CursorTop -= 2; // go back to the previous lines, so that we'll erase the message
     }
+
+    Parallel.For(0, 100, (_, _) => driver.RunGenerators(unit));
 
     driver = driver.RunGenerators(unit);
     var results = driver.GetRunResult().Results[0];
