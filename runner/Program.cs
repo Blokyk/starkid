@@ -53,9 +53,9 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
         Console.CursorTop -= 2; // go back to the previous lines, so that we'll erase the message
     }
 
-    Parallel.For(0, 100, (_, _) => driver.RunGenerators(unit));
+    driver = driver.RunGenerators(unit); // actual run
+    Parallel.For(0, 100, (_, _) => driver.RunGenerators(unit)); // parallel runs to make sure Recline can run during threaded build
 
-    driver = driver.RunGenerators(unit);
     var results = driver.GetRunResult().Results[0];
 
     Utils.DisplayReclineSteps(results);
