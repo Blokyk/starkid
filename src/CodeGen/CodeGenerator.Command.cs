@@ -149,9 +149,9 @@ internal sealed partial class CodeGenerator
         var isVoid = cmd.BackingMethod.ReturnsVoid;
         var methodParams = cmd.BackingMethod.Parameters;
 
-        // if _func is already Func<int>
+        // if _func is basically Func<int>
         if (!isVoid && methodParams.Length == 0) {
-            sb.Append("__func");
+            sb.Append("new Func<int>(__func)"); // explicit cast between delegates, same as `() => __func()` but no display class
         } else {
             // lambda attributes are only supported since C#10
             if (_config.LanguageVersion >= LanguageVersion.CSharp10)
