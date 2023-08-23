@@ -24,11 +24,11 @@ using System;
 ");
 
         var attribs = new[] {
-            nameof(CommandGroupAttribute),
-            nameof(CommandAttribute),
-            nameof(OptionAttribute),
-            nameof(ParseWithAttribute),
-            nameof(ValidateWithAttribute)
+            "CommandGroupAttribute",
+            "CommandAttribute",
+            "OptionAttribute",
+            "ParseWithAttribute",
+            "ValidateWithAttribute"
         };
 
         foreach (var name in attribs)
@@ -43,7 +43,7 @@ using System;
         context.RegisterPostInitializationOutput(
             static postInitCtx =>
                 postInitCtx.AddSource(
-                    Resources.GenNamespace + "_Attributes.g.cs",
+                    "Recline_Attributes.g.cs",
                     SourceText.From(_attributeCode, Encoding.UTF8)
                 ));
 

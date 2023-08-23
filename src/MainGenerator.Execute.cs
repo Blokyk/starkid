@@ -11,16 +11,15 @@ public partial class MainGenerator
 
         var config = ParseConfig(analyzerConfig, langVersion, spc);
 
-        var usingsCode = CodegenHelpers.GenerateUsingsHeaderCode(usings.Distinct());
-        var cmdDescCode = CodeGenerator.ToSourceCode(rootGroup, config);
+        var cmdDescCode = CodeGenerator.ToSourceCode(rootGroup, usings, config);
 
         spc.AddSource(
-            Resources.GenNamespace + "_CmdDescDynamic.g.cs",
-            SourceText.From(usingsCode + cmdDescCode, Encoding.UTF8)
+            "Recline_CmdDescDynamic.g.cs",
+            SourceText.From(cmdDescCode, Encoding.UTF8)
         );
 
         spc.AddSource(
-            Resources.GenNamespace + "_ReclineProgram.g.cs",
+            "Recline_ReclineProgram.g.cs",
             SourceText.From(_reclineProgramCode, Encoding.UTF8)
         );
 

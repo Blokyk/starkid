@@ -17,6 +17,21 @@ internal static class Utils
 
         return defaultVal;
     }
+
+#pragma warning disable RCS1197 // Optimize StringBuilder call
+    public static StringBuilder AppendJoin(this StringBuilder sb, string separator, params string[] values)
+        => sb.Append(String.Join(separator, values));
+    public static StringBuilder AppendJoin(this StringBuilder sb, string separator, params object[] values)
+        => sb.Append(String.Join(separator, values));
+    public static StringBuilder AppendJoin(this StringBuilder sb, char separator, params string[] values)
+        => sb.Append(String.Join(separator.ToString(), values));
+    public static StringBuilder AppendJoin(this StringBuilder sb, char separator, params object[] values)
+        => sb.Append(String.Join(separator.ToString(), values));
+    public static StringBuilder AppendJoin<T>(this StringBuilder sb, string separator, IEnumerable<T> values)
+        => sb.Append(String.Join(separator, values));
+    public static StringBuilder AppendJoin<T>(this StringBuilder sb, char separator, IEnumerable<T> values)
+        => sb.Append(String.Join(separator.ToString(), values));
+#pragma warning restore RCS1197
 #endif // NETSTANDARD2_0
 
     private static readonly Assembly _reclineAssembly = typeof(Utils).Assembly;

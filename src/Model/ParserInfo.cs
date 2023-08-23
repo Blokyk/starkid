@@ -1,7 +1,7 @@
 namespace Recline.Generator.Model;
 
 public abstract record ParserInfo {
-    public static readonly DirectMethod AsBool = new(Resources.GenNamespace + "." + Resources.ProgClassName + ".AsBool", CommonTypes.BOOL);
+    public static readonly DirectMethod AsBool = new("Recline.Generated.ReclineProgram.AsBool", CommonTypes.BOOL);
     public static readonly Identity StringIdentity = new(CommonTypes.STR);
 
     public abstract MinimalTypeInfo TargetType { get; init; }

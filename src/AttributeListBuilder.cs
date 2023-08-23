@@ -118,7 +118,7 @@ internal class AttributeListBuilder
 
         foreach (var attr in attrs) {
             switch (attr.AttributeClass?.Name) {
-                case Resources.CmdGroupAttribName:
+                case "CommandGroupAttribute":
                     if (!_parser.TryParseGroupAttrib(attr, out group))
                         return error();
 
@@ -129,7 +129,7 @@ internal class AttributeListBuilder
                     );
 
                     break;
-                case Resources.CmdAttribName:
+                case "CommandAttribute":
                     if (!_parser.TryParseCmdAttrib(attr, out cmd))
                         return error();
 
@@ -140,7 +140,7 @@ internal class AttributeListBuilder
                     );
 
                     break;
-                case Resources.OptAttribName:
+                case "OptionAttribute":
                     if (!_parser.TryParseOptAttrib(attr, out opt))
                         return error();
 
@@ -151,11 +151,11 @@ internal class AttributeListBuilder
                     );
 
                     break;
-                case Resources.ParseWithAttribName:
+                case "ParseWithAttribute":
                     if (!_parser.TryParseParseAttrib(attr, out parseWith))
                         return error();
                     break;
-                case Resources.ValidateWithAttribName:
+                case "ValidateWithAttribute":
                     if (!_parser.TryParseValidateAttrib(attr, out var validateWith))
                         return error();
                     validateWithList.Add(validateWith);
