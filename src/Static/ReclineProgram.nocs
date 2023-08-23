@@ -324,7 +324,7 @@ internal static partial class ReclineProgram
     internal static int ArgCount => posArgIdx + _paramsCount;
     internal static int ArgSlotsLeft => _posArgActions.Length - posArgIdx;
 
-    internal static bool TryAddPosArg(string arg) {
+    static bool TryAddPosArg(string arg) {
         if (_displayHelp)
             return true;
 
