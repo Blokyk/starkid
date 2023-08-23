@@ -125,10 +125,7 @@ internal sealed partial class CodeGenerator
     }
 
     void AddCommandFunc(StringBuilder sb, MinimalMethodInfo method) {
-        var typeName
-            = method.ReturnsVoid
-            ? "void"
-            : method.ReturnType.FullName;
+        var typeName = method.ReturnType.FullName;
 
         sb.Append(@"
         private delegate ").Append(typeName).Append(" __funcT(");

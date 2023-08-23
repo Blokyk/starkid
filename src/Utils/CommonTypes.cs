@@ -36,9 +36,9 @@ internal static class CommonTypes
         Location.None
     ) { SpecialType = SpecialType.System_String };
     internal static MinimalTypeInfo VOID = new(
-        "Void",
+        "void",
         null,
-        "System.Void",
+        "void", // can't be referred to by System.Void
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Void };

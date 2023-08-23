@@ -59,7 +59,7 @@ public record MinimalTypeInfo(
         var fullName = SymbolInfoCache.GetFullTypeName(type);
         string shortName;
 
-        if (fullName == "System.Void") {
+        if (type.SpecialType is SpecialType.System_Void) {
             fullName = "void";
             shortName = "void";
         } else {
