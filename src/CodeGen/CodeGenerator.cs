@@ -24,6 +24,21 @@ internal sealed partial class CodeGenerator
         return sb.ToString();
     }
 
+    void AddRootHeader(StringBuilder sb, Group rootGroup) {
+        sb.AppendLine(Resources.GenFileHeader);
+
+        sb.Append("internal static partial class ").Append(Resources.ProgClassName).Append(@"
+{
+#pragma warning disable CS8618
+    static ReclineProgram() {
+        ").Append(rootGroup.ID).AppendLine(@"CmdDesc.Activate();
+    }
+#pragma warning restore CS8618");
+    }
+
+    void AddRootFooter(StringBuilder sb, Group _)
+        => sb.AppendLine("}"); // class ReclineProgram
+
     void AddOptionLookup(StringBuilder sb, InvokableBase groupOrCmd, bool isFlags) {
         string funcName = isFlags ? "TryExecFlagAction" : "TryExecOptionAction";
 

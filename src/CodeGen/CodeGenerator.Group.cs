@@ -89,18 +89,6 @@ internal sealed partial class CodeGenerator
         .AppendLine();
     }
 
-    void AddRootHeader(StringBuilder sb, Group rootGroup) {
-        sb.AppendLine(Resources.GenFileHeader);
-
-        sb.Append("internal static partial class ").Append(Resources.ProgClassName).Append(@"
-{
-#pragma warning disable CS8618
-    static ReclineProgram() {
-        ").Append(rootGroup.ID).AppendLine(@"CmdDesc.Activate();
-    }
-#pragma warning restore CS8618");
-    }
-
     void AddSubsLookup(StringBuilder sb, Group group) {
         sb.Append(@"
         internal static bool TryUpdateCommand(string cmdName) {");
@@ -162,7 +150,4 @@ internal sealed partial class CodeGenerator
     void AddCommandName(StringBuilder sb, Group group)
         => sb.Append(@"
         internal const string __name = """).Append(group.Name).Append("\";").AppendLine();
-
-    void AddRootFooter(StringBuilder sb, Group _)
-        => sb.AppendLine("}"); // class Program
 }
