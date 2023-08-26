@@ -127,6 +127,7 @@ internal static partial class ReclineProgram
                     default:
                         return ").Append(defaultReturn).Append(';');
         sb.Append("""
+
                 }
             } catch (Exception e) {
                 if (_displayHelp)
