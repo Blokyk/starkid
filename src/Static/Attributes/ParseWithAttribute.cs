@@ -19,8 +19,8 @@ namespace Recline
             ParserName = parserName;
         }
 #else
-    public ParseWithAttribute(string nameofParsingMethod)
-        => ParserName = nameofParsingMethod;
+        public ParseWithAttribute(string nameofParsingMethod)
+            => ParserName = nameofParsingMethod;
 #endif
 
         public bool Equals(ParseWithAttribute? other)
