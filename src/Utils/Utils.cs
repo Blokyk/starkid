@@ -9,7 +9,7 @@ internal static class Utils
 #if NETSTANDARD2_0
     public static bool StartsWith(this string s, char c) => s.Length >= 1 && s[0] == c;
 
-    internal static T FirstOrDefault<T>(this IEnumerable<T> coll, Func<T, bool> condition, T defaultVal) {
+    public static T FirstOrDefault<T>(this IEnumerable<T> coll, Func<T, bool> condition, T defaultVal) {
         foreach (var item in coll) {
             if (condition(item))
                 return item;
@@ -56,12 +56,12 @@ internal static class Utils
     public static Location GetApplicationLocation(AttributeData attr)
         => attr.ApplicationSyntaxReference?.GetLocation() ?? Location.None;
 
-    internal static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
+    public static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
 
-    internal static bool IsAsciiLetter(char c) => (uint)((c | 0x20) - 'a') <= 'z' - 'a';
-    internal static bool IsAsciiDigit(char c) => (uint)(c - '0') <= '9' - '0';
+    public static bool IsAsciiLetter(char c) => (uint)((c | 0x20) - 'a') <= 'z' - 'a';
+    public static bool IsAsciiDigit(char c) => (uint)(c - '0') <= '9' - '0';
 
-    internal readonly struct SequenceComparer<T> : IEqualityComparer<IEnumerable<T>>
+    public readonly struct SequenceComparer<T> : IEqualityComparer<IEnumerable<T>>
     {
         public static readonly SequenceComparer<T> Instance = new();
 
@@ -87,7 +87,7 @@ internal static class Utils
         }
     }
 
-    internal static IEqualityComparer<T> CreateComparerFrom<T>(Func<T, T, bool> eq, Func<T, int> hash)
+    public static IEqualityComparer<T> CreateComparerFrom<T>(Func<T, T, bool> eq, Func<T, int> hash)
         => new PredicateEqualityComparer<T>(eq, hash);
 
     private class PredicateEqualityComparer<T> : IEqualityComparer<T>
