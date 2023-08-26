@@ -359,8 +359,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor NonWritableOptProp
         = new(
             "CLI202",
-            "Properties marked with [Option] must have a public set accessor",
-            "Properties marked with [Option] must have a public set accessor",
+            "Properties marked with [Option] must have a internal or public set accessor",
+            "Properties marked with [Option] must have a internal or public set accessor",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -369,8 +369,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CouldntFindAutoParser
         = new(
             "CLI400",
-            "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
-            "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
+            "Type '{0}' doesn't have any accessible static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
+            "Type '{0}' doesn't have any accessible static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
