@@ -386,6 +386,16 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor NonAccessibleCtor
+        = new(
+            "CLI400",
+            "Type's constructor must be internal or public to be used for parsing",
+            "Type's constructor must be internal or public to be used for parsing",
+            "Recline.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor NoGenericAutoParser
         = new(
             "CLI401",

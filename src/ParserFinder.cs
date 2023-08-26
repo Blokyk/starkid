@@ -237,7 +237,12 @@ public class ParserFinder
 
         var isCtor = method.MethodKind == MethodKind.Constructor;
 
-        if (!isCtor) {
+        if (isCtor) {
+            if (method.DeclaredAccessibility < Accessibility.Internal) {
+                parser = new ParserInfo.Invalid(Diagnostics.NonAccessibleCtor);
+                return false;
+            }
+        } else {
             if (!method.IsStatic) {
                 parser = new ParserInfo.Invalid(Diagnostics.ParserHasToBeStatic);
                 return false;
