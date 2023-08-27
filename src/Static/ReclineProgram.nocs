@@ -90,7 +90,7 @@ internal static partial class ReclineProgram
                         if (value is not null || TryGetNextArgFromArgv(out value))
                             _ = _tryUpdateCmd(value);
 
-                        return DisplayHelp();
+                        return DisplayHelpAndExit();
                     }
 
                     if (_tryExecFlag(arg, value, false))
@@ -118,7 +118,7 @@ internal static partial class ReclineProgram
         }
 
         if (_displayHelp)
-            return DisplayHelp();
+            return DisplayHelpAndExit();
 
         if (_requiredArgsMissing > 0)
             return ExitWithError("Expected at least {0} arguments, but only got {1}", _requiredArgsMissing + argCount, argCount);
@@ -160,11 +160,18 @@ internal static partial class ReclineProgram
             "Something went wrong while trying to understand your command line. Please fill a report at https://github.com/blokyk/recline/issues/new"
         );
 
+    static readonly Lazy<bool> isNoColorEnvVarSet = new(() => Environment.GetEnvironmentVariable("NO_COLOR") is not null or "" or "0" or "false", false);
+    static bool IsColorOnErrorAllowed()
+        => !Console.IsErrorRedirected && !isNoColorEnvVarSet.Value;
+
     static string InRed(string msg)
-        => "\x1b[31m" + msg + "\x1b[0m";
+        => IsColorOnErrorAllowed() ? msg : "\x1b[31m" + msg + "\x1b[39m";
+
+    static string InBold(string msg)
+        => IsColorOnErrorAllowed() ? msg : "\x1b[1m" + msg + "\x1b[22m";
 
     static string FormatError(string reason, params object[] objs)
-        => InRed(string.Format(reason, objs.Select(obj => "\x1b[1m" + obj.ToString() + "\x1b[22m").ToArray()));
+        => InRed(string.Format(reason, objs.Select(o => InBold(o.ToString()!)).ToArray()));
 
     public static int ExitWithError(string msg) {
         Console.Error.WriteLine(InRed(msg));
@@ -172,16 +179,21 @@ internal static partial class ReclineProgram
         return 1;
     }
 
-    public static int ExitWithError(string fmt, params object[] objs)
-        => ExitWithError(FormatError(fmt, objs));
+    public static int ExitWithError(string fmt, params object[] objs) {
+        Console.Error.WriteLine(FormatError(fmt, objs));
+        Environment.Exit(1);
+        return 1;
+    }
 
     public static int PrintHelpString(string reason) {
         Console.Error.WriteLine(InRed(reason));
-        return DisplayHelp();
+        return DisplayHelpAndExit();
     }
 
-    public static int PrintHelpString(string reason, params object[] objs)
-        => PrintHelpString(FormatError(reason, objs));
+    public static int PrintHelpString(string reason, params object[] objs) {
+        Console.Error.WriteLine(FormatError(reason, objs));
+        return DisplayHelpAndExit();
+    }
 
     private static bool AsBool(string? val) => AsBool(val, true);
 
@@ -350,7 +362,7 @@ internal static partial class ReclineProgram
         }
     }
 
-    internal static int DisplayHelp() {
+    internal static int DisplayHelpAndExit() {
         Console.Error.WriteLine(_helpString);
         Environment.Exit(1);
         return 1;
