@@ -287,8 +287,9 @@ internal static partial class ReclineProgram
     private static T ThrowIfParseError<T>(Func<string, T> parse, string arg) {
         try {
             return parse(arg);
-        } catch (Exception e) {
-            var msg = ": " + e.Message;
+        }
+        catch (Exception e) {
+            var msg = e.Message is null ? "" : ": " + e.Message;
 
             throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'" + msg);
         }
