@@ -165,10 +165,10 @@ internal static partial class ReclineProgram
         => !Console.IsErrorRedirected && !isNoColorEnvVarSet.Value;
 
     static string InRed(string msg)
-        => IsColorOnErrorAllowed() ? msg : "\x1b[31m" + msg + "\x1b[39m";
+        => !IsColorOnErrorAllowed() ? msg : "\x1b[31m" + msg + "\x1b[39m";
 
     static string InBold(string msg)
-        => IsColorOnErrorAllowed() ? msg : "\x1b[1m" + msg + "\x1b[22m";
+        => !IsColorOnErrorAllowed() ? msg : "\x1b[1m" + msg + "\x1b[22m";
 
     static string FormatError(string reason, params object[] objs)
         => InRed(string.Format(reason, objs.Select(o => InBold(o.ToString()!)).ToArray()));
