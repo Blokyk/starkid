@@ -187,7 +187,7 @@ public class ParserFinder
         ParserInfo? parserInfo = null;
 
         foreach (var ctor in targetType.Constructors) {
-            if (TryGetParserInfo(ctor, targetType, out parserInfo))
+            if (TryGetCtorParserInfo(ctor, targetType, out parserInfo))
                 return parserInfo;
         }
 
@@ -195,33 +195,21 @@ public class ParserFinder
 
         // if we didn't find a suitable constructor, try to find Parse(string) or TryParse(string, out $target)
 
-        ParserInfo? boolOutParseCandidate = null;
         int candidateCount = 0;
 
-        foreach (var member in targetType.GetMembers()) {
-            if (member.Kind != SymbolKind.Method)
-                continue;
-
-            var method = (member as IMethodSymbol)!;
-
-            if (method.Name is "TryParse" or "Parse") {
-                candidateCount++;
-                if (TryGetParserInfo(method, targetType, out parserInfo)) {
-                    // always prefer Parse methods over TryParse, since the
-                    // first generally gives more info with exception
-                    // messages
-                    if (parserInfo is ParserInfo.BoolOutMethod bo)
-                        boolOutParseCandidate = bo;
-                    else
-                        return parserInfo;
-                }
-            }
+        var directMembers = targetType.GetMembers("Parse").OfType<IMethodSymbol>();
+        foreach (var method in directMembers) {
+            candidateCount++;
+            if (TryGetDirectParserInfo(method, targetType, out parserInfo))
+                return parserInfo;
         }
 
-        // if we're here, we went through every method without finding
-        // any Parse() method
-        if (boolOutParseCandidate is not null)
-            return boolOutParseCandidate;
+        var boolOutMembers = targetType.GetMembers("TryParse").OfType<IMethodSymbol>();
+        foreach (var method in boolOutMembers) {
+            candidateCount++;
+            if (TryGetBoolOutParserInfo(method, targetType, out parserInfo))
+                return parserInfo;
+        }
 
         switch (candidateCount) {
             case 0:
@@ -282,7 +270,10 @@ public class ParserFinder
     }
 
     bool TryGetDirectParserInfo(IMethodSymbol method, ITypeSymbol targetType, out ParserInfo parser) {
-        Debug.Assert(method.Parameters.Length is 1);
+        if (method.Parameters.Length != 1) {
+            parser = new ParserInfo.Invalid(Diagnostics.ParamCountWrongForParser);
+            return false;
+        }
 
         if (!CouldBeValidParser(method, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
             return false;
@@ -307,7 +298,10 @@ public class ParserFinder
     }
 
     bool TryGetCtorParserInfo(IMethodSymbol ctor, ITypeSymbol targetType, out ParserInfo parser) {
-        Debug.Assert(ctor.Parameters.Length is 1);
+        if (ctor.Parameters.Length != 1) {
+            parser = new ParserInfo.Invalid(Diagnostics.CouldntFindAutoParser);
+            return false;
+        }
 
         if (!CouldBeValidParser(ctor, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
             return false;
@@ -331,7 +325,10 @@ public class ParserFinder
     }
 
     bool TryGetBoolOutParserInfo(IMethodSymbol method, ITypeSymbol targetType, out ParserInfo parser) {
-        Debug.Assert(method.Parameters.Length is 2);
+        if (method.Parameters.Length != 2) {
+            parser = new ParserInfo.Invalid(Diagnostics.ParamCountWrongForParser);
+            return false;
+        }
 
         if (!CouldBeValidParser(method, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
             return false;
@@ -380,7 +377,9 @@ public class ParserFinder
                 return TryGetBoolOutParserInfo(method, targetType, out parser);
             default:
                 parser = new ParserInfo.Invalid(
-                    Diagnostics.ParamCountWrongForParser,
+                    method.MethodKind is MethodKind.Constructor
+                        ? Diagnostics.CouldntFindAutoParser
+                        : Diagnostics.ParamCountWrongForParser,
                     method.GetErrorName(),
                     method.Parameters.Length
                 );
