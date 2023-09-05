@@ -369,8 +369,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor CouldntFindAutoParser
         = new(
             "CLI400",
-            "Type '{0}' doesn't have any accessible static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
-            "Type '{0}' doesn't have any accessible static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
+            "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
+            "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -386,11 +386,11 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor NonAccessibleCtor
+    public static readonly DiagnosticDescriptor NonAccessibleParser
         = new(
             "CLI400",
-            "Type's constructor must be internal or public to be used for parsing",
-            "Type's constructor must be internal or public to be used for parsing",
+            "Constructor or Parse/TryParse method must be internal or public to be used for parsing",
+            "Constructor or Parse/TryParse method must be internal or public to be used for parsing",
             "Recline.Analysis",
             DiagnosticSeverity.Error,
             true

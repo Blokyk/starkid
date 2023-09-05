@@ -1,4 +1,5 @@
 using Recline.Generator.Model;
+using System.Diagnostics;
 
 namespace Recline.Generator;
 
@@ -232,118 +233,158 @@ public class ParserFinder
         }
     }
 
-    bool TryGetParserInfo(IMethodSymbol method, ITypeSymbol targetType, out ParserInfo parser) {
+    bool CouldBeValidParser(IMethodSymbol method, [NotNullWhen(false)] out ParserInfo? reason) {
+        reason = null;
+
         // todo: add checks like bound generics, etc
-
-        var isCtor = method.MethodKind == MethodKind.Constructor;
-
-        if (isCtor) {
-            if (method.DeclaredAccessibility < Accessibility.Internal) {
-                parser = new ParserInfo.Invalid(Diagnostics.NonAccessibleCtor);
-                return false;
-            }
-        } else {
-            if (!method.IsStatic) {
-                parser = new ParserInfo.Invalid(Diagnostics.ParserHasToBeStatic);
-                return false;
-            }
-
-            // note: when we refactor to lift the restriction on generic methods,
-            // also change the Enum.Parse code in FindParserForType
-            if (method.IsGenericMethod) {
-                parser = new ParserInfo.Invalid(Diagnostics.ParserCantBeGenericMethod);
-                return false;
-            }
-
-            if (method.ReturnsByRef || method.ReturnsByRefReadonly) {
-                parser = new ParserInfo.Invalid(Diagnostics.ParserCantReturnRef);
-                return false;
-            }
-        }
 
         if (method.Parameters.Length != 0) {
             var inputParam = method.Parameters[0];
 
             if (inputParam.RefKind != RefKind.None) {
-                parser = new ParserInfo.Invalid(Diagnostics.ParserParamWrongRefKind, inputParam.RefKind);
+                reason = new ParserInfo.Invalid(Diagnostics.ParserParamWrongRefKind, inputParam.RefKind);
                 return false;
             }
 
             if (!SymbolUtils.IsStringLike(inputParam.Type)) {
-                parser = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
+                reason = new ParserInfo.Invalid(Diagnostics.ParserMustTakeStringParam);
                 return false;
             }
         }
 
+        if (method.DeclaredAccessibility < Accessibility.Internal) {
+            reason = new ParserInfo.Invalid(Diagnostics.NonAccessibleParser);
+            return false;
+        }
+
+        // if this is a ctor, the next conditions don't apply
+        if (method.MethodKind is MethodKind.Constructor)
+            return true;
+
+        if (!method.IsStatic) {
+            reason = new ParserInfo.Invalid(Diagnostics.ParserHasToBeStatic);
+            return false;
+        }
+
+        // note: when we refactor to lift the restriction on generic methods,
+        // also change the Enum.Parse code in FindParserForType
+        if (method.IsGenericMethod) {
+            reason = new ParserInfo.Invalid(Diagnostics.ParserCantBeGenericMethod);
+            return false;
+        }
+
+        if (method.ReturnsByRef || method.ReturnsByRefReadonly) {
+            reason = new ParserInfo.Invalid(Diagnostics.ParserCantReturnRef);
+            return false;
+        }
+
+        return true;
+    }
+
+    bool TryGetDirectParserInfo(IMethodSymbol method, ITypeSymbol targetType, out ParserInfo parser) {
+        Debug.Assert(method.Parameters.Length is 1);
+
+        if (!CouldBeValidParser(method, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
+            return false;
+
+        var isReturnTypeTarget = _implicitConversionsCache.GetValue(method.ReturnType, targetType);
+
+        if (!isReturnTypeTarget) {
+            parser = new ParserInfo.Invalid(
+                Diagnostics.ParserHasToReturnTargetType,
+                targetType.GetErrorName(),
+                method.ReturnType.GetErrorName()
+            );
+            return false;
+        }
+
+        var targetTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
+
+        var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
+
+        parser = new ParserInfo.DirectMethod(containingTypeFullName + "." + method.Name, targetTypeInfo);
+        return true;
+    }
+
+    bool TryGetCtorParserInfo(IMethodSymbol ctor, ITypeSymbol targetType, out ParserInfo parser) {
+        Debug.Assert(ctor.Parameters.Length is 1);
+
+        if (!CouldBeValidParser(ctor, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
+            return false;
+
+        var isReturnTypeTarget
+            = _implicitConversionsCache.GetValue(ctor.ContainingType, targetType);
+
+        if (!isReturnTypeTarget) {
+            parser = new ParserInfo.Invalid(
+                Diagnostics.ParserHasToReturnTargetType,
+                targetType.GetErrorName(),
+                ctor.ContainingType.GetErrorName()
+            );
+            return false;
+        }
+
+        var targetTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
+
+        parser = new ParserInfo.Constructor(targetTypeInfo);
+        return true;
+    }
+
+    bool TryGetBoolOutParserInfo(IMethodSymbol method, ITypeSymbol targetType, out ParserInfo parser) {
+        Debug.Assert(method.Parameters.Length is 2);
+
+        if (!CouldBeValidParser(method, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
+            return false;
+
+        // the return type should be exactly bool
+        if (method.ReturnType.SpecialType != SpecialType.System_Boolean) {
+            parser = new ParserInfo.Invalid(Diagnostics.InvalidIndirectParserForm);
+            return false;
+        }
+
+        var outParam = method.Parameters[1];
+
+        // the second parameter should always be out
+        if (outParam.RefKind != RefKind.Out) {
+            parser = new ParserInfo.Invalid(Diagnostics.InvalidIndirectParserForm);
+            return false;
+        }
+
+        // and its type should always be the same as the target type (out parameters can't be co- or contra- variant)
+        if (!SymbolUtils.Equals(outParam.Type, targetType)) {
+            parser = new ParserInfo.Invalid(
+                Diagnostics.IndirectParserWrongTargetType,
+                targetType.GetErrorName()
+            );
+            return false;
+        }
+
+        var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
+
+        parser = new ParserInfo.BoolOutMethod(
+            containingTypeFullName + "." + method.Name,
+            MinimalTypeInfo.FromSymbol(targetType)
+        );
+
+        return true;
+    }
+
+    bool TryGetParserInfo(IMethodSymbol method, ITypeSymbol targetType, out ParserInfo parser) {
         switch (method.Parameters.Length) {
-            case 1: { // $targetType Parse(string)
-                var isReturnTypeTarget
-                    = isCtor
-                    ? _implicitConversionsCache.GetValue(method.ContainingType, targetType)
-                    : _implicitConversionsCache.GetValue(method.ReturnType, targetType);
-
-                if (!isReturnTypeTarget) {
-                    parser = new ParserInfo.Invalid(
-                        Diagnostics.ParserHasToReturnTargetType,
-                        targetType.GetErrorName(),
-                        method.ReturnType.GetErrorName()
-                    );
-                    return false;
-                }
-
-                var targetTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
-
-                if (isCtor) {
-                    parser = new ParserInfo.Constructor(targetTypeInfo);
-                    return true;
-                }
-
-                var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
-
-                parser = new ParserInfo.DirectMethod(containingTypeFullName + "." + method.Name, targetTypeInfo);
-                return true;
-            }
-            case 2: { // bool TryParse(string, out $targetType)
-                // the return type should be exactly bool
-                if (method.ReturnType.SpecialType != SpecialType.System_Boolean) {
-                    parser = new ParserInfo.Invalid(Diagnostics.InvalidIndirectParserForm);
-                    return false;
-                }
-
-                var outParam = method.Parameters[1];
-
-                // the second parameter should always be out
-                if (outParam.RefKind != RefKind.Out) {
-                    parser = new ParserInfo.Invalid(Diagnostics.InvalidIndirectParserForm);
-                    return false;
-                }
-
-                // and its type should always be the same as the target type (out parameters can't be co- or contra- variant)
-                if (!SymbolUtils.Equals(outParam.Type, targetType)) {
-                    parser = new ParserInfo.Invalid(
-                        Diagnostics.IndirectParserWrongTargetType,
-                        targetType.GetErrorName()
-                    );
-                    return false;
-                }
-
-                var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
-
-                parser = new ParserInfo.BoolOutMethod(
-                    containingTypeFullName + "." + method.Name,
-                    MinimalTypeInfo.FromSymbol(targetType)
-                );
-
-                return false;
-            }
-            default: {
+            case 1:
+                if (method.MethodKind is MethodKind.Constructor)
+                    return TryGetCtorParserInfo(method, targetType, out parser);
+                else
+                    return TryGetDirectParserInfo(method, targetType, out parser);
+            case 2:
+                return TryGetBoolOutParserInfo(method, targetType, out parser);
+            default:
                 parser = new ParserInfo.Invalid(
                     Diagnostics.ParamCountWrongForParser,
                     method.GetErrorName(),
                     method.Parameters.Length
                 );
                 return false;
-            }
         }
     }
 }
