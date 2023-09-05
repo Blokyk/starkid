@@ -9,7 +9,6 @@ public class ParserFinder
 
     private readonly Cache<ITypeSymbol, ITypeSymbol, bool> _implicitConversionsCache;
     private readonly TypeCache<ParserInfo> _typeParserCache;
-    private readonly Cache<ParseWithAttribute, ITypeSymbol, ParserInfo> _attrParserCache;
 
     private readonly SemanticModel _model;
 
@@ -64,12 +63,6 @@ public class ParserFinder
         // todo: make those static and reset them on every end of the pipeline
         _typeParserCache = new(FindParserForTypeCore, _specialTypesMap);
 
-        _attrParserCache = new(
-            EqualityComparer<ParseWithAttribute>.Default,
-            SymbolEqualityComparer.Default,
-            GetParserFromNameCore
-        );
-
         _implicitConversionsCache = new(
             SymbolEqualityComparer.Default,
             SymbolEqualityComparer.Default,
@@ -78,7 +71,7 @@ public class ParserFinder
     }
 
     public bool TryGetParserFromName(ParseWithAttribute attr, ITypeSymbol targetType, out ParserInfo parser) {
-        parser = _attrParserCache.GetValue(attr, targetType);
+        parser = GetParserFromNameCore(attr, targetType);
 
         if (parser is not ParserInfo.Invalid invalidParser)
             return true;
@@ -95,33 +88,31 @@ public class ParserFinder
     }
 
     ParserInfo GetParserFromNameCore(ParseWithAttribute attr, ITypeSymbol targetType) {
-        var members = _model.GetMemberGroup(attr.ParserNameSyntaxRef.GetSyntax());
-
-        bool hasAnyMethodWithName = false; // can't use members.Length cause they're not all methods
+        var members =
+            _model.GetMemberGroup(attr.ParserNameSyntaxRef.GetSyntax())
+                .OfType<IMethodSymbol>()
+                .ToArray();
 
         ParserInfo? parserInfo = null;
 
-        foreach (var member in members) {
-            if (member.Kind != SymbolKind.Method)
-                continue;
-
-            hasAnyMethodWithName = true;
-
-            var method = (member as IMethodSymbol)!;
-
-            if (method.MethodKind != MethodKind.Ordinary)
-                continue;
+        foreach (var method in members) {
+            if (method.MethodKind != MethodKind.Ordinary) {
+                return new ParserInfo.Invalid(
+                    Diagnostics.CouldntFindNamedParser,
+                    attr.ParserName
+                );
+            }
 
             if (TryGetParserInfo(method, targetType, out parserInfo))
                 return parserInfo;
         }
 
-        if (hasAnyMethodWithName) {
-            if (members.Length == 1)
-                return parserInfo!;
+        if (members.Length == 1)
+            return parserInfo!;
 
-            // if there's more than one methods, better to just say none of them fit
-            // rather than spit out just the reason the last candidate was rejected
+        // if there's more than one methods, better to just say none of them fit
+        // rather than spit out just the reason the last candidate was rejected
+        if (members.Length > 1) {
             return new ParserInfo.Invalid(
                 Diagnostics.NoValidParserOverload,
                 attr.ParserName
