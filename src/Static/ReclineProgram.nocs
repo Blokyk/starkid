@@ -261,10 +261,14 @@ internal static partial class ReclineProgram
     private static T ThrowIfParseError<T>(Func<string, T> parse, string arg) {
         try {
             return parse(arg);
+        } catch (Exception e) when (IsDefaultException(e)) {
+            throw new FormatException(
+                "Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'"
+            );
         } catch (Exception e) {
-            var msg = e.Message is null ? "" : ": " + e.Message;
-
-            throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'" + msg);
+            throw new FormatException(
+                "Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "' :" + e.Message
+            );
         }
     }
 
@@ -309,8 +313,12 @@ internal static partial class ReclineProgram
     private static T ThrowIfNotValid<T>(T val, Action<T> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         try {
             isValid(val);
-        } catch (Exception) when (message != null) { // if there's no message, the caller will handle the exception itself
+        }
+        catch (Exception e) when (message != null && IsDefaultException(e)) {
             throw new Exception(message);
+        } catch {
+            // if there's no message, the caller will handle the exception itself
+            throw;
         }
 
         return val;
@@ -339,8 +347,11 @@ internal static partial class ReclineProgram
         try {
             if (val is not null)
                 isValid(val);
-        } catch (Exception) when (message != null) {
+        }
+        catch (Exception e) when (message != null && IsDefaultException(e)) {
             throw new Exception(message);
+        } catch {
+            throw;
         }
 
         return val;
@@ -357,6 +368,27 @@ internal static partial class ReclineProgram
     // +======+
     // | MISC |
     // +======+
+
+    private static readonly string _defaultExceptionMsg = "Exception of type 'System.Exception' was thrown.";
+    static bool IsDefaultException(Exception e) {
+        if (String.IsNullOrEmpty(e.Message))
+            return true;
+
+        var msg = e.Message.AsSpan();
+
+        if (msg == _defaultExceptionMsg)
+            return true;
+
+        return false;
+
+        // we might enable this some day, but right now I feel like it might "erase" some
+        // typed exceptions and I think that's a bit unfortunate
+        // var typeName = e.GetType().ToString().AsSpan(); // that's what System.Exception uses
+
+        // return msg.StartsWith("Exception of type '")
+        //     && msg[19..(19+typeName.Length)] == typeName
+        //     && msg[(19+typeName.Length)..] == "' was thrown.";
+    }
 
     private static string GetFriendlyNameOf(Type t) {
         if (t.IsArray) {
