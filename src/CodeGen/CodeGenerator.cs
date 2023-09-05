@@ -65,7 +65,7 @@ internal static partial class ReclineProgram
         string funcName = isFlags ? "TryExecFlagAction" : "TryExecOptionAction";
 
         sb.Append(@"
-        internal static bool ").Append(funcName).Append("(string optName, string? arg, bool onlyAllowGlobal) {");
+        internal static bool ").Append(funcName).AppendLine("(string optName, string? arg, bool onlyAllowGlobal) {");
 
         // if we didn't find the option here, it might be global, so we ask the parent group
         var defaultReturn

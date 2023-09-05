@@ -126,6 +126,17 @@ internal static partial class ReclineProgram
         return _invokeCmd();
     }
 
+    static readonly Func<int> NonInvokableGroupAction = () =>
+        PrintHelpString(
+            "Can't use '{0}' without a sub-command",
+            _currCmdName
+        );
+
+
+    // +==============+
+    // | ARG HANDLING |
+    // +==============+
+
     /// <summary>
     /// In case the option is separated from its value/argument by a space, it will be the next
     /// item in argv. This function tries to extract it, when possible
@@ -149,16 +160,48 @@ internal static partial class ReclineProgram
         return true;
     }
 
-    static readonly Func<int> NonInvokableGroupAction = () =>
-        PrintHelpString(
-            "Can't use '{0}' without a sub-command",
-            _currCmdName
-        );
+    private static int posArgIdx = 0;
+    private static int _paramsCount = 0;
+    internal static int ArgCount => posArgIdx + _paramsCount;
+    internal static int ArgSlotsLeft => _posArgActions.Length - posArgIdx;
 
     static readonly Action<string> DefaultParamsAdd = _ =>
         throw new InvalidOperationException(
             "Something went wrong while trying to understand your command line. Please fill a report at https://github.com/blokyk/recline/issues/new"
         );
+
+    static bool TryAddPosArg(string arg) {
+        if (_displayHelp)
+            return true;
+
+        if (ArgSlotsLeft > 0) {
+            try {
+                _posArgActions[posArgIdx++](arg);
+                _requiredArgsMissing--;
+                return true;
+            } catch (EnvironmentExitException) {
+                throw;
+            } catch (Exception e) {
+                ExitWithError(
+                    "Expression '{0}' is not a valid value for this argument: {1}",
+                    arg, e.Message
+                );
+                return false;
+            }
+        } else {
+            if (!_hasParams)
+                return false;
+
+            _addParams(arg);
+            _paramsCount++;
+            return true;
+        }
+    }
+
+
+    // +==========+
+    // | PRINTING |
+    // +==========+
 
     static readonly Lazy<bool> isNoColorEnvVarSet = new(() => Environment.GetEnvironmentVariable("NO_COLOR") is not null or "" or "0" or "false", false);
     static bool IsColorOnErrorAllowed()
@@ -195,6 +238,36 @@ internal static partial class ReclineProgram
         return DisplayHelpAndExit();
     }
 
+    internal static int DisplayHelpAndExit() {
+        Console.Error.WriteLine(_helpString);
+        Environment.Exit(1);
+        return 1;
+    }
+
+
+    // +=========+
+    // | PARSING |
+    // +=========+
+
+    private delegate bool BoolOut<T>(string arg, out T t);
+
+    private static T ThrowIfTryParseNotTrue<T>(BoolOut<T> tryParse, string arg) {
+        if (!tryParse(arg, out var val))
+            throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'");
+
+        return val;
+    }
+
+    private static T ThrowIfParseError<T>(Func<string, T> parse, string arg) {
+        try {
+            return parse(arg);
+        } catch (Exception e) {
+            var msg = e.Message is null ? "" : ": " + e.Message;
+
+            throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'" + msg);
+        }
+    }
+
     private static bool AsBool(string? val) => AsBool(val, true);
 
     private static bool AsBool(string? val, bool defaultVal) {
@@ -216,6 +289,11 @@ internal static partial class ReclineProgram
         return val;
     }
 
+
+    // +============+
+    // | VALIDATION |
+    // +============+
+
     private static void ThrowOptionAlreadySpecified(string optName)
         => ExitWithError("Option '{0}' has already been specified", optName);
 
@@ -231,7 +309,7 @@ internal static partial class ReclineProgram
     private static T ThrowIfNotValid<T>(T val, Action<T> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         try {
             isValid(val);
-        } catch (Exception) when (message != null) {
+        } catch (Exception) when (message != null) { // if there's no message, the caller will handle the exception itself
             throw new Exception(message);
         }
 
@@ -275,25 +353,10 @@ internal static partial class ReclineProgram
         return val;
     }
 
-    private delegate bool BoolOut<T>(string arg, out T t);
 
-    private static T ThrowIfTryParseNotTrue<T>(BoolOut<T> tryParse, string arg) {
-        if (!tryParse(arg, out var val))
-            throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'");
-
-        return val;
-    }
-
-    private static T ThrowIfParseError<T>(Func<string, T> parse, string arg) {
-        try {
-            return parse(arg);
-        }
-        catch (Exception e) {
-            var msg = e.Message is null ? "" : ": " + e.Message;
-
-            throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'" + msg);
-        }
-    }
+    // +======+
+    // | MISC |
+    // +======+
 
     private static string GetFriendlyNameOf(Type t) {
         if (t.IsArray) {
@@ -330,42 +393,5 @@ internal static partial class ReclineProgram
         var baseName = t.Name[..^(t.GenericTypeArguments.Length < 10 ? 2 : 3)];
 
         return baseName + "<" + string.Join(',', t.GenericTypeArguments.Select(GetFriendlyNameOf)) + ">";
-    }
-
-    private static int posArgIdx = 0;
-    private static int _paramsCount = 0;
-    internal static int ArgCount => posArgIdx + _paramsCount;
-    internal static int ArgSlotsLeft => _posArgActions.Length - posArgIdx;
-
-    static bool TryAddPosArg(string arg) {
-        if (_displayHelp)
-            return true;
-
-        if (ArgSlotsLeft > 0) {
-            try {
-                _posArgActions[posArgIdx++](arg);
-                _requiredArgsMissing--;
-                return true;
-            } catch (Exception e) {
-                ExitWithError(
-                    "Expression '{0}' is not a valid value for this argument: {1}",
-                    arg, e.Message
-                );
-                return false;
-            }
-        } else {
-            if (!_hasParams)
-                return false;
-
-            _addParams(arg);
-            _paramsCount++;
-            return true;
-        }
-    }
-
-    internal static int DisplayHelpAndExit() {
-        Console.Error.WriteLine(_helpString);
-        Environment.Exit(1);
-        return 1;
     }
 }
