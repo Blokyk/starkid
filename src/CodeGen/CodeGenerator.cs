@@ -51,11 +51,7 @@ namespace Recline.Generated;
 
 internal static partial class ReclineProgram
 {
-#pragma warning disable CS8618
-    static ReclineProgram() {
-        ").Append(rootGroup.ID).AppendLine(@"CmdDesc.Activate();
-    }
-#pragma warning restore CS8618");
+    static void Initialize() => ").Append(rootGroup.ID).AppendLine("CmdDesc.Activate();");
     }
 
     void AddRootFooter(StringBuilder sb, Group _)

@@ -1,0 +1,93 @@
+using Recline.Generated;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Reflection;
+using Xunit.Sdk;
+
+namespace Recline.Tests;
+
+internal static partial class Utils {
+    internal static readonly object DefaultHostState;
+    private static readonly IDictionary<string, object> _defaultHostStateDict;
+    private static readonly Func<object?, object?, bool, EquivalentException> _equivalent;
+    static Utils() {
+        ReclineProgram.Reset();
+        DefaultHostState = GetHostState();
+        _defaultHostStateDict = DefaultHostState.AsMemberDictionary();
+
+        var asm = typeof(Assert).Assembly;
+        var helperType = asm.GetType("Xunit.Internal.AssertHelper", throwOnError: true)!;
+
+        _equivalent = ((MethodInfo)helperType.GetMember("VerifyEquivalence").First()).CreateDelegate<Func<object?, object?, bool, EquivalentException>>();
+    }
+
+    public static bool AreEquivalent(object expected, object actual, bool strict = false)
+        => _equivalent(expected, actual, strict) is null;
+
+    // i know this not actually correct but... i'm lazy
+    private static bool IsAnonymous(this Type t) => t.Name.Contains("AnonymousType");
+
+    private static IEnumerable<MemberInfo> GetFieldsAndProps(object obj)
+        => obj
+            .GetType()
+            .GetMembers()
+            .Where(m => m is FieldInfo { IsSpecialName: false } or PropertyInfo);
+
+    public static Dictionary<string, object> AsMemberDictionary(this object obj)
+        => GetFieldsAndProps(obj).ToDictionary(
+                m => m.Name,
+                m => m switch {
+                    FieldInfo f => f.GetValue(obj),
+                    PropertyInfo p => p.GetValue(obj),
+                    _ => null
+                }
+            )!;
+
+    public static object With(this object target, object modifiedMembers) {
+        var targetType = target.GetType();
+
+        if (!targetType.IsAnonymous() || !modifiedMembers.GetType().IsAnonymous())
+            throw new InvalidOperationException("The With() method is meant to be used with anonymous objects only.");
+
+        // anon types only have one ctor, with every property in order
+        var ctor = targetType.GetConstructors().First();
+
+        var propInfos = GetFieldsAndProps(target).Cast<PropertyInfo>().ToArray();
+        var modifiedValues = AsMemberDictionary(modifiedMembers);
+
+        var newValues = propInfos.Select(prop => {
+            if (!modifiedValues.TryGetValue(prop.Name, out var val))
+                return prop.GetValue(target);
+
+            var valType = val.GetType();
+            var propType = withoutNullable(prop.PropertyType);
+
+            if (propType.IsAnonymous() && valType.IsAnonymous())
+                return prop.GetValue(target)?.With(val) ?? val;
+
+            if (propType != valType)
+                throw new InvalidOperationException($"Type mismatch for property {prop.Name}: trying to assign value of type {valType} to {propType}.");
+
+            return val;
+        });
+
+        return ctor.Invoke(newValues.ToArray());
+
+        static Type withoutNullable(Type t)
+            =>  t.Name.StartsWith("Nullable`1")
+                    ? withoutNullable(t.GenericTypeArguments[0])
+                    : t;
+    }
+
+    public static Dictionary<string, object> GetHostDiff() {
+        var dict = new Dictionary<string, object>();
+        var state = GetHostState().AsMemberDictionary();
+
+        foreach (var (prop, value) in state) {
+            if (!AreEquivalent(_defaultHostStateDict[prop], value))
+                dict.Add(prop, value);
+        }
+
+        return dict;
+    }
+}

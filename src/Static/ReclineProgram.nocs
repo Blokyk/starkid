@@ -15,6 +15,10 @@ namespace Recline.Generated;
 [StackTraceHidden]
 internal static partial class ReclineProgram
 {
+#pragma warning disable CS8618
+    static ReclineProgram() => Initialize();
+#pragma warning restore CS8618
+
     private static string _currCmdName = "";
     private static string _prevCmdName = "";
 
@@ -36,6 +40,7 @@ internal static partial class ReclineProgram
     private static int argvIdx;
 
     static int Main(string[] args) {
+        Initialize();
         argv = args;
         var argCount = 0;
 
@@ -261,6 +266,8 @@ internal static partial class ReclineProgram
     private static T ThrowIfParseError<T>(Func<string, T> parse, string arg) {
         try {
             return parse(arg);
+        } catch (EnvironmentExitException) {
+            throw;
         } catch (Exception e) when (IsDefaultException(e)) {
             throw new FormatException(
                 "Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'"
@@ -314,6 +321,9 @@ internal static partial class ReclineProgram
         try {
             isValid(val);
         }
+        catch (EnvironmentExitException) {
+            throw;
+        }
         catch (Exception e) when (message != null && IsDefaultException(e)) {
             throw new Exception(message);
         } catch {
@@ -348,6 +358,9 @@ internal static partial class ReclineProgram
             if (val is not null)
                 isValid(val);
         }
+        catch (EnvironmentExitException) {
+            throw;
+        }
         catch (Exception e) when (message != null && IsDefaultException(e)) {
             throw new Exception(message);
         } catch {
@@ -371,20 +384,21 @@ internal static partial class ReclineProgram
 
     private static readonly string _defaultExceptionMsg = "Exception of type 'System.Exception' was thrown.";
     static bool IsDefaultException(Exception e) {
-        if (String.IsNullOrEmpty(e.Message))
-            return true;
-
-        var msg = e.Message.AsSpan();
-
-        if (msg == _defaultExceptionMsg)
-            return true;
-
-        return false;
+        return String.IsNullOrEmpty(e.Message) || e.Message == _defaultExceptionMsg;
 
         // we might enable this some day, but right now I feel like it might "erase" some
         // typed exceptions and I think that's a bit unfortunate
-        // var typeName = e.GetType().ToString().AsSpan(); // that's what System.Exception uses
 
+        // if (String.IsNullOrEmpty(e.Message))
+        //    return true;
+        //
+        // var msg = e.Message.AsSpan();
+        //
+        // if (msg == _defaultExceptionMsg)
+        //    return true;
+        //
+        // var typeName = e.GetType().ToString().AsSpan(); // that's what System.Exception uses
+        //
         // return msg.StartsWith("Exception of type '")
         //     && msg[19..(19+typeName.Length)] == typeName
         //     && msg[(19+typeName.Length)..] == "' was thrown.";
@@ -397,16 +411,17 @@ internal static partial class ReclineProgram
 
         if (!t.IsGenericType) {
             return t.Name switch {
-                "Char"   => "char",
-                "Byte"   => "byte",
-                "Int16"  => "short",
-                "UInt16" => "ushort",
-                "Int32"  => "int",
-                "UInt32" => "uint",
-                "Int64"  => "long",
-                "UInt64" => "ulong",
-                "String" => "string",
-                _        => t.Name
+                "Boolean" => "bool",
+                "Char"    => "char",
+                "Byte"    => "byte",
+                "Int16"   => "short",
+                "UInt16"  => "ushort",
+                "Int32"   => "int",
+                "UInt32"  => "uint",
+                "Int64"   => "long",
+                "UInt64"  => "ulong",
+                "String"  => "string",
+                _         => t.Name
             };
         }
 
@@ -425,5 +440,11 @@ internal static partial class ReclineProgram
         var baseName = t.Name[..^(t.GenericTypeArguments.Length < 10 ? 2 : 3)];
 
         return baseName + "<" + string.Join(',', t.GenericTypeArguments.Select(GetFriendlyNameOf)) + ">";
+    }
+
+    // for recline's tests
+    internal class EnvironmentExitException : Exception {
+        public int ExitCode { get; }
+        public EnvironmentExitException(int exitCode) => ExitCode = exitCode;
     }
 }
