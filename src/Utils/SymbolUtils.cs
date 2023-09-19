@@ -9,12 +9,9 @@ internal static class SymbolUtils
     [Obsolete("Wrong one, buddy")]
     public new static bool Equals(object _, object __) => false;
 
-    public static bool IsStringLike(ITypeSymbol type) {
-        if (type is not INamedTypeSymbol nt)
-            return false;
-
-        return nt.SpecialType == SpecialType.System_String || IsReadOnlySpanCharType(nt);
-    }
+    public static bool IsStringLike(ITypeSymbol type)
+        => type.SpecialType is SpecialType.System_String
+        || (type is INamedTypeSymbol nt && IsReadOnlySpanCharType(nt));
 
     public static bool IsReadOnlySpanCharType(INamedTypeSymbol type)
         => type is {

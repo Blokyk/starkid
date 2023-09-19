@@ -4,6 +4,7 @@ namespace Recline.Generator.Model;
 
 internal static class SymbolInfoCache
 {
+    // todo: turn those into lock'd dictionaries
     private static readonly SymbolEqualityComparer symbolComparer = SymbolEqualityComparer.IncludeNullability;
     private static readonly ConcurrentDictionary<ITypeSymbol, string> _typeFullNameMap = new(symbolComparer);
     private static readonly ConcurrentDictionary<ITypeSymbol, string> _typeShortNameMap = new(symbolComparer);
