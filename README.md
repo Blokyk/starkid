@@ -22,17 +22,17 @@ That's it! For a quick tutorial, check out [Your first app with Recline](docs/Yo
 
 - Commands are represented by methods marked with `[Command]`, *groups* of commands by (static) classes marked with `[CommandGroup]`.
 
-- Just like you can nest classes inside others, you can have a command group "inside" another group, which acts as a subgroup to its parent.
+- By nesting classes inside others, you can have a command group "inside" another group, which acts as a subgroup to its parent.
 
 - The outmost `[CommandGroup]` class is the root group, which basically defines the CLI; it is only special in that there can't be multiple root groups (since you can't have multiple CLIs inside a single assembly).
 
-- Just like you can't have methods outside of classes, you can't have `[Command]`s outside of `[CommandGroup]`s.
-
 - Command options are declared by adding `[Option]` to a parameter. Any other parameter will be treated as a mandatory argument.
+
+- An `[Option]` whose type is `bool` will be treated as a flag.
 
 - Using `[Option]` on a field or property (with a set accessor) declares that option for the whole group.
 
-- An `[Option]` whose type is `bool` will be treated as a flag.
+- Just like you can't have methods outside of classes, you can't have `[Command]`s outside of `[CommandGroup]`s.
 
 For more information, check out [Your first app with Recline](docs/Your-first-app-with-Recline.md) and [Recline overview](docs/Recline-overview.md).
 
