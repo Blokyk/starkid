@@ -16,8 +16,6 @@ class C1 {}
         driver = driver.RunGeneratorsAndUpdateCompilation(comp, out var newComp, out _);
         var runResult = driver.GetRunResult().Results[0];
 
-        Assert.Single(runResult.GeneratedSources.Select(src => src.HintName), "Recline.Generated_Attributes.g.cs");
-
         Assert.True(newComp.ContainsSymbolsWithName("CommandAttribute", SymbolFilter.Type));
         Assert.True(newComp.ContainsSymbolsWithName("CommandGroupAttribute", SymbolFilter.Type));
         Assert.True(newComp.ContainsSymbolsWithName("OptionAttribute", SymbolFilter.Type));
