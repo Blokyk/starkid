@@ -118,7 +118,7 @@ methods together (+do some other stuff in OOP); it is such a good
 analogy, in fact, that commands are represented by methods, and
 groups by classes.
 
-> Much like C# with methods with classes, Recline does not allow
+> Much like C# with methods and classes, Recline does not allow
 > commands to exist outside of a group. See [the relevant paragraph](#one-command-apps-are-impossible-to-create)
 > for more details.
 
@@ -227,8 +227,6 @@ Hello, Emily!
 > todo: optional args
 
 ### Global options
-
-### Custom argument/option value names
 
 ### Default commands
 
@@ -412,11 +410,29 @@ whether it exists or not.
 In terms of restrictions, validators have mostly the same limitations
 as manual parsers (in addition to [Recline's general restrictions](#restrictions))
 
-## Help text generation
+## Help text generation and customization
 
-> todo: auto-gen'd + manual xml doc
+> fixme: should we put error messages:
+> fixme:  - here
+> fixme:  - in the relevant parsing/validator sections
+> fixme:  - in a separate h2 section
 
-> fixme: should we also put the error messages here, or in the relevant parsing sections?
+### How help text is generated
+
+> todo: what's displayed on each "page"
+> todo: + mention quickly xml with a link to #customization
+
+#### Textual output
+
+> todo: talk about the two column system (+ when line breaks are inserted)
+
+### Customization
+
+> todo: allowed xml tags
+> todo: Recline_Help_MaxCharsPerLine
+
+#### Custom argument/option value names
+
 
 ## Restrictions
 

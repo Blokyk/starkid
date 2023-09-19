@@ -1,6 +1,6 @@
 # Your first app with Recline
 
-*The finished version of this example can be found [here](../samples/door-cli/)*
+*The finished version of this example can be found [here](samples/door-cli/)*
 
 In this tutorial, we will be building a simple command-line app,
 `door-cli`, which simulates a house door. It has 3 sub-commands:
