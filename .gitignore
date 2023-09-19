@@ -11,7 +11,10 @@
 # Build artifact
 bin/
 obj/
+
+# generated files
 raw-sample/
+*.g.cs
 
 # Misc
 *.old
