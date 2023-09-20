@@ -1,9 +1,9 @@
 #nullable disable
-using static Recline.Tests.Options.OptionTest; // i'm lazy i don't care
+using static StarKid.Tests.Options.OptionTest; // i'm lazy i don't care
 
-namespace Recline.Generated;
+namespace StarKid.Generated;
 
-internal static partial class ReclineProgram
+internal static partial class StarKidProgram
 {
     static partial void ResetCmdDescs() {
         OptionTestCmdDesc.Reset();

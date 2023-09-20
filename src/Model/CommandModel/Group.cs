@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 public sealed record Group(
     string Name,

@@ -1,7 +1,7 @@
 using System.IO;
 using System.Diagnostics;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 public sealed class HelpTextBuilder
 {

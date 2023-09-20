@@ -1,6 +1,6 @@
-using Recline.Generator;
+using StarKid.Generator;
 
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 public static class GeneratorStepsTests
 {

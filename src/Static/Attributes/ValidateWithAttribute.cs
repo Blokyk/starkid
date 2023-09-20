@@ -1,4 +1,4 @@
-namespace Recline
+namespace StarKid
 {
     /// <summary>
     /// Indicates the function used to validate the argument/option

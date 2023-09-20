@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 public class PrivateProxy<T> : DynamicObject where T : class
 {

@@ -1,9 +1,9 @@
 #pragma warning disable RCS1197 // Optimize StringBuilder call
 
-using Recline.Generator.Model;
+using StarKid.Generator.Model;
 using System.Collections.ObjectModel;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal sealed partial class CodeGenerator
 {
@@ -22,7 +22,7 @@ internal sealed partial class CodeGenerator
         private const int padSize = 2;
         private readonly int _maxLineLength;
 
-        public HelpGenerator(ReclineConfig config) => _maxLineLength = config.ColumnLength;
+        public HelpGenerator(StarKidConfig config) => _maxLineLength = config.ColumnLength;
 
         public void AddHelpText(StringBuilder sb, InvokableBase groupOrCmd) {
             AddDescription(sb, groupOrCmd);

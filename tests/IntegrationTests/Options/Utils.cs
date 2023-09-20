@@ -1,6 +1,6 @@
-using Recline.Tests.Options;
+using StarKid.Tests.Options;
 
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 internal static partial class Utils
 {

@@ -1,27 +1,27 @@
-# Recline overview
+# StarKid overview
 
-### What is Recline?
+### What is StarKid?
 
-Recline is a source generator that aims to make writing command line
+StarKid is a source generator that aims to make writing command line
 interfaces (a.k.a. CLI) easier. To achieve that goal, it helps you
 focus on the actual *interface* part, i.e. options, commands and
 sub-commands, arguments, etc, and generates all the necessary
 plumbing for you, like formatting the help texts for each command, or
 validating each option or argument before calling any command.
-Recline is mainly built for CLIs making use of "verbs," i.e. groups
+StarKid is mainly built for CLIs making use of "verbs," i.e. groups
 of subcommands, and has sensible defaults builtin; however, it also
 aims to provide some flexibility when needed, and has many ways to be
-tweaked to suit your needs (including via the [build-time config](Recline-config.md)).
+tweaked to suit your needs (including via the [build-time config](StarKid-config.md)).
 
 > **Note**: Although there are quite a lot of references to `System.CommandLine`
-> throughout both Recline's documentation and its codebase, it should
-> be noted that Recline's functional goals are pretty different from
+> throughout both StarKid's documentation and its codebase, it should
+> be noted that StarKid's functional goals are pretty different from
 > [System.CLI's goals](https://github.com/dotnet/command-line-api/blob/main/docs/Functional-goals.md).
 >
 > That library is a very different workhorse, and awesome in its own
 > right! It is clearly cut-out for some pretty heavy workloads and
 > scenarios, and has had a lot more work and expertise put into it
-> than Recline (I'm just a student working on this in their spare time
+> than StarKid (I'm just a student working on this in their spare time
 > after all!)
 >
 > You can find my reasons for writing this library regardless in [this project's README](/README.md),
@@ -29,7 +29,7 @@ tweaked to suit your needs (including via the [build-time config](Recline-config
 
 ## The core model
 
-Recline aims to have as simple a mental model as possible; In fact,
+StarKid aims to have as simple a mental model as possible; In fact,
 it can even be stated in just two sentences: "Commands (methods)
 accept arguments and options (parameters). You can create groups
 (classes) of related commands, and you can even have options for the
@@ -39,12 +39,12 @@ Do you need to have a group inside another group? Then just nest the
 corresponding classes, and that's it!
 
 And that's basically all you need to know to get started! Obviously,
-Recline provides some additional features, which we will explore
+StarKid provides some additional features, which we will explore
 below, but those two sentences are all you really need to think about
 when working with this package, almost everything else will come
 naturally from your code.
 
-> You might also want to take a look at [Recline's general restrictions](#restrictions)!
+> You might also want to take a look at [StarKid's general restrictions](#restrictions)!
 
 <details>
 <summary>A small example</summary>
@@ -103,11 +103,11 @@ you code structure.
 ## Commands, groups and options
 
 > **Note**: This is mostly intended to be a piece of documentation,
-> not a tutorial. If you want a gentle introduction to Recline's
+> not a tutorial. If you want a gentle introduction to StarKid's
 > base concepts and how to make your first app, you should check out
-> [Your first app with Recline](./Your-first-app-with-Recline.md).
+> [Your first app with StarKid](./Your-first-app-with-StarKid.md).
 
-There are two core concepts in Recline, commands and command groups,
+There are two core concepts in StarKid, commands and command groups,
 which are represented by two attributes: `[Command]` and
 `[CommandGroup]`. A command is something that actually *executes*,
 while a command group, as the name indicates, is simply a group of
@@ -118,7 +118,7 @@ methods together (+do some other stuff in OOP); it is such a good
 analogy, in fact, that commands are represented by methods, and
 groups by classes.
 
-> Much like C# with methods and classes, Recline does not allow
+> Much like C# with methods and classes, StarKid does not allow
 > commands to exist outside of a group. See [the relevant paragraph](#one-command-apps-are-impossible-to-create)
 > for more details.
 
@@ -156,7 +156,7 @@ is a way to convert from a string to that type (see [the section on parsing](#pa
 for more info.)
 
 You can also have as many parameters as you want, so if your command
-requires 42 arguments for some reason, then so be it, Recline won't
+requires 42 arguments for some reason, then so be it, StarKid won't
 even notice!
 
 ```csharp
@@ -253,13 +253,13 @@ Hello, Emily!
 Part of making the relation between code and CLI as transparent as
 possible is also being able to easily express restrictions on values,
 which is most often expressed through the type of each operand.
-Recline allows you to do away with a lot of boilerplate code by
+StarKid allows you to do away with a lot of boilerplate code by
 automatically finding a way to convert a string into whatever type is
 required for the operand, relying on .NET's convention of the
 `TryParse`/`Parse` pattern to cover most common cases and to easily
 allow you to implement it for your own types.
 
-Specifically, given an operand which should have type `T`, Recline
+Specifically, given an operand which should have type `T`, StarKid
 will check:
 - Is `T == string`? If yes, don't do anything
 - Is `string` implicitly castable to `T`? If yes, don't do anything
@@ -272,13 +272,13 @@ will check:
   If yes, use that method, using the return value to determine if
   there was an error. *Those are sometimes called indirect parsers*
 
-This, however, does have limits. Besides [Recline's general restrictions](#restrictions),
+This, however, does have limits. Besides [StarKid's general restrictions](#restrictions),
 the auto parser cannot:
 - Discover extension methods ([issue #7](https://github.com/Blokyk/fuzzy-octo-chainsaw/issues/7))
 
 ### Manual parsers
 
-In case Recline cannot find a parsing method automatically, or if
+In case StarKid cannot find a parsing method automatically, or if
 you'd like to override the default one, you can specify one yourself
 using the `[ParseWith(...)]` attribute:
 
@@ -326,7 +326,7 @@ was wrong with their input, only that it was invalid. However, by
 using exceptions directly, it becomes instantly clear to the user
 what they need to change in case of a parsing error.
 
-You can check [Recline's general restrictions](#restrictions) for
+You can check [StarKid's general restrictions](#restrictions) for
 a list of restrictions on what can and can't be a manual parsing
 method, but basically: almost anything that isn't generic. Because
 of the `nameof` mechanism, it is unfortunately impossible to specify
@@ -337,7 +337,7 @@ assuming there *is* a perfect fit for it, which is not a given!)
 ### Validators
 
 You might want to run some sort of validation on operands before
-running any command, and Recline has a tool for that called...
+running any command, and StarKid has a tool for that called...
 validators! They can especially useful when you have an option in a
 command group with a bunch of subcommands: traditionally, you'd
 have to add one or two lines at the start of each method to validate
@@ -408,7 +408,7 @@ This will first check if it ends with the right extension, and then
 whether it exists or not.
 
 In terms of restrictions, validators have mostly the same limitations
-as manual parsers (in addition to [Recline's general restrictions](#restrictions))
+as manual parsers (in addition to [StarKid's general restrictions](#restrictions))
 
 ## Help text generation and customization
 
@@ -429,14 +429,14 @@ as manual parsers (in addition to [Recline's general restrictions](#restrictions
 ### Customization
 
 > todo: allowed xml tags
-> todo: Recline_Help_MaxCharsPerLine
+> todo: StarKid_Help_MaxCharsPerLine
 
 #### Custom argument/option value names
 
 
 ## Restrictions
 
-As a source generator, Recline has some base restrictions that we
+As a source generator, StarKid has some base restrictions that we
 either could never avoid, or have chosen to not fight against, often
 because it would:
 
@@ -455,7 +455,7 @@ because it would:
 ### Classes/methods/fields must be `internal`
 
 One of the first restriction you'll encounter is that most things
-that interact with Recline has to be `internal` or `public`. This
+that interact with StarKid has to be `internal` or `public`. This
 includes classes marked `[CommandGroup]`, methods marked `[Command]`,
 fields/properties marked `[Option]`, as well as methods and props
 used for parsing and validation.
@@ -463,7 +463,7 @@ used for parsing and validation.
 <details>
 <summary>Reason</summary>
 The reason why everything has to be at least `internal` is because
-Recline generates code *outside* the command classes, and thus it
+StarKid generates code *outside* the command classes, and thus it
 has to be able to reference the fields, methods and classes that make
 up the different groups and commands.
 
@@ -475,7 +475,7 @@ what's allowed and what isn't might seem arbitrary and a bit
 clunky to most users.
 
 To figure out why, let's go through a little example. We'll assume
-that Recline generates everything needed (`Main()`, command
+that StarKid generates everything needed (`Main()`, command
 descriptors, etc...) in the top-most command group class. Let's say
 we have the following class structure:
 
@@ -485,7 +485,7 @@ MyCLI
 │   └── Fib
 ├── Bar
 │   └── Bob
-└── ReclineStuff
+└── StarKidStuff
     ├── Main()
     ├── MyCLICmdDesc
     └── ...
@@ -493,14 +493,14 @@ MyCLI
 
 So, our goal is to make as many classes private as possible. Remember
 that every field/method/nested class has to be accessible inside of
-`ReclineStuff`, otherwise it won't work. To start off, I've got bad
+`StarKidStuff`, otherwise it won't work. To start off, I've got bad
 news: `MyCLI` cannot be private, because top-level type declarations
 have to be internal or public. Thankfully, every member of `MyCLI`
-*can* be private, since `ReclineStuff` is itself a member and thus
+*can* be private, since `StarKidStuff` is itself a member and thus
 can access everything above or on the same nesting level as itself.
 This means that *technically* `Foo` and `Bar` can be private, since
 they're also members of `MyCLI`... but that's only a shallow victory,
-because Recline's code will need to access *their* members, so
+because StarKid's code will need to access *their* members, so
 anything inside `Foo`/`Bar` will need to be public, including `Fib`
 and `Bob` (and anything inside *those*).
 
@@ -528,10 +528,10 @@ best and confusing at worst.
 > single- and multi-command scenarios. [While it is possible](#bonus-using-default-commands-to-write-a-single-command-app),
 > to write single-command apps, please understand that this not
 > really a scenario we favor, and we will not be making any huge
-> changes to Recline just to cater to it. If you find *do* a
+> changes to StarKid just to cater to it. If you find *do* a
 > **non-intrusive** way to make it easier that also matches the
-> criteria we outlined earlier, please [do file an issue](https://github.com/blokyk/recline/issues)
+> criteria we outlined earlier, please [do file an issue](https://github.com/blokyk/starkid/issues)
 > so that we can discuss it! I'd also eventually like to make an
 > alternative generator specialized for single-command apps, which
-> would probably re-use a lot of Recline plumbing, so if that's
+> would probably re-use a lot of StarKid plumbing, so if that's
 > something you'd like to work on, don't hesitate to hit me up!

@@ -1,22 +1,22 @@
-# Recline
+# StarKid
 
 A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).
 
 ## What can it actually do?
 
-Recline allows you to write code that matches perfectly your command line interface's structure, by using nesting to represent your CLI's hierarchy of verbs and subcommands.
+StarKid allows you to write code that matches perfectly your command line interface's structure, by using nesting to represent your CLI's hierarchy of verbs and subcommands.
 
 It also includes a bunch of mechanisms to make parsing and validating options/args easier, so you never have to string-type anything, you can simply use the appropriate type for everything instead of writing walls of `if-then-throw`s at the start of every method.
 
 ## Getting started 🚀
 
-Recline is just like most other source generators and requires no additional dependency. You can install it just like a normal package, with:
+StarKid is just like most other source generators and requires no additional dependency. You can install it just like a normal package, with:
 
 ```shell
-dotnet add package Blokyk.Recline
+dotnet add package Blokyk.StarKid
 ```
 
-That's it! For a quick tutorial, check out [Your first app with Recline](docs/Your-first-app-with-Recline.md), or have a look through the TL;DR docs below. If you want to deep-dive directly in, you can check out the [overview](docs/Recline-overview.md) and the rest of the [docs folder](docs/)
+That's it! For a quick tutorial, check out [Your first app with StarKid](docs/Your-first-app-with-StarKid.md), or have a look through the TL;DR docs below. If you want to deep-dive directly in, you can check out the [overview](docs/StarKid-overview.md) and the rest of the [docs folder](docs/)
 
 ## TL;DR docs 📖
 
@@ -34,7 +34,7 @@ That's it! For a quick tutorial, check out [Your first app with Recline](docs/Yo
 
 - Just like you can't have methods outside of classes, you can't have `[Command]`s outside of `[CommandGroup]`s.
 
-For more information, check out [Your first app with Recline](docs/Your-first-app-with-Recline.md) and [Recline overview](docs/Recline-overview.md).
+For more information, check out [Your first app with StarKid](docs/Your-first-app-with-StarKid.md) and [StarKid overview](docs/StarKid-overview.md).
 
 ## ...why tho?
 
@@ -52,6 +52,6 @@ For now, I don't actually plan on maintaining this any further than I need to fo
 
 ## Disclaimer ⚠️
 
-You probably shouldn't actually use this for anything serious. While I've put a lot of effort into it, it is still pretty brittle in some cases; and although Recline's design has gone through multiple iterations, it is fairly opinionated, goes against some of C#'s coding conventions, and can quickly lead to unmaintainable code if not planned carefully. I personally encourage partial classes split into files and folders reflecting your CLI's structure.
+You probably shouldn't actually use this for anything serious. While I've put a lot of effort into it, it is still pretty brittle in some cases; and although StarKid's design has gone through multiple iterations, it is fairly opinionated, goes against some of C#'s coding conventions, and can quickly lead to unmaintainable code if not planned carefully. I personally encourage partial classes split into files and folders reflecting your CLI's structure.
 
 In addition, it is not fit for every case or app in the world: it heavily discourages "one root command, a thousand options"-kind of CLI. If you're trying to write a GCC-style CLI with a thousand different flags, this is probably not the library for you.

@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
-using Recline.Tests;
+using StarKid.Tests;
 
-namespace Recline.Tests.Options;
+namespace StarKid.Tests.Options;
 
 [CommandGroup("test")]
 public static partial class OptionTest {

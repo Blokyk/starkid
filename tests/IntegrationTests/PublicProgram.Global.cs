@@ -1,6 +1,6 @@
-namespace Recline.Generated;
+namespace StarKid.Generated;
 
-internal static partial class ReclineProgram {
+internal static partial class StarKidProgram {
     // trick to "intercept" all the System.Environment.Exit() calls
     private static class Environment {
         public static void Exit(int exitCode) => throw new EnvironmentExitException(exitCode);

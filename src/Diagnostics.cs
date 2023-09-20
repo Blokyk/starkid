@@ -1,4 +1,4 @@
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal static class Diagnostics {
     public static readonly DiagnosticDescriptor TimingInfo
@@ -6,7 +6,7 @@ internal static class Diagnostics {
             "CLI000",
             "{0} took: {1:0}ms ({1:0.000)}",
             "{0} took: {1:0}ms ({1:0.000)}",
-            "Recline.Debug",
+            "StarKid.Debug",
             DiagnosticSeverity.Info,
 #if DEBUG
             true
@@ -18,9 +18,9 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor GiveUp
         = new(
             "CLI000",
-            "Recline gave up analyzing invalid code",
-            "Recline gave up analyzing invalid code",
-            "Recline.Analysis",
+            "StarKid gave up analyzing invalid code",
+            "StarKid gave up analyzing invalid code",
+            "StarKid.Analysis",
             DiagnosticSeverity.Hidden,
             false
         );
@@ -30,7 +30,7 @@ internal static class Diagnostics {
             "CLI001",
             "This assembly defines multiple root groups, which is illegal",
             "Classes '{0}' and '{1}' both declare a root group, because neither of them are nested in a class marked with [CommandGroup], which is illegal",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -40,7 +40,7 @@ internal static class Diagnostics {
             "CLI002",
             "Member '{0}' can't have both [Option] and [Command/SubCommand] attributes",
             "A member can't be both an option and a command",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -50,7 +50,7 @@ internal static class Diagnostics {
             "CLI003",
             "[ParseWith] can only be used on options or arguments",
             "[ParseWith] can only be used on options or arguments",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -60,7 +60,7 @@ internal static class Diagnostics {
             "CLI003",
             "[ValidateWith] can only be used on options or arguments",
             "[ValidateWith] can only be used on options or arguments",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -70,7 +70,7 @@ internal static class Diagnostics {
             "CLI004",
             "Parameter '{0}' cannot be used as options because it's a 'params' argument",
             "Parameter '{0}' cannot be used as options because it's a 'params' argument",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -80,7 +80,7 @@ internal static class Diagnostics {
             "CLI005",
             "Invalid value for property '{0}' in project settings",
             "Invalid value for property '{0}' in project settings",
-            "Recline.Config",
+            "StarKid.Config",
             DiagnosticSeverity.Error,
             true
         );
@@ -88,9 +88,9 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ConfigPropNotVisible
         = new(
             "CLI006",
-            "Recline cannot read configuration/build property '{0}'",
-            "Build property '{0}' should be visible to Recline's source generator. Check that you installed the package correctly.",
-            "Recline.Config",
+            "StarKid cannot read configuration/build property '{0}'",
+            "Build property '{0}' should be visible to StarKid's source generator. Check that you installed the package correctly.",
+            "StarKid.Config",
             DiagnosticSeverity.Warning,
             true
         );
@@ -100,7 +100,7 @@ internal static class Diagnostics {
             "CLI007",
             "The name '--' is forbidden for commands and options",
             "The name '--' is forbidden for commands and options",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -110,7 +110,7 @@ internal static class Diagnostics {
             "CLI007",
             "Option/command names can't start with '-'",
             "Option/command names can't start with '-'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -120,7 +120,7 @@ internal static class Diagnostics {
             "CLI100",
             "Command group classes must not be generic, and neither should any containing type",
             "Command group classes must not be generic, and neither should any containing type",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -130,7 +130,7 @@ internal static class Diagnostics {
             "CLI100",
             "Command group classes must be static (and their containing type as well)",
             "Command group classes must be static (and their containing type as well)",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -140,7 +140,7 @@ internal static class Diagnostics {
             "CLI101",
             "Command methods cannot be generic",
             "Command methods cannot be generic",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -150,7 +150,7 @@ internal static class Diagnostics {
             "CLI102",
             "{1} method '{0}' cannot be a command",
             "{1}s can't be commands",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -160,7 +160,7 @@ internal static class Diagnostics {
             "CLI103",
             "Method '{0}' returns '{1}', which is invalid for a command",
             "Commands must return either void or int",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -170,7 +170,7 @@ internal static class Diagnostics {
             "CLI104",
             "Couldn't find a command named '{0}' in this group",
             "Couldn't find a command named '{0}' in this group",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -180,7 +180,7 @@ internal static class Diagnostics {
             "CLI105",
             "Couldn't find parent method '{1}' for sub-command '{0}'",
             "'{1}' must be the name of a method marked with [Command] or [SubCommand]",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -190,7 +190,7 @@ internal static class Diagnostics {
             "CLI106",
             "Ambiguity between methods '{1}' and '{2}'",
             "More than one method with name '{0}' for entry point",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -200,7 +200,7 @@ internal static class Diagnostics {
             "CLI107",
             "Null/empty/whitespace-only command names are disallowed",
             "Command names cannot be null, empty or only contain whitespace",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -210,7 +210,7 @@ internal static class Diagnostics {
             "CLI107",
             "Another command with the name '{0}' was already declared",
             "Another command with the name '{0}' was already declared",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -220,7 +220,7 @@ internal static class Diagnostics {
             "CLI107",
             "Command names can only contain '-', '_', or ASCII letters/digits",
             "Command names can only contain '-', '_', or ASCII letters/digits",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -230,7 +230,7 @@ internal static class Diagnostics {
             "CLI107",
             "Command names cannot begin with '--'",
             "Command names cannot begin with '--', as that would clash with options",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -241,7 +241,7 @@ internal static class Diagnostics {
             "Special name '#' is illegal because the containing group's default command name isn't '#'",
             "Special name '#' is illegal since the containing group's default command name isn't '#', "
                 + "therefore this command would never be invoked",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -251,7 +251,7 @@ internal static class Diagnostics {
             "CLI109",
             "Command method parameters cannot be marked 'ref', 'out' or 'in'",
             "Command method parameters cannot be marked 'ref', 'out' or 'in'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -261,7 +261,7 @@ internal static class Diagnostics {
             "CLI110",
             "A command method cannot have any ref struct as a parameter",
             "A command method cannot have any ref struct as a parameter",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -271,7 +271,7 @@ internal static class Diagnostics {
             "CLI200",
             "Whitespace characters can't be used for option's aliases",
             "Whitespace characters can't be used for option's aliases",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -281,7 +281,7 @@ internal static class Diagnostics {
             "CLI200",
             "'{0}' is not a valid option alias",
             "Option aliases can only contain '-', '_', or ASCII letters/digits",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -291,7 +291,7 @@ internal static class Diagnostics {
             "CLI200",
             "Null/empty/whitespace-only option names are disallowed",
             "Option names cannot be null, empty or only contain whitespace",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -301,7 +301,7 @@ internal static class Diagnostics {
             "CLI200",
             "'{0}' is not a valid option name",
             "Option names can only contain '-', '_', or ASCII letters/digits",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -311,7 +311,7 @@ internal static class Diagnostics {
             "CLI200",
             "Option can't be named \"--help\" or be aliased to '-h'",
             "Option can't be named \"--help\" or be aliased to '-h'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -321,7 +321,7 @@ internal static class Diagnostics {
             "CLI200",
             "Option names shouldn't include '--' at the beginning",
             "Option names shouldn't include '--' at the beginning, just give the name directly (for example: '{0}')",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -331,7 +331,7 @@ internal static class Diagnostics {
             "CLI201",
             "Another option with the name '{0}' was already declared in this command, or in a parent group",
             "Another option with the name '{0}' was already declared in this command, or in a parent group",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -341,7 +341,7 @@ internal static class Diagnostics {
             "CLI201",
             "Another option with the alias '{0}' was already declared in this command, or in a parent group",
             "Another option with the alias '{0}' was already declared in this command, or in a parent group",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -351,7 +351,7 @@ internal static class Diagnostics {
             "CLI202",
             "Can't use 'readonly' on option fields",
             "Fields marked with [Option] must be writable",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -361,7 +361,7 @@ internal static class Diagnostics {
             "CLI202",
             "Properties marked with [Option] must have a internal or public set accessor",
             "Properties marked with [Option] must have a internal or public set accessor",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -371,7 +371,7 @@ internal static class Diagnostics {
             "CLI400",
             "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
             "Type '{0}' doesn't have any static method named 'Parse' or 'TryParse', or a constructor with a single string parameter",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -381,7 +381,7 @@ internal static class Diagnostics {
             "CLI400",
             "None of the 'Parse' or 'TryParse' methods for type '{0}' were valid parsers",
             "None of the 'Parse' or 'TryParse' methods for type '{0}' were valid parsers",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -391,7 +391,7 @@ internal static class Diagnostics {
             "CLI400",
             "Constructor or Parse/TryParse method must be internal or public to be used for parsing",
             "Constructor or Parse/TryParse method must be internal or public to be used for parsing",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -401,7 +401,7 @@ internal static class Diagnostics {
             "CLI401",
             "Can't auto-parse unbound generic type '{0}'",
             "Auto-parsing generic types is not supported",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -411,7 +411,7 @@ internal static class Diagnostics {
             "CLI402",
             "No overload for '{0}' can be used as a parsing method here",
             "No overload for '{0}' can be used as a parsing method here",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -421,7 +421,7 @@ internal static class Diagnostics {
             "CLI403",
             "Parser's containing type '{0}' can't be an array, pointer, or unbound generic type",
             "Parser's containing type '{0}' can't be an array, pointer, or unbound generic type",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -431,7 +431,7 @@ internal static class Diagnostics {
             "CLI404",
             "Couldn't find a method named '{0}' suitable for parsing",
             "Couldn't find method '{0}', or it wasn't suitable to parse this option/argument",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -441,7 +441,7 @@ internal static class Diagnostics {
             "CLI405",
             "Parsing methods cannot return by ref or ref readonly",
             "Parsing methods cannot return by ref or ref readonly",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -451,7 +451,7 @@ internal static class Diagnostics {
             "CLI406",
             "Parsing methods cannot have any type parameters",
             "Parsing methods cannot have any type parameters",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -461,7 +461,7 @@ internal static class Diagnostics {
             "CLI407",
             "Parsing methods have to be static",
             "Parsing methods have to be static",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -471,7 +471,7 @@ internal static class Diagnostics {
             "CLI408",
             "This parser doesn't return a type compatible with '{0}'",
             "There is no implicit conversion from return type '{1}' to target type '{0}'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -481,7 +481,7 @@ internal static class Diagnostics {
             "CLI409",
             "A parsing method's first parameter must be of type 'string'",
             "A parsing method's first parameter must be of type 'string'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -491,7 +491,7 @@ internal static class Diagnostics {
             "CLI410",
             "Indirect parsers must be of the form 'bool Foo(string, out T)'",
             "Indirect parsers must be of the form 'bool Foo(string, out T)'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -501,7 +501,7 @@ internal static class Diagnostics {
             "CLI411",
             "The out parameter of an indirect parser must be exactly the same as the target type",
             "This out parameter must be of target type '{0}' to be a valid indirect parser",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -511,7 +511,7 @@ internal static class Diagnostics {
             "CLI412",
             "Parsing methods must have either 1 or 2 parameters",
             "Method '{0}' needs either 1 or 2 parameters to be a parser, but has '{1}' instead",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -521,7 +521,7 @@ internal static class Diagnostics {
             "CLI413",
             "A parser input (string) parameter cannot be marked 'ref', 'out' or 'in'",
             "A parser input (string) parameter cannot be marked 'ref', 'out' or 'in'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -532,7 +532,7 @@ internal static class Diagnostics {
             "The parameter to a ParseWith attribute must be a nameof expression",
             "Expression '{0}' can't be used as a parameter to a ParseWith attribute; "
             + "it must be a nameof expression",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -542,7 +542,7 @@ internal static class Diagnostics {
             "CLI500",
             "Couldn't find a method named '{0}' suitable for validation",
             "Couldn't find any method named '{0}' suitable to validate this option/argument",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -552,7 +552,7 @@ internal static class Diagnostics {
             "CLI501",
             "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
             "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -562,7 +562,7 @@ internal static class Diagnostics {
             "CLI501",
             "Property '{0}' must be a member of '{1}' to be used for validation",
             "Property '{0}' must be a member of '{1}' to be used for validation",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -572,7 +572,7 @@ internal static class Diagnostics {
             "CLI502",
             "No overload for method '{0}' can be used as a validator for type '{1}'",
             "No overload for method '{0}' can be used as a validator for type '{1}'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -582,7 +582,7 @@ internal static class Diagnostics {
             "CLI503",
             "Validator method '{0}' must return bool or void",
             "Validator method '{0}' must return bool or void",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -592,7 +592,7 @@ internal static class Diagnostics {
             "CLI503",
             "Property '{0}' must be of type bool to be used for validation",
             "Property '{0}' must be of type bool to be used for validation",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -602,7 +602,7 @@ internal static class Diagnostics {
             "CLI504",
             "Validator methods must be static",
             "Method '{0}' must be static to be used as a validator",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -612,7 +612,7 @@ internal static class Diagnostics {
             "CLI505",
             "Validator methods must take a single parameter of type '{0}'",
             "Validator methods must take a single parameter of type '{0}'",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );
@@ -623,7 +623,7 @@ internal static class Diagnostics {
             "The parameter to a ValidateWith attribute must be a nameof expression",
             "Expression '{0}' can't be used as a parameter to a ValidateWith attribute; "
             + "it must be a nameof expression",
-            "Recline.Analysis",
+            "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
         );

@@ -1,4 +1,4 @@
-namespace Recline
+namespace StarKid
 {
     /// <summary>
     /// Indicates the function used to convert the raw string argument into the desired type

@@ -1,7 +1,7 @@
-using Recline.Generator;
-using Recline.Generator.Model;
+using StarKid.Generator;
+using StarKid.Generator.Model;
 
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 public static class GroupBuilderTests
 {

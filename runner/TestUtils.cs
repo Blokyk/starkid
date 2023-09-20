@@ -44,12 +44,12 @@ internal static class Utils
                 )
         );
 
-    public static void DisplayReclineSteps(GeneratorRunResult results) {
-        var steps = results.TrackedSteps.Where(kv => kv.Key.StartsWith("recline_")).ToDictionary(kv => kv.Key, kv => kv.Value);
+    public static void DisplayStarKidSteps(GeneratorRunResult results) {
+        var steps = results.TrackedSteps.Where(kv => kv.Key.StartsWith("starkid_")).ToDictionary(kv => kv.Key, kv => kv.Value);
 
         if (results.TrackedOutputSteps.TryGetValue("ImplementationSourceOutput", out var outputStep)) {
             steps.Add(
-                "recline_output",
+                "starkid_output",
                 outputStep
             );
         } else {
@@ -57,11 +57,11 @@ internal static class Utils
         }
 
         if (steps.Count == 0) {
-            Console.WriteLine("No recline steps were run.");
+            Console.WriteLine("No starkid steps were run.");
             return;
         }
 
-        // [8..] to remove the "recline_" prefix
+        // [8..] to remove the "starkid_" prefix
         DisplayTimes(steps.ToDictionary(kv => kv.Key[8..], kv => kv.Value.Select(s => s.ElapsedTime)));
     }
 }

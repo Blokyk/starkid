@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Recline.csproj" />
+    <ProjectReference Include="..\src\StarKid.csproj" />
   </ItemGroup>
 
   <ItemGroup>

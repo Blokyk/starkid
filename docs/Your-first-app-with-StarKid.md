@@ -1,4 +1,4 @@
-# Your first app with Recline
+# Your first app with StarKid
 
 *The finished version of this example can be found [here](samples/door-cli/)*
 
@@ -30,7 +30,7 @@ like! One of the biggest difference is that we need to make our class
 `static`, since, as a CLI, the concept of "instantiation" doesn't
 really make sense, for the same reasons you have to mark a
 traditional `Main()` method static. Besides that, all we have left to
-do is using Recline's attributes to mark commands and options.
+do is using StarKid's attributes to mark commands and options.
 
 ```csharp
 [CommandGroup("door-cli")]
@@ -56,7 +56,7 @@ doesn't have any inherent behavior: it's not "invokable" like methods
 are; instead it's meant to group together related commands a.k.a.
 methods.
 
-**This is one of Recline's core cncepts, so it's worth repeating:
+**This is one of StarKid's core cncepts, so it's worth repeating:
 *static classes are groups of related methods/commands; only methods
 can be executed.***
 
@@ -70,14 +70,14 @@ And... that's about it! After adding some actual code to the `Open`,
 > $ dotnet run -- open 5ecr3t_keii
 > ```
 > If you're using an executable directly, there is obviously no need
-> to do this (and in fact, Recline follows POSIX's recommendation
+> to do this (and in fact, StarKid follows POSIX's recommendation
 > to use `--` as a delimiter between options/commands and normal
 > arguments, which is why you need to do this for `dotnet run`)
 > ```shell
 > $ ./door-cli open 5ecr3t_keii
 > ```
 
-Finally, Recline automatically generates a `--help`/`-h` flag for
+Finally, StarKid automatically generates a `--help`/`-h` flag for
 *every* group and command, but right now it's not super... helpful:
 ```shell
 $ ./door-cli knock --help

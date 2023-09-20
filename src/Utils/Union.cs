@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 // non-nullable field must contain a null value when exiting constructor
 #pragma warning disable CS8618

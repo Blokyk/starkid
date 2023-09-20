@@ -1,6 +1,6 @@
-using Recline.Generator.Model;
+using StarKid.Generator.Model;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal sealed class GroupBuilder
 {

@@ -1,4 +1,4 @@
-namespace Recline
+namespace StarKid
 {
     [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
     public sealed class OptionAttribute : System.Attribute

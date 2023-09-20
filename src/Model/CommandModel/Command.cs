@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 [System.Diagnostics.DebuggerDisplay("<{Name,nq}>")]
 public sealed record Command : InvokableBase, IEquatable<Command> {

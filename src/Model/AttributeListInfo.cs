@@ -1,4 +1,4 @@
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal readonly struct AttributeListInfo {
     public readonly CommandGroupAttribute? CommandGroup { get; } = null;

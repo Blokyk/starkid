@@ -1,4 +1,4 @@
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 public abstract record ValidatorInfo() {
     public string? Message { get; init; }

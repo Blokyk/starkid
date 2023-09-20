@@ -1,0 +1,19 @@
+<Project>
+    <Target Name="_StarKidRoslynVersionCheck" BeforeTargets="GenerateMSBuildEditorConfigFile">
+        <Warning Code="CLI000"
+            Text="StarKid requires Roslyn/Compiler API 4.3.0 or greater."
+            Condition="$([MSBuild]::VersionLessThan('$(CompilerApiVersion.Substring(6))', '4.3.0'))" />
+    </Target>
+
+    <ItemGroup>
+        <CompilerVisibleProperty Include="StarKid_Help_MaxCharsPerLine" />
+        <CompilerVisibleProperty Include="StarKid_Help_ExitCode" />
+        <CompilerVisibleProperty Include="StarKid_AllowRepeatingOptions" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <StarKid_Help_MaxCharsPerLine Condition="$(StarKid_Help_MaxCharsPerLine) == ''">80</StarKid_Help_MaxCharsPerLine>
+        <StarKid_Help_ExitCode Condition="$(StarKid_Help_ExitCode) == ''">1</StarKid_Help_ExitCode>
+        <StarKid_AllowRepeatingOptions Condition="$(StarKid_AllowRepeatingOptions) == ''">false</StarKid_AllowRepeatingOptions>
+    </PropertyGroup>
+</Project>

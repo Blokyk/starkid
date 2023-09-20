@@ -1,17 +1,17 @@
-using Recline.Generated;
+using StarKid.Generated;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
 using Xunit.Sdk;
 
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 internal static partial class Utils {
     internal static readonly object DefaultHostState;
     private static readonly IDictionary<string, object> _defaultHostStateDict;
     private static readonly Func<object?, object?, bool, EquivalentException> _equivalent;
     static Utils() {
-        ReclineProgram.Reset();
+        StarKidProgram.Reset();
         DefaultHostState = GetHostState();
         _defaultHostStateDict = DefaultHostState.AsMemberDictionary();
 

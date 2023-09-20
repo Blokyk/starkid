@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 public abstract record MinimalSymbolInfo(
     string Name,

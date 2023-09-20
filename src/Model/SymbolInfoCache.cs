@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 internal static class SymbolInfoCache
 {

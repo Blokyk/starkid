@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 internal sealed class ConfigProvider : AnalyzerConfigOptionsProvider
 {

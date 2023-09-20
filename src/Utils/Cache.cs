@@ -1,4 +1,4 @@
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 public readonly struct Cache<TKey, TValue> where TKey : notnull
 {

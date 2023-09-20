@@ -1,21 +1,21 @@
 #pragma warning disable RCS1197 // Optimize StringBuilder call
 
-using Recline.Generator.Model;
+using StarKid.Generator.Model;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal sealed partial class CodeGenerator
 {
-    private readonly ReclineConfig _config;
+    private readonly StarKidConfig _config;
 
     private readonly HelpGenerator _helpGenerator;
 
-    public CodeGenerator(ReclineConfig config) {
+    public CodeGenerator(StarKidConfig config) {
         _config = config;
         _helpGenerator = new(config);
     }
 
-    public static string ToSourceCode(Group rootGroup, ImmutableArray<string> usings, ReclineConfig config) {
+    public static string ToSourceCode(Group rootGroup, ImmutableArray<string> usings, StarKidConfig config) {
         var generator = new CodeGenerator(config);
         var sb = new StringBuilder();
         generator.AddRootHeader(sb, rootGroup, usings);
@@ -47,15 +47,15 @@ internal sealed partial class CodeGenerator
 
 sb.Append(@"
 
-namespace Recline.Generated;
+namespace StarKid.Generated;
 
-internal static partial class ReclineProgram
+internal static partial class StarKidProgram
 {
     static void Initialize() => ").Append(rootGroup.ID).AppendLine("CmdDesc.Activate();");
     }
 
     void AddRootFooter(StringBuilder sb, Group _)
-        => sb.AppendLine("}"); // class ReclineProgram
+        => sb.AppendLine("}"); // class StarKidProgram
 
     void AddOptionLookup(StringBuilder sb, InvokableBase groupOrCmd, bool isFlags) {
         string funcName = isFlags ? "TryExecFlagAction" : "TryExecOptionAction";
@@ -214,16 +214,16 @@ internal static partial class ReclineProgram
     void AddActivateFunc(StringBuilder sb) =>
         sb.Append(@"
         internal static void Activate() {
-            ReclineProgram._prevCmdName = _currCmdName;
-            ReclineProgram._tryExecOption = TryExecOptionAction;
-            ReclineProgram._tryExecFlag = TryExecFlagAction;
-            ReclineProgram._tryUpdateCmd = TryUpdateCommand;
-            ReclineProgram._addParams = _addParams;
-            ReclineProgram._hasParams = _hasParams;
-            ReclineProgram._posArgActions = _posArgActions;
-            ReclineProgram._requiredArgsMissing = _requiredArgCount;
-            ReclineProgram._invokeCmd = _invokeCmd;
-            ReclineProgram._helpString = _helpText;
-            ReclineProgram._currCmdName = __name;
+            StarKidProgram._prevCmdName = _currCmdName;
+            StarKidProgram._tryExecOption = TryExecOptionAction;
+            StarKidProgram._tryExecFlag = TryExecFlagAction;
+            StarKidProgram._tryUpdateCmd = TryUpdateCommand;
+            StarKidProgram._addParams = _addParams;
+            StarKidProgram._hasParams = _hasParams;
+            StarKidProgram._posArgActions = _posArgActions;
+            StarKidProgram._requiredArgsMissing = _requiredArgCount;
+            StarKidProgram._invokeCmd = _invokeCmd;
+            StarKidProgram._helpString = _helpText;
+            StarKidProgram._currCmdName = __name;
         }");
 }

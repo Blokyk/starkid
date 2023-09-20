@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.IO;
 
-using Recline.Generator;
+using StarKid.Generator;
 
 var sampleDir = "../sample/";
 var testDir = "../raw-sample/";
@@ -54,11 +54,11 @@ void runDriver(string phase, string filename, CSharpCompilation unit) {
     }
 
     driver = driver.RunGenerators(unit); // actual run
-    Parallel.For(0, 100, (_, _) => driver.RunGenerators(unit)); // parallel runs to make sure Recline can run during threaded build
+    Parallel.For(0, 100, (_, _) => driver.RunGenerators(unit)); // parallel runs to make sure StarKid can run during threaded build
 
     var results = driver.GetRunResult().Results[0];
 
-    Utils.DisplayReclineSteps(results);
+    Utils.DisplayStarKidSteps(results);
 
     foreach (var diag in driver.GetRunResult().Diagnostics) {
         Console.WriteLine(diag.FormatSeverity() + diag.GetMessage());

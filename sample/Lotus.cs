@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.IO;
 
-using Recline;
+using StarKid;
 
 [CommandGroup("upject-cli")]
 public static class Lotus

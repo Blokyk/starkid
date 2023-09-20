@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 [System.Diagnostics.DebuggerDisplay("{ID,nq}")]
 public abstract record InvokableBase : IEquatable<InvokableBase> {

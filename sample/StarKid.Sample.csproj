@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Recline.csproj"
+    <ProjectReference Include="..\src\StarKid.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
     />

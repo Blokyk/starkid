@@ -9,14 +9,14 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace Recline.Generated;
+namespace StarKid.Generated;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 [StackTraceHidden]
-internal static partial class ReclineProgram
+internal static partial class StarKidProgram
 {
 #pragma warning disable CS8618
-    static ReclineProgram() => Initialize();
+    static StarKidProgram() => Initialize();
 #pragma warning restore CS8618
 
     private static string _currCmdName = "";
@@ -47,7 +47,7 @@ internal static partial class ReclineProgram
         var onlyArgs = false; // set to true if we get '--'
 
         bool argsContainHelp() {
-            foreach (var rawArg in ReclineProgram.argv) {
+            foreach (var rawArg in StarKidProgram.argv) {
                 // either it's exactly '-h' or it's something like '-h=foo' (and idem for '--help')
                 if (rawArg.StartsWith("-h", StringComparison.Ordinal) && (rawArg.Length == 2 || rawArg[2] == '='))
                     return true;
@@ -60,8 +60,8 @@ internal static partial class ReclineProgram
 
         _displayHelp = argsContainHelp();
 
-        for (; argvIdx < ReclineProgram.argv.Length; argvIdx++) {
-            ref var rawArg = ref ReclineProgram.argv[argvIdx];
+        for (; argvIdx < StarKidProgram.argv.Length; argvIdx++) {
+            ref var rawArg = ref StarKidProgram.argv[argvIdx];
 
             var eqIdx = rawArg.IndexOf('=');
 
@@ -172,7 +172,7 @@ internal static partial class ReclineProgram
 
     static readonly Action<string> DefaultParamsAdd = _ =>
         throw new InvalidOperationException(
-            "Something went wrong while trying to understand your command line. Please fill a report at https://github.com/blokyk/recline/issues/new"
+            "Something went wrong while trying to understand your command line. Please fill a report at https://github.com/blokyk/starkid/issues/new"
         );
 
     static bool TryAddPosArg(string arg) {
@@ -442,7 +442,7 @@ internal static partial class ReclineProgram
         return baseName + "<" + string.Join(',', t.GenericTypeArguments.Select(GetFriendlyNameOf)) + ">";
     }
 
-    // for recline's tests
+    // for starkid's tests
     internal class EnvironmentExitException : Exception {
         public int ExitCode { get; }
         public EnvironmentExitException(int exitCode) => ExitCode = exitCode;

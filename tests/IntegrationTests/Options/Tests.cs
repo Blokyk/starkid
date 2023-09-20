@@ -1,9 +1,9 @@
-using Recline.Generated;
+using StarKid.Generated;
 using System.Net;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
-namespace Recline.Tests.Options;
+namespace StarKid.Tests.Options;
 
 public class Tests
 {
@@ -13,7 +13,7 @@ public class Tests
     static readonly object DefaultState = Utils.DefaultHostState;
 
     static void TestMainDummy(params string[] args)
-        => ReclineProgram.TestMain(args.Append("dummy").ToArray());
+        => StarKidProgram.TestMain(args.Append("dummy").ToArray());
 
     static void AssertStateChange(object changedProps)
         => Assert.Equal(DefaultState.With(changedProps), Utils.GetHostState());
@@ -162,10 +162,10 @@ public class Tests
         TestMainDummy("--global-switch");
         AssertStateChange(new { GlobalSwitch = true });
 
-        Assert.Equal(0, ReclineProgram.TestMain("dummy", "--global-switch"));
+        Assert.Equal(0, StarKidProgram.TestMain("dummy", "--global-switch"));
         AssertStateChange(new { GlobalSwitch = true });
 
-        Assert.Equal(0, ReclineProgram.TestMain("dummy2", "--cmd-opt-with-default", "32", "--global-switch"));
+        Assert.Equal(0, StarKidProgram.TestMain("dummy2", "--cmd-opt-with-default", "32", "--global-switch"));
         Assert.True(OptionTest.GlobalSwitch);
     }
 

@@ -1,4 +1,4 @@
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 public sealed record DescriptionInfo(
     string? ShortDesc,

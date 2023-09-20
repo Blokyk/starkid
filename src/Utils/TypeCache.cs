@@ -1,4 +1,4 @@
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 public readonly struct TypeCache<TValue>
 {

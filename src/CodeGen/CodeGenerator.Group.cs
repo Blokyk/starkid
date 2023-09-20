@@ -2,9 +2,9 @@
 
 using System.Linq;
 
-using Recline.Generator.Model;
+using StarKid.Generator.Model;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal sealed partial class CodeGenerator
 {
@@ -82,7 +82,7 @@ internal sealed partial class CodeGenerator
         if (group.DefaultCommand is not null) {
             sb.Append(group.DefaultCommand.ID).Append("CmdDesc._invokeCmd");
         } else {
-            sb.Append("ReclineProgram.NonInvokableGroupAction");
+            sb.Append("StarKidProgram.NonInvokableGroupAction");
         }
 
         sb.Append(';')

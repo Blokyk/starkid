@@ -3,7 +3,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 public record DocumentationInfo(
     string? Summary,

@@ -1,4 +1,4 @@
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 public record Option(MinimalTypeInfo Type, string Name, char Alias, string ArgName, bool IsGlobal, ParserInfo Parser, MinimalSymbolInfo BackingSymbol, string? DefaultValueExpr) {
     public string? Description { get; set; }

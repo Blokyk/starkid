@@ -1,4 +1,4 @@
-namespace Recline
+namespace StarKid
 {
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class CommandGroupAttribute : System.Attribute

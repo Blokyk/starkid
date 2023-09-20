@@ -1,7 +1,7 @@
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 public abstract record ParserInfo {
-    public static readonly DirectMethod AsBool = new("Recline.Generated.ReclineProgram.AsBool", CommonTypes.BOOL);
+    public static readonly DirectMethod AsBool = new("StarKid.Generated.StarKidProgram.AsBool", CommonTypes.BOOL);
     public static readonly Identity StringIdentity = new(CommonTypes.STR);
 
     public abstract MinimalTypeInfo TargetType { get; init; }

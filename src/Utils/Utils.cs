@@ -1,7 +1,7 @@
 using System.IO;
 using System.Reflection;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal static class Utils
 {
@@ -34,9 +34,9 @@ internal static class Utils
 #pragma warning restore RCS1197
 #endif // NETSTANDARD2_0
 
-    private static readonly Assembly _reclineAssembly = typeof(Utils).Assembly;
+    private static readonly Assembly _starkidAssembly = typeof(Utils).Assembly;
     public static string GetStaticResource(string filePath) {
-        using var stream = _reclineAssembly.GetManifestResourceStream("Recline.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'Recline.Static." + filePath + "' was not found");
+        using var stream = _starkidAssembly.GetManifestResourceStream("StarKid.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'StarKid.Static." + filePath + "' was not found");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }

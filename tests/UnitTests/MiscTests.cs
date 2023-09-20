@@ -1,11 +1,11 @@
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 public class MiscTests
 {
     [Fact]
     public void OnlyGeneratesAttributes() {
         var source = @"
-using Recline;
+using StarKid;
 
 class C1 {}
 ";

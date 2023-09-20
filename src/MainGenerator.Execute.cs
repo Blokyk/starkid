@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis.Diagnostics;
-using Recline.Generator.Model;
+using StarKid.Generator.Model;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 public partial class MainGenerator
 {
@@ -14,13 +14,13 @@ public partial class MainGenerator
         var cmdDescCode = CodeGenerator.ToSourceCode(rootGroup, usings, config);
 
         spc.AddSource(
-            "Recline_CmdDescDynamic.g.cs",
+            "StarKid_CmdDescDynamic.g.cs",
             SourceText.From(cmdDescCode, Encoding.UTF8)
         );
 
         spc.AddSource(
-            "Recline_ReclineProgram.g.cs",
-            SourceText.From(_reclineProgramCode, Encoding.UTF8)
+            "StarKid_StarKidProgram.g.cs",
+            SourceText.From(_starkidProgramCode, Encoding.UTF8)
         );
 
         SymbolInfoCache.FullReset();

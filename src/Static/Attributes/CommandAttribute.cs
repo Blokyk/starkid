@@ -1,4 +1,4 @@
-namespace Recline
+namespace StarKid
 {
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public class CommandAttribute : System.Attribute

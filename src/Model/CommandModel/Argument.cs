@@ -1,4 +1,4 @@
-namespace Recline.Generator.Model;
+namespace StarKid.Generator.Model;
 
 public sealed record Argument(ParserInfo Parser, MinimalParameterInfo BackingSymbol, string? DefaultValueExpr) {
     public string? Description { get; set; }

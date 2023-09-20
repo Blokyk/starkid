@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal enum CLIMemberKind {
     None,

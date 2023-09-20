@@ -1,7 +1,7 @@
-using Recline.Generator.Model;
+using StarKid.Generator.Model;
 using System.Diagnostics;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 public class ParserFinder
 {

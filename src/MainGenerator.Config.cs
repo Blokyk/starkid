@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
-public record ReclineConfig(
+public record StarKidConfig(
     int ColumnLength,
     int HelpExitCode,
     bool AllowRepeatingOptions,
@@ -11,14 +11,14 @@ public record ReclineConfig(
 
 public partial class MainGenerator
 {
-    public const string COLUMN_LENGTH_PROP_NAME = "Recline_Help_MaxCharsPerLine";
-    public const string HELP_EXIT_CODE_PROP_NAME = "Recline_Help_ExitCode";
-    public const string REPEATED_OPT_PROP_NAME = "Recline_AllowRepeatingOptions";
+    public const string COLUMN_LENGTH_PROP_NAME = "StarKid_Help_MaxCharsPerLine";
+    public const string HELP_EXIT_CODE_PROP_NAME = "StarKid_Help_ExitCode";
+    public const string REPEATED_OPT_PROP_NAME = "StarKid_AllowRepeatingOptions";
 
     public const int DEFAULT_COLUMN_LENGTH = 80, DEFAULT_HELP_EXIT_CODE = 1;
     public const bool DEFAULT_REPEATED_OPT = false;
 
-    static ReclineConfig ParseConfig(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, SourceProductionContext spc) {
+    static StarKidConfig ParseConfig(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, SourceProductionContext spc) {
         int columnLength
             = GetProp(
                 COLUMN_LENGTH_PROP_NAME,

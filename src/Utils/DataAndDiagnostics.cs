@@ -1,4 +1,4 @@
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
 {

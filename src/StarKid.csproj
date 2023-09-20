@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Recline.UnitTests"/>
+    <InternalsVisibleTo Include="StarKid.UnitTests"/>
   </ItemGroup>
 
   <ItemGroup>
@@ -40,11 +40,11 @@
 
   <!-- Nuget info -->
   <PropertyGroup>
-    <PackageId>Recline</PackageId>
+    <PackageId>StarKid</PackageId>
     <Version>0.3.2</Version>
     <Authors>Blokyk</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/blokyk/recline</RepositoryUrl>
+    <RepositoryUrl>https://github.com/blokyk/starkid</RepositoryUrl>
     <PackageReadmeFile>info/README.md</PackageReadmeFile>
     <PackageType>Dependency</PackageType>
 
@@ -73,7 +73,7 @@
 
   <!-- Make sure the .props file (with the <CompilerVisible...> stuff) is included in the package -->
   <ItemGroup>
-    <None Include="Recline.props" Pack="true" PackagePath="build" Condition="Exists('./Recline.props')" />
-    <None Include="Recline.targets" Pack="true" PackagePath="build" Condition="Exists('./Recline.targets')" />
+    <None Include="StarKid.props" Pack="true" PackagePath="build" Condition="Exists('./StarKid.props')" />
+    <None Include="StarKid.targets" Pack="true" PackagePath="build" Condition="Exists('./StarKid.targets')" />
   </ItemGroup>
 </Project>

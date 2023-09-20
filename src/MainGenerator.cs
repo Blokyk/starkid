@@ -1,16 +1,16 @@
-using Recline.Generator.Model;
+using StarKid.Generator.Model;
 
-namespace Recline.Generator;
+namespace StarKid.Generator;
 
 [Generator(LanguageNames.CSharp)]
 public partial class MainGenerator : IIncrementalGenerator
 {
     private static readonly string _cmdGroupAttributeName = typeof(CommandGroupAttribute).FullName!;
 
-    private static readonly string _reclineProgramCode;
+    private static readonly string _starkidProgramCode;
 
     static MainGenerator() {
-        _reclineProgramCode = Utils.GetStaticResource("ReclineProgram.nocs");
+        _starkidProgramCode = Utils.GetStaticResource("StarKidProgram.nocs");
 
         var sb = new StringBuilder();
 
@@ -43,7 +43,7 @@ using System;
         context.RegisterPostInitializationOutput(
             static postInitCtx =>
                 postInitCtx.AddSource(
-                    "Recline_Attributes.g.cs",
+                    "StarKid_Attributes.g.cs",
                     SourceText.From(_attributeCode, Encoding.UTF8)
                 ));
 
@@ -79,7 +79,7 @@ using System;
                 )
                 .SelectMany((arr, _) => arr)
                 .Collect()
-                .WithTrackingName("recline_collect_usings");
+                .WithTrackingName("starkid_collect_usings");
 
         // todo: separate this into three pipelines:
         //      - ParseWith resolution with FAWMN (returns a map between symbol name and parser)
@@ -108,7 +108,7 @@ using System;
                         return wrapper;
                     }
                 )
-                .WithTrackingName("recline_group_building");
+                .WithTrackingName("starkid_group_building");
 
         var groupTreeSource
             = groupsSource
@@ -120,7 +120,7 @@ using System;
                         return wrapper;
                     }
                 )
-                .WithTrackingName("recline_binding");
+                .WithTrackingName("starkid_binding");
 
         var globalConfigSource = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
 
@@ -143,14 +143,14 @@ using System;
                 )
         );
 
-        var reclineDiagnosticSource
+        var starkidDiagnosticSource
             = groupsSource
                 .Append(groupTreeSource)
                 .SelectMany((w, _) => w.GetDiagnostics())
                 .Where(diag => diag.Id != Diagnostics.GiveUp.Id);
 
         context.RegisterSourceOutput(
-            reclineDiagnosticSource,
+            starkidDiagnosticSource,
             static (spc, diag) => spc.ReportDiagnostic(diag)
         );
     }

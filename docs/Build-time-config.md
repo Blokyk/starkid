@@ -1,9 +1,9 @@
-# Build-time Recline options
+# Build-time StarKid options
 
-## `Recline_Help_MaxCharsPerLine` -- Help text maximum column length
+## `StarKid_Help_MaxCharsPerLine` -- Help text maximum column length
 
 Property name:
-    `Recline_Help_MaxCharsPerLine`
+    `StarKid_Help_MaxCharsPerLine`
 
 Purpose:
     Sets the maximum number of characters allowed in each line of the
@@ -21,14 +21,14 @@ Default value: 80 characters
 Example usage:
 ```xml
 <PropertyGroup>
-    <Recline_Help_MaxCharsPerLine>120</Recline_Help_MaxCharsPerLine>
+    <StarKid_Help_MaxCharsPerLine>120</StarKid_Help_MaxCharsPerLine>
 </PropertyGroup>
 ```
 
-## `Recline_Help_ExitCode` -- Exit code for `--help` option
+## `StarKid_Help_ExitCode` -- Exit code for `--help` option
 
 Property name:
-    `Recline_Help_ExitCode`
+    `StarKid_Help_ExitCode`
 
 Purpose:
     Sets the exit code returned when a user requests the build-in
@@ -42,14 +42,14 @@ Default value: 1
 Example usage:
 ```xml
 <PropertyGroup>
-    <Recline_Help_ExitCode>41</Recline_Help_ExitCode>
+    <StarKid_Help_ExitCode>41</StarKid_Help_ExitCode>
 </PropertyGroup>
 ```
 
-## `Recline_AllowRepeatingOptions` -- Don't complain about repeated options in command lines
+## `StarKid_AllowRepeatingOptions` -- Don't complain about repeated options in command lines
 
 Property name:
-    `Recline_AllowRepeatingOptions`
+    `StarKid_AllowRepeatingOptions`
 
 Purpose:
     By default, the generated parser will emit an error when a user
@@ -66,6 +66,6 @@ Default value: false
 Example usage:
 ```xml
 <PropertyGroup>
-    <Recline_AllowRepeatingOptions>true</Recline_AllowRepeatingOptions>
+    <StarKid_AllowRepeatingOptions>true</StarKid_AllowRepeatingOptions>
 </PropertyGroup>
 ```

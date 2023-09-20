@@ -1,4 +1,4 @@
-namespace Recline.Tests;
+namespace StarKid.Tests;
 
 internal static class Compilation
 {
