@@ -40,8 +40,8 @@
 
   <!-- Nuget info -->
   <PropertyGroup>
-    <PackageId>StarKid</PackageId>
-    <Version>0.3.2</Version>
+    <PackageId>Blokyk.StarKid</PackageId>
+    <Version>0.4</Version>
     <Authors>Blokyk</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/blokyk/starkid</RepositoryUrl>
