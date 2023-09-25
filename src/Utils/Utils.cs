@@ -36,7 +36,7 @@ internal static class Utils
 
     private static readonly Assembly _starkidAssembly = typeof(Utils).Assembly;
     public static string GetStaticResource(string filePath) {
-        using var stream = _starkidAssembly.GetManifestResourceStream("StarKid.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'StarKid.Static." + filePath + "' was not found");
+        using var stream = _starkidAssembly.GetManifestResourceStream("Blokyk.StarKid.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'StarKid.Static." + filePath + "' was not found");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }

@@ -73,7 +73,7 @@
 
   <!-- Make sure the .props file (with the <CompilerVisible...> stuff) is included in the package -->
   <ItemGroup>
-    <None Include="StarKid.props" Pack="true" PackagePath="build" Condition="Exists('./StarKid.props')" />
-    <None Include="StarKid.targets" Pack="true" PackagePath="build" Condition="Exists('./StarKid.targets')" />
+    <None Include="Blokyk.StarKid.props" Pack="true" PackagePath="build" Condition="Exists('./Blokyk.StarKid.props')" />
+    <None Include="Blokyk.StarKid.targets" Pack="true" PackagePath="build" Condition="Exists('./Blokyk.StarKid.targets')" />
   </ItemGroup>
 </Project>

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\StarKid.csproj"
+    <ProjectReference Include="..\src\Blokyk.StarKid.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
     />

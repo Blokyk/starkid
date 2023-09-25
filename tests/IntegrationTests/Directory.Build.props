@@ -14,11 +14,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/StarKid.csproj"
+        <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/Blokyk.StarKid.csproj"
             OutputItemType="Analyzer"
             ReferenceOutputAssembly="false"
         />
-        <Import Include="$(MSBuildThisFileDirectory)../../src/StarKid.props" />
+        <Import Include="$(MSBuildThisFileDirectory)../../src/Blokyk.StarKid.props" />
 
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
         <PackageReference Include="xunit" Version="2.5.0" />
