@@ -16,7 +16,7 @@ internal static class CodegenHelpers
             GetParsingExpression(arg.Parser, arg.DefaultValueExpr),
             arg.Name,
             arg.Type.IsNullable,
-            arg.Validators
+            arg.Validators.Array
         );
 
     public static string GetFullExpression(Option opt)
@@ -24,7 +24,7 @@ internal static class CodegenHelpers
             GetParsingExpression(opt.Parser, opt.DefaultValueExpr),
             opt.Name,
             opt.Type.IsNullable,
-            opt.Validators
+            opt.Validators.Array
         );
 
     public static string GetParsingExpression(ParserInfo parser, string? defaultValueExpr) {

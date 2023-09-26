@@ -242,7 +242,7 @@ internal sealed class GroupBuilder
         if (!TryGetParser(attrInfo.ParseWith, type, symbol, out var parser))
             return false;
 
-        if (!TryGetValidators(attrInfo.ValidateWithList, type, symbol, out var validators))
+        if (!TryGetValidators(attrInfo.ValidateWithList.Array, type, symbol, out var validators))
             return false;
 
         var typeMinInfo = MinimalTypeInfo.FromSymbol(type);
@@ -257,7 +257,7 @@ internal sealed class GroupBuilder
                 backingSymbol,
                 defaultValStr
             ) {
-                Validators = validators,
+                Validators = validators.ToImmutableValueArray(),
                 Description = docInfo?.Summary
             };
 
@@ -274,7 +274,7 @@ internal sealed class GroupBuilder
             backingSymbol,
             defaultValStr
         ) {
-            Validators = validators,
+            Validators = validators.ToImmutableValueArray(),
             Description = docInfo?.Summary
         };
 
@@ -294,7 +294,7 @@ internal sealed class GroupBuilder
         if (!TryGetParser(attrList.ParseWith, parserTargetType, param, out var parser))
             return false;
 
-        if (!TryGetValidators(attrList.ValidateWithList, param.Type, param, out var validators))
+        if (!TryGetValidators(attrList.ValidateWithList.Array, param.Type, param, out var validators))
             return false;
 
         var paramMinInfo = MinimalParameterInfo.FromSymbol(param);
@@ -304,7 +304,7 @@ internal sealed class GroupBuilder
             paramMinInfo,
             defaultVal
         ) {
-            Validators = validators,
+            Validators = validators.ToImmutableValueArray(),
         };
 
         return true;

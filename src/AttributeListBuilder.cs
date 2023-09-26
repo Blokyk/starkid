@@ -165,7 +165,7 @@ internal class AttributeListBuilder
             }
         }
 
-        attribList = new(group, cmd, opt, parseWith, validateWithList.ToImmutable(), symbol is IParameterSymbol);
+        attribList = new(group, cmd, opt, parseWith, validateWithList.ToImmutableValueArray(), symbol is IParameterSymbol);
 
         return (isValid, attribList);
     }

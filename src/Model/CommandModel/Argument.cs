@@ -10,5 +10,5 @@ public sealed record Argument(ParserInfo Parser, MinimalParameterInfo BackingSym
 
     public bool IsParams => BackingSymbol.IsParams;
 
-    public ImmutableArray<ValidatorInfo> Validators { get; set; }
+    public ImmutableValueArray<ValidatorInfo> Validators { get; set; }
 }

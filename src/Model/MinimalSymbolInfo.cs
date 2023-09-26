@@ -34,7 +34,7 @@ public record MinimalTypeInfo(
     public override string ToString() => '@' + FullName;
 
     public SpecialType SpecialType { get; init; } = SpecialType.None;
-    public ImmutableArray<MinimalTypeInfo> TypeArguments { get; init; } = ImmutableArray<MinimalTypeInfo>.Empty;
+    public ImmutableValueArray<MinimalTypeInfo> TypeArguments { get; init; } = ImmutableValueArray<MinimalTypeInfo>.Empty;
 
     public bool IsGeneric => TypeArguments.Length != 0;
 
@@ -53,8 +53,8 @@ public record MinimalTypeInfo(
 
         var typeArgs
             = type is INamedTypeSymbol namedType
-            ? namedType.TypeArguments.Select(getTypeArgSymbol).ToImmutableArray()
-            : ImmutableArray<MinimalTypeInfo>.Empty;
+            ? namedType.TypeArguments.Select(getTypeArgSymbol).ToImmutableValueArray()
+            : ImmutableValueArray<MinimalTypeInfo>.Empty;
 
         var fullName = SymbolInfoCache.GetFullTypeName(type);
         string shortName;
@@ -84,7 +84,7 @@ public record MinimalTypeInfo(
             return new MinimalTypeInfo(
                 t.Name, null, t.Name, false, MinimalLocation.Default) {
                 SpecialType = SpecialType.None,
-                TypeArguments = ImmutableArray<MinimalTypeInfo>.Empty
+                TypeArguments = ImmutableValueArray<MinimalTypeInfo>.Empty
             };
         }
     }
@@ -165,8 +165,8 @@ public sealed record MinimalMethodInfo(
     string Name,
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo ReturnType,
-    ImmutableArray<MinimalParameterInfo> Parameters,
-    ImmutableArray<MinimalTypeInfo> TypeParameters,
+    ImmutableValueArray<MinimalParameterInfo> Parameters,
+    ImmutableValueArray<MinimalTypeInfo> TypeParameters,
     MinimalLocation Location
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
     public override string ToString() => ContainingType!.ToString() + ".@" + Name;
@@ -179,8 +179,8 @@ public sealed record MinimalMethodInfo(
             symbol.Name,
             SymbolInfoCache.GetTypeInfo(symbol.ContainingType),
             SymbolInfoCache.GetTypeInfo(symbol.ReturnType),
-            symbol.Parameters.Select(MinimalParameterInfo.FromSymbol).ToImmutableArray(),
-            symbol.TypeArguments.Select(MinimalTypeInfo.FromSymbol).ToImmutableArray(),
+            symbol.Parameters.Select(MinimalParameterInfo.FromSymbol).ToImmutableValueArray(),
+            symbol.TypeArguments.Select(MinimalTypeInfo.FromSymbol).ToImmutableValueArray(),
             symbol.GetDefaultLocation()
         );
 
@@ -196,8 +196,8 @@ public sealed record MinimalMethodInfo(
     // doesn't use GetHashCode to take advantage of SpanHelpers.SequenceEqual's better perf
     public bool Equals(MinimalMethodInfo? other)
         => base.Equals(other)
-        && Parameters.AsSpan().SequenceEqual(other.Parameters.AsSpan())
-        && TypeParameters.AsSpan().SequenceEqual(other.TypeParameters.AsSpan());
+        && Parameters.Equals(other.Parameters)
+        && TypeParameters.Equals(other.TypeParameters);
 }
 
 [DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
