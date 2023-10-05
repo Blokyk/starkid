@@ -274,7 +274,7 @@ internal static partial class StarKidProgram
             );
         } catch (Exception e) {
             throw new FormatException(
-                "Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "' :" + e.Message
+                "Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "': " + e.Message
             );
         }
     }
