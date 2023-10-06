@@ -55,8 +55,6 @@ public static partial class CollectionExtensions
 {
     public static ImmutableValueArray<T> ToImmutableValueArray<T>(this IEnumerable<T> source, IEqualityComparer<T> comparer) => new(source.ToImmutableArray(), comparer);
     public static ImmutableValueArray<T> ToImmutableValueArray<T>(this IEnumerable<T> source) => new(source.ToImmutableArray());
-    public static ImmutableValueArray<T> ToImmutableValueArray<T>(this ImmutableArray<T> source, IEqualityComparer<T> comparer) => new(source, comparer);
-    public static ImmutableValueArray<T> ToImmutableValueArray<T>(this ImmutableArray<T> source) => new(source);
     public static ImmutableValueArray<T> ToImmutableValueArray<T>(this ImmutableArray<T>.Builder builder, IEqualityComparer<T> comparer) => new(builder.ToImmutable(), comparer);
     public static ImmutableValueArray<T> ToImmutableValueArray<T>(this ImmutableArray<T>.Builder builder) => new(builder.ToImmutable());
 

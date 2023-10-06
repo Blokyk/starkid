@@ -31,7 +31,10 @@ public record MinimalTypeInfo(
     bool IsNullable,
     MinimalLocation Location
 ) : MinimalSymbolInfo(Name, ContainingType, Location) {
-    public override string ToString() => '@' + FullName;
+    public override string ToString()
+        => SpecialType is not SpecialType.None
+        ? FullName
+        : '@' + FullName;
 
     public SpecialType SpecialType { get; init; } = SpecialType.None;
     public ImmutableValueArray<MinimalTypeInfo> TypeArguments { get; init; } = ImmutableValueArray<MinimalTypeInfo>.Empty;
@@ -53,7 +56,7 @@ public record MinimalTypeInfo(
 
         var typeArgs
             = type is INamedTypeSymbol namedType
-            ? namedType.TypeArguments.Select(getTypeArgSymbol).ToImmutableValueArray()
+            ? namedType.TypeArguments.Select(SymbolInfoCache.GetTypeInfo).ToImmutableValueArray()
             : ImmutableValueArray<MinimalTypeInfo>.Empty;
 
         var fullName = SymbolInfoCache.GetFullTypeName(type);
@@ -76,17 +79,6 @@ public record MinimalTypeInfo(
             SpecialType = type.SpecialType,
             TypeArguments = typeArgs,
         };
-
-        static MinimalTypeInfo getTypeArgSymbol(ITypeSymbol t) {
-            if (t.TypeKind is not TypeKind.TypeParameter)
-                return SymbolInfoCache.GetTypeInfo(t);
-
-            return new MinimalTypeInfo(
-                t.Name, null, t.Name, false, MinimalLocation.Default) {
-                SpecialType = SpecialType.None,
-                TypeArguments = ImmutableValueArray<MinimalTypeInfo>.Empty
-            };
-        }
     }
 
     public override int GetHashCode() =>
@@ -97,7 +89,7 @@ public record MinimalTypeInfo(
                     SpecialType.GetHashCode(),
                     TypeArguments.GetHashCode()
                 ),
-                IsNullable ? 0 : 1
+                IsNullable ? 1 : 0
             )
         );
 }
@@ -135,7 +127,7 @@ public sealed record MinimalTypeParameterInfo(
     public static MinimalTypeParameterInfo FromSymbol(ITypeParameterSymbol type)
         => new(type.Name, SymbolUtils.IsNullable(type), type.GetDefaultLocation());
 
-    public override int GetHashCode() => Utils.CombineHashCodes(Name.GetHashCode(), IsNullable ? 0 : 1);
+    public override int GetHashCode() => Utils.CombineHashCodes(Name.GetHashCode(), IsNullable ? 1 : 0);
 }
 
 [DebuggerDisplay("{ContainingType!.ToString(),nq} . {SymbolUtils.GetSafeName(Name),nq}")]

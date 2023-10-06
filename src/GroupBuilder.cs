@@ -257,7 +257,7 @@ internal sealed class GroupBuilder
                 backingSymbol,
                 defaultValStr
             ) {
-                Validators = validators.ToImmutableValueArray(),
+                Validators = validators.ToValueArray(),
                 Description = docInfo?.Summary
             };
 
@@ -274,7 +274,7 @@ internal sealed class GroupBuilder
             backingSymbol,
             defaultValStr
         ) {
-            Validators = validators.ToImmutableValueArray(),
+            Validators = validators.ToValueArray(),
             Description = docInfo?.Summary
         };
 
@@ -304,7 +304,7 @@ internal sealed class GroupBuilder
             paramMinInfo,
             defaultVal
         ) {
-            Validators = validators.ToImmutableValueArray(),
+            Validators = validators.ToValueArray(),
         };
 
         return true;
