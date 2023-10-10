@@ -547,11 +547,11 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor NotValidValidatorType
+    public static readonly DiagnosticDescriptor UnvalidatableType
         = new(
             "CLI501",
-            "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
-            "Validator's containing type '{0}' can't be an array, pointer, or unbound generic type",
+            "Can't use a validator with an array, pointer, or unbound generic type",
+            "Can't use a validator with an array, pointer, or unbound generic type",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -610,8 +610,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ValidatorWrongParameter
         = new(
             "CLI505",
-            "Validator methods must take a single parameter of type '{0}'",
-            "Validator methods must take a single parameter of type '{0}'",
+            "Validator methods for this value must take a single parameter of type '{0}'",
+            "Validator methods for this value must take a single parameter of type '{0}'",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true

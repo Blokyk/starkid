@@ -47,7 +47,7 @@ public class ValidatorFinder
 
     ValidatorInfo GetValidatorCoreWithoutProperty(ValidateWithAttribute attr, ITypeSymbol type) {
         if (type is not INamedTypeSymbol argType)
-            return new ValidatorInfo.Invalid(Diagnostics.NotValidValidatorType, type.GetErrorName());
+            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, type.GetErrorName());
 
         var members = _model.GetMemberGroup(attr.ValidatorNameSyntaxRef.GetSyntax());
 
@@ -82,7 +82,7 @@ public class ValidatorFinder
 
     ValidatorInfo GetValidatorCore(ValidateWithAttribute attr, ITypeSymbol type) {
         if (type is not INamedTypeSymbol argType)
-            return new ValidatorInfo.Invalid(Diagnostics.NotValidValidatorType, type.GetErrorName());
+            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, type.GetErrorName());
 
         var memberSymbolInfo = _model.GetSymbolInfo(attr.ValidatorNameSyntaxRef.GetSyntax());
 
