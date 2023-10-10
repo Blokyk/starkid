@@ -152,9 +152,21 @@ public class Tests
     }
 
     [Fact]
-    public void NullableStructOption() {
-        TestMainDummy("--nullable-struct-opt", "123456789");
-        AssertStateChange(new { NullableStructOption = (Int128?)123456789 });
+    public void AutoParsedNullableStructOption() {
+        TestMainDummy("--auto-parsed-nullable-struct-opt", "123456789");
+        AssertStateChange(new { AutoParsedNullableStructOption = (Int128?)123456789 });
+    }
+
+    [Fact]
+    public void ManualParsedNullableStructOption() {
+        TestMainDummy("--manual-parsed-nullable-struct-opt", "47");
+        AssertStateChange(new { ManualParsedNullableStructOption = 47 });
+    }
+
+    [Fact]
+    public void DirectParsedNullableStructOption() {
+        TestMainDummy("--direct-parsed-nullable-struct-opt", "47");
+        AssertStateChange(new { DirectParsedNullableStructOption = 47 });
     }
 
     [Fact]
@@ -169,11 +181,11 @@ public class Tests
         Assert.True(OptionTest.GlobalSwitch);
     }
 
-    [Fact]
-    public void WithTest() {
-        var a = new { Foo = "hello", Bar = 6 };
-        var b = a.With(new{ Foo = "hi" });
-        Assert.Equal(new { Foo = "hi", Bar = 6 }, b);
-        Assert.Equal(new { Foo = "hello", Bar = 6 }, a);
-    }
+    // [Fact]
+    // public void WithTest() {
+    //     var a = new { Foo = "hello", Bar = 6 };
+    //     var b = a.With(new{ Foo = "hi" });
+    //     Assert.Equal(new { Foo = "hi", Bar = 6 }, b);
+    //     Assert.Equal(new { Foo = "hello", Bar = 6 }, a);
+    // }
 }

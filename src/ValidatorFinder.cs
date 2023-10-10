@@ -158,7 +158,18 @@ public class ValidatorFinder
             return false;
         }
 
-        if (!_implicitConversionsCache.GetValue(argType, method.Parameters[0].Type)) {
+        var coreType = SymbolUtils.GetCoreTypeOfNullable(argType);
+
+        if (coreType is not INamedTypeSymbol) {
+            validator = new ValidatorInfo.Invalid(
+                Diagnostics.UnvalidatableType,
+                argType.GetErrorName()
+            );
+
+            return false;
+        }
+
+        if (!_implicitConversionsCache.GetValue(coreType, method.Parameters[0].Type)) {
             validator = new ValidatorInfo.Invalid(
                 Diagnostics.ValidatorWrongParameter,
                 argType.GetErrorName()

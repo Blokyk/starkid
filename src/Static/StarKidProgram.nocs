@@ -263,7 +263,30 @@ internal static partial class StarKidProgram
         return val;
     }
 
+    private static Nullable<T> ThrowIfTryParseNotTrue<T>(BoolOut<Nullable<T>> tryParse, string arg) where T : struct {
+        if (!tryParse(arg, out var val))
+            throw new FormatException("Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'");
+
+        return val;
+    }
+
     private static T ThrowIfParseError<T>(Func<string, T> parse, string arg) {
+        try {
+            return parse(arg);
+        } catch (EnvironmentExitException) {
+            throw;
+        } catch (Exception e) when (IsDefaultException(e)) {
+            throw new FormatException(
+                "Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "'"
+            );
+        } catch (Exception e) {
+            throw new FormatException(
+                "Couldn't parse '" + (arg ?? "") + "' as an argument of type '" + GetFriendlyNameOf(typeof(T)) + "': " + e.Message
+            );
+        }
+    }
+
+    private static Nullable<T> ThrowIfParseError<T>(Func<string, Nullable<T>> parse, string arg) where T : struct {
         try {
             return parse(arg);
         } catch (EnvironmentExitException) {
@@ -308,15 +331,6 @@ internal static partial class StarKidProgram
     private static void ThrowOptionAlreadySpecified(string optName)
         => ExitWithError("Option '{0}' has already been specified", optName);
 
-    private static T ThrowIfNotValid<T>(T val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
-        var errorMessage = isValid(val);
-
-        if (!String.IsNullOrEmpty(errorMessage))
-            throw new Exception(errorMessage);
-
-        return val;
-    }
-
     private static T ThrowIfNotValid<T>(T val, Action<T> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         try {
             isValid(val);
@@ -341,18 +355,6 @@ internal static partial class StarKidProgram
         return val;
     }
 
-    private static T? ThrowIfNotValidNullable<T>(T? val, Func<T, string?> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
-        if (val is null)
-            return val;
-
-        var errorMessage = isValid(val);
-
-        if (!String.IsNullOrEmpty(errorMessage))
-            throw new Exception(errorMessage);
-
-        return val;
-    }
-
     private static T? ThrowIfNotValidNullable<T>(T? val, Action<T> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcName = "") {
         try {
             if (val is not null)
@@ -370,8 +372,44 @@ internal static partial class StarKidProgram
         return val;
     }
 
+    private static Nullable<T> ThrowIfNotValidNullable<T>(
+        Nullable<T> val,
+        Action<T> isValid,
+        string argName,
+        string? message,
+        [CallerArgumentExpression("isValid")] string funcName = ""
+    ) where T : struct {
+        try {
+            if (val.HasValue)
+                isValid(val.Value);
+        }
+        catch (EnvironmentExitException) {
+            throw;
+        }
+        catch (Exception e) when (message != null && IsDefaultException(e)) {
+            throw new Exception(message);
+        } catch {
+            throw;
+        }
+
+        return val;
+    }
+
     private static T? ThrowIfNotValidNullable<T>(T? val, Func<T, bool> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcExpr = "") {
         if (val is not null && !isValid(val))
+            throw new Exception(message ?? "'" + funcExpr + "' returned false");
+
+        return val;
+    }
+
+    private static Nullable<T> ThrowIfNotValidNullable<T>(
+        Nullable<T> val,
+        Func<T, bool> isValid,
+        string argName,
+        string? message,
+        [CallerArgumentExpression("isValid")] string funcExpr = ""
+    ) where T : struct {
+        if (val.HasValue && !isValid(val.Value))
             throw new Exception(message ?? "'" + funcExpr + "' returned false");
 
         return val;

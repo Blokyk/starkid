@@ -20,23 +20,6 @@ internal static partial class Utils
         return res;
     }
 
-    public static object GetHostState() {
-        return new {
-            OptionTest.SimpleSwitch,
-            OptionTest.SwitchProp,
-            OptionTest.TrueSwitch,
-            OptionTest.ParsedSwitch,
-            OptionTest.GlobalSwitch,
-            OptionTest.StringOption,
-            OptionTest.IntOption,
-            OptionTest.AutoLibOption,
-            OptionTest.EnumOption,
-            OptionTest.ParsedStringOption,
-            OptionTest.ManualLibOption,
-            OptionTest.ManualEnumOption,
-            OptionTest.ManualFooOption,
-            OptionTest.NullableStructOption,
-            OptionTest.ThrowingOption
-        };
-    }
+    public static object GetHostState()
+        => OptionTest.GetState();
 }

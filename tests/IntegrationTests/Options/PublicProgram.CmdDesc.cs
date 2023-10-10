@@ -57,8 +57,14 @@ internal static partial class StarKidProgram
             ManualFooOption = default;
             hasManualFooOptionActionBeenTriggered = false;
 
-            NullableStructOption = default;
-            hasNullableStructOptionActionBeenTriggered = false;
+            AutoParsedNullableStructOption = default;
+            hasAutoParsedNullableStructOptionActionBeenTriggered = false;
+
+            ManualParsedNullableStructOption = default;
+            hasManualParsedNullableStructOptionActionBeenTriggered = false;
+
+            DirectParsedNullableStructOption = default;
+            hasDirectParsedNullableStructOptionActionBeenTriggered = false;
 
             // ThrowingOption = "this shouldn't be set, remember?";
             hasThrowingOptionActionBeenTriggered = false;

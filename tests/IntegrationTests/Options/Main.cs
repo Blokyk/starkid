@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 using StarKid.Tests;
@@ -7,6 +6,10 @@ namespace StarKid.Tests.Options;
 
 [CommandGroup("test")]
 public static partial class OptionTest {
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // edit Utils.cs and PublicProgram.CmdDesc.cs when adding new options!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     [Command("dummy")] public static void Dummy() { }
 
     [Option("switch")] public static bool SimpleSwitch;
@@ -46,15 +49,45 @@ public static partial class OptionTest {
     [ParseWith(nameof(AsciiString.From))]
     [Option("manual-user-opt")] public static AsciiString ManualFooOption { get; set; }
 
-    [Option("nullable-struct-opt")] public static Int128? NullableStructOption { get; set; }
+    [Option("auto-parsed-nullable-struct-opt")] public static Int128? AutoParsedNullableStructOption { get; set; }
+
+    public static int? ParseNullableInt(string s) => Int32.TryParse(s, out var res) ? res : default;
+    [Option("manual-parsed-nullable-struct-opt")]
+    [ParseWith(nameof(ParseNullableInt))] public static int? ManualParsedNullableStructOption { get; set; }
+
+    // ensure parser nullability variance
+    [Option("direct-parsed-nullable-struct-opt")]
+    [ParseWith(nameof(Int32.Parse))] public static int? DirectParsedNullableStructOption { get; set; }
+
 
     // todo: ParseWith(TryParse)
-    // todo: validators
+    // todo: validators (w/ nullability variance, like Int32.IsPositive with a int?)
 
     [Option("throwing-setter")] public static string ThrowingOption {
         get => null!;
         set => throw new InvalidOperationException("Faulty setter!");
     }
+
+    public static object GetState()
+        => new {
+            SimpleSwitch,
+            SwitchProp,
+            TrueSwitch,
+            ParsedSwitch,
+            GlobalSwitch,
+            StringOption,
+            IntOption,
+            AutoLibOption,
+            EnumOption,
+            ParsedStringOption,
+            ManualLibOption,
+            ManualEnumOption,
+            ManualFooOption,
+            AutoParsedNullableStructOption,
+            ManualParsedNullableStructOption,
+            DirectParsedNullableStructOption,
+            ThrowingOption
+        };
 }
 
 public static partial class OptionTest {
@@ -65,25 +98,5 @@ public static partial class OptionTest {
         [Option("cmd-opt-with-default")] int defaultOpt = 5
     ) {
         Dummy2State = new { defaultOpt };
-    }
-}
-
-public readonly struct AsciiString {
-    public string InternalString { get; }
-    private AsciiString(string s) => InternalString = s;
-    public static AsciiString From(string s) {
-        if (TryParse(s, out var res))
-            return res;
-
-        var firstNonAsciiChar = s.FirstOrDefault(c => !Char.IsAscii(c));
-        throw new InvalidOperationException("Char '" + firstNonAsciiChar + "' is not an ASCII character");
-    }
-
-    public static bool TryParse(string s, [MaybeNullWhen(false)] out AsciiString ascii) {
-        ascii = default;
-        if (!s.All(Char.IsAscii))
-            return false;
-        ascii = new(s);
-        return true;
     }
 }

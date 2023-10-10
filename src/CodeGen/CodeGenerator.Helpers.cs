@@ -44,11 +44,16 @@ internal static class CodegenHelpers
             expr = "__arg is null ? true : ";
         }
 
+        static string getNonNullableTypeName(MinimalTypeInfo type)
+            => type is MinimalNullableValueTypeInfo nullableInfo
+             ? getNonNullableTypeName(nullableInfo.ValueType)
+             : type.FullName;
+
         expr += parser switch {
             ParserInfo.Identity => "__arg",
-            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + targetType.FullName + ">(" + dm.FullName + ", __arg ?? \"\")",
-            ParserInfo.Constructor ctor => "new " + ctor.TargetType.FullName + "(__arg ?? \"\")",
-            ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + targetType.FullName + ">(" + bom.FullName + ", __arg ?? \"\")",
+            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + getNonNullableTypeName(targetType) + ">(" + dm.FullName + ", __arg ?? \"\")",
+            ParserInfo.Constructor ctor => "new " + getNonNullableTypeName(ctor.TargetType) + "(__arg ?? \"\")",
+            ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + getNonNullableTypeName(targetType) + ">(" + bom.FullName + ", __arg ?? \"\")",
             _ => throw new Exception(parser.GetType().Name + " is not a supported ParserInfo type."),
         };
 
@@ -81,10 +86,10 @@ internal static class CodegenHelpers
                     throw new Exception(validator.GetType().Name + " is not a supported ValidatorInfo type.");
             }
 
-            var throwFunc = isNullable ? "ThrowIfNotValidNullable(" : "ThrowIfNotValid(";
+            // var throwFunc = isNullable ? "ThrowIfNotValidNullable(" : "ThrowIfNotValid(";
 
             currExpr =
-                throwFunc +
+                "ThrowIfNotValid(" +
                     $"{currExpr}, " +
                     $"{funcExpr}, " +
                     $"\"{argName}\", " +

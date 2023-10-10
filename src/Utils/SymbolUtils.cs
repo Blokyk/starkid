@@ -20,10 +20,24 @@ internal static class SymbolUtils
             TypeArguments: [ {SpecialType: SpecialType.System_Char} ],
         };
 
+    // Nullable<Nullable<int>> is not a valid type (Nullable<T> has T : nonnull)
+    public static bool IsNullableValue(ITypeSymbol type)
+        => type is INamedTypeSymbol { ConstructedFrom.SpecialType: SpecialType.System_Nullable_T };
+
     public static bool IsNullable(ITypeSymbol type)
         => type.IsReferenceType
         ?  type.NullableAnnotation == NullableAnnotation.Annotated
-        :  type is INamedTypeSymbol { ConstructedFrom.SpecialType: SpecialType.System_Nullable_T };
+        :  IsNullableValue(type);
+
+    public static ITypeSymbol GetCoreTypeOfNullable(INamedTypeSymbol type) {
+        if (type.TypeParameters.Length != 1)
+            return type;
+
+        if (type.ConstructedFrom.SpecialType is SpecialType.System_Nullable_T)
+            return type.TypeArguments[0];
+
+        return type;
+    }
 
     public static string GetRawName(ISymbol symbol) {
         if (symbol is IArrayTypeSymbol arrayTypeSymbol) {

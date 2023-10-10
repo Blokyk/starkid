@@ -46,6 +46,8 @@ public record MinimalTypeInfo(
             return MinimalArrayTypeInfo.FromSymbol(arrType);
         if (type is ITypeParameterSymbol paramType)
             return MinimalTypeParameterInfo.FromSymbol(paramType);
+        if (type is INamedTypeSymbol { ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } nullableType)
+            return MinimalNullableValueTypeInfo.FromSymbol(nullableType);
 
         MinimalTypeInfo? containingType = null;
 
@@ -128,6 +130,30 @@ public sealed record MinimalTypeParameterInfo(
         => new(type.Name, SymbolUtils.IsNullable(type), type.GetDefaultLocation());
 
     public override int GetHashCode() => Utils.CombineHashCodes(Name.GetHashCode(), IsNullable ? 1 : 0);
+}
+
+public sealed record MinimalNullableValueTypeInfo(
+    MinimalTypeInfo ValueType,
+    MinimalLocation Location
+) : MinimalTypeInfo(ValueType.Name + "?", null, "System.Nullable<"+ValueType.FullName+">", true, Location) {
+    public override string ToString() => base.ToString();
+
+    public static MinimalNullableValueTypeInfo FromSymbol(INamedTypeSymbol type) {
+        Debug.Assert(type.IsValueType && type.TypeArguments.Length == 1);
+
+        var innerType = SymbolInfoCache.GetTypeInfo(type.TypeArguments[0]);
+
+        return new(
+            innerType,
+            type.GetDefaultLocation()
+        ) {
+            TypeArguments = ImmutableArray.Create(innerType).ToValueArray(),
+            // if this is an unconstrained Nullable<T>, this will be System_Nullable_T, otherwise it'll be None
+            SpecialType = type.SpecialType
+        };
+    }
+
+    public override int GetHashCode() => ValueType.GetHashCode() + 1;
 }
 
 [DebuggerDisplay("{ContainingType!.ToString(),nq} . {SymbolUtils.GetSafeName(Name),nq}")]

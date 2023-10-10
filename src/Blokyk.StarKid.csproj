@@ -42,6 +42,7 @@
   <PropertyGroup>
     <PackageId>Blokyk.StarKid</PackageId>
     <Version>0.4</Version>
+    <Version Condition="'$(Configuration)'=='Debug'">$([System.DateTime]::UtcNow.ToString(yyyy)).$([System.DateTime]::UtcNow.ToString(MMdd)).$([System.DateTime]::UtcNow.ToString(HHmm)).1$([System.DateTime]::UtcNow.ToString(ss))</Version>
     <Authors>Blokyk</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/blokyk/starkid</RepositoryUrl>
@@ -76,4 +77,10 @@
     <None Include="Blokyk.StarKid.props" Pack="true" PackagePath="build" Condition="Exists('./Blokyk.StarKid.props')" />
     <None Include="Blokyk.StarKid.targets" Pack="true" PackagePath="build" Condition="Exists('./Blokyk.StarKid.targets')" />
   </ItemGroup>
+
+  <Target Name="UpdateLocalPackage" AfterTargets="Pack">
+    <Exec Condition="'$(Configuration)'=='Debug'"
+      Command="nuget add -Source /home/blokyk/.nuget/local '$(OutputPath)$(PackageId).$(Version).nupkg'"
+    />
+  </Target>
 </Project>

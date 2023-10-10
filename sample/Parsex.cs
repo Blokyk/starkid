@@ -12,6 +12,8 @@ enum Greetings { Hey, Hi }
 
 public record Stuff(int i) {
     public bool IsPositive => i > 0;
+
+    public static implicit operator int(Stuff s) => s.i;
 }
 
 /// <summary>
@@ -55,6 +57,11 @@ public static partial class Lotus
     [ValidateWith(nameof(Stuff.IsPositive))]
     [ValidateWith(nameof(FeelLikeIt), "Welp, looks like the oracle didn't like your value")]
     public static Stuff? logLevel = new(5);
+
+    [Option("other-log-level")]
+    [ParseWith(nameof(ParseStuff))]
+    [ValidateWith(nameof(Int32.IsPositive))]
+    public static Stuff logLevel2 = new(0);
 
     private static FileInfo? _outputFile;
     /// <summary>The file to output stuff to, instead of stdin</summary>
@@ -131,6 +138,7 @@ public static partial class Lotus
             Console.WriteLine("Bravely Default, available now in your terminal!");
         return 0;
     }
+
 }
 
 public static partial class Lotus {

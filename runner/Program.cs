@@ -36,9 +36,9 @@ var lotusUnit = createCompUnit("Lotus", lotusTree);
 runDriver("init", parsexPath, unit);
 runDriver("edit", parsex2Path, unit.ReplaceSyntaxTree(parsexTree, parsex2Tree));
 runDriver("paste", dotnetPath, unit.ReplaceSyntaxTree(parsexTree, dotnetTree));
-runDriver("stuff", stuffPath, stuffUnit);
 runDriver("new", lotusPath, lotusUnit);
 runDriver("redo", lotusPath, lotusUnit);
+runDriver("stuff", stuffPath, stuffUnit);
 
 /// <summary>
 /// Runs the generator in the given unit, and, if filename doesn't
