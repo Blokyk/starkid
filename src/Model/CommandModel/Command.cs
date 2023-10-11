@@ -60,5 +60,5 @@ public sealed record Command : InvokableBase, IEquatable<Command> {
         );
 
     public bool Equals(Command? cmd)
-        => cmd is not null && cmd.GetHashCode() == GetHashCode();
+        => (object)this == cmd || (cmd is not null && cmd.GetHashCode() == GetHashCode());
 }

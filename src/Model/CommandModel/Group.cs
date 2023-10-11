@@ -57,7 +57,7 @@ public sealed record Group(
         );
 
     public bool Equals(Group? group)
-        => group is not null && group.GetHashCode() == GetHashCode();
+        => (object)this == group || (group is not null && group.GetHashCode() == GetHashCode());
 
     public override string ToString() => ID;
 }
