@@ -95,7 +95,7 @@ internal sealed partial class CodeGenerator
         }
 
         sb.Append(@"
-        internal const int _requiredArgCount = ").Append(cmd.Arguments.Count(a => a.DefaultValueExpr is not null)).Append(';').Append(@"
+        internal const int _requiredArgCount = ").Append(cmd.Arguments.Count(a => a.DefaultValueExpr is null)).Append(';').Append(@"
         internal static readonly Action<string>[] _posArgActions = ");
 
         if (cmd.Arguments.Count == 0) {
