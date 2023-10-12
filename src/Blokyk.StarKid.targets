@@ -1,0 +1,6 @@
+<Project>
+    <PropertyGroup>
+        <NoWarn Condition="'$(GenerateDocumentationFile)' != 'true'">$(NoWarn);CS1587;CS1591;CS1573</NoWarn>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+</Project>

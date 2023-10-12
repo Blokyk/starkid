@@ -132,9 +132,9 @@ internal static class SymbolUtils
     }
 
     public static DocumentationInfo? GetDocInfo(ISymbol symbol) {
-        var xml = symbol.GetDocumentationCommentXml(preferredCulture: System.Globalization.CultureInfo.InvariantCulture, expandIncludes: true);
-        return xml is null
+        var xml = symbol.GetDocumentationCommentXml(preferredCulture: CultureInfo.InvariantCulture, expandIncludes: true);
+        return String.IsNullOrEmpty(xml)
             ? null
-            : DocumentationParser.ParseDocumentationInfoFrom(xml);
+            : DocumentationParser.ParseDocumentationInfoFrom(xml!);
     }
 }
