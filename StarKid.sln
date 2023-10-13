@@ -13,7 +13,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.Tests", "tests\Unit
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationTests", "IntegrationTests", "{475ACE57-EB80-4032-8F07-43081317F9FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTest.Options", "tests\IntegrationTests\Options\StarKid.IntegrationTest.csproj", "{D5C15F43-A516-4E77-AE4D-0B93E20F8C55}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTests.Options", "tests\IntegrationTests\Options\StarKid.IntegrationTest.csproj", "{D5C15F43-A516-4E77-AE4D-0B93E20F8C55}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTests.OperandParser", "tests\IntegrationTests\OperandParser\StarKid.IntegrationTest.csproj", "{163F823B-6A61-4E90-AE75-063CECD77EB1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,10 +42,15 @@ Global
 		{D5C15F43-A516-4E77-AE4D-0B93E20F8C55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5C15F43-A516-4E77-AE4D-0B93E20F8C55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5C15F43-A516-4E77-AE4D-0B93E20F8C55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{163F823B-6A61-4E90-AE75-063CECD77EB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{163F823B-6A61-4E90-AE75-063CECD77EB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{163F823B-6A61-4E90-AE75-063CECD77EB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{163F823B-6A61-4E90-AE75-063CECD77EB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E0999B1C-EF3A-4EA2-9A25-A6FFECD62C26} = {3F6CE76B-35E8-46CB-9A12-CCAC591DFE7A}
 		{475ACE57-EB80-4032-8F07-43081317F9FF} = {3F6CE76B-35E8-46CB-9A12-CCAC591DFE7A}
 		{D5C15F43-A516-4E77-AE4D-0B93E20F8C55} = {475ACE57-EB80-4032-8F07-43081317F9FF}
+		{163F823B-6A61-4E90-AE75-063CECD77EB1} = {475ACE57-EB80-4032-8F07-43081317F9FF}
 	EndGlobalSection
 EndGlobal
