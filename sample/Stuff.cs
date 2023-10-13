@@ -17,6 +17,12 @@ public static class MyApp {
     [ValidateWith(nameof(Int32.IsPositive))]
     public static int? SomeOpt = null;
 
+    /// <summary>
+    /// announce some name and then maybe numbers idk
+    /// </summary>
+    /// <param name="name">this is a name</param>
+    /// <param name="isQuiet">should it be quiet</param>
+    /// <param name="nums">so numbers</param>
     [Command("announce")]
     public static void Announce(string name, [Option("quiet")] bool isQuiet, [ParseWith(nameof(ParseNegInt))] params int[] nums) {
         var displayName = isQuiet ? name : name.ToUpperInvariant();
