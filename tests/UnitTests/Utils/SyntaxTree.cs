@@ -26,7 +26,7 @@ public static class SyntaxTree
 
         var tree = Of(cleanSource);
 
-        node = tree.GetRoot().FindNode(new TextSpan(startMarkerIdx, endMarkerIdx - startMarkerIdx - 2));
+        node = tree.GetRoot().FindNode(TextSpan.FromBounds(startMarkerIdx, endMarkerIdx - 1));
 
         return tree;
     }

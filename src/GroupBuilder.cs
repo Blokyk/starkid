@@ -222,13 +222,8 @@ internal sealed class GroupBuilder
         char shortName = attrInfo.Option!.Alias;
         string? argName = attrInfo.Option!.ArgName;
         bool isGlobal = attrInfo.Option!.IsGlobal;
-        var docInfo = SymbolUtils.GetDocInfo(symbol);
 
-        bool isValid = IsSymbolValidForOption(symbol, _addDiagnostic);
-
-        var defaultValStr = SymbolUtils.GetDefaultValue(symbol);
-
-        if (!isValid)
+        if (!IsSymbolValidForOption(symbol, _addDiagnostic))
             return false;
 
         MinimalSymbolInfo backingSymbol
@@ -246,6 +241,9 @@ internal sealed class GroupBuilder
             return false;
 
         var typeMinInfo = MinimalTypeInfo.FromSymbol(type);
+
+        var defaultValStr = SymbolUtils.GetDefaultValue(symbol);
+        var docInfo = SymbolUtils.GetDocInfo(symbol);
 
         // if it's a flag
         if (typeMinInfo.SpecialType == SpecialType.System_Boolean) {
@@ -284,8 +282,6 @@ internal sealed class GroupBuilder
     private bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
         arg = null;
 
-        var defaultVal = SymbolUtils.GetDefaultValue(param);
-
         var parserTargetType
             = param.IsParams
             ? (param.Type as IArrayTypeSymbol)!.ElementType
@@ -298,6 +294,7 @@ internal sealed class GroupBuilder
             return false;
 
         var paramMinInfo = MinimalParameterInfo.FromSymbol(param);
+        var defaultVal = SymbolUtils.GetDefaultValue(param);
 
         arg = new Argument(
             parser,
@@ -471,6 +468,8 @@ internal sealed class GroupBuilder
     }
 
     static void TryBindChildDocInfo(ref Option option, DocumentationInfo? docInfo) {
+        // if (docInfo is not null)
+        //     throw new Exception($"TryBindChildDocInfo({option}, {String.Join(", ", docInfo?.ParamSummaries)})");
         if (docInfo is not null && docInfo.ParamSummaries.TryGetValue(option.BackingSymbol.Name, out var paramDesc))
             option.Description = paramDesc;
     }

@@ -45,7 +45,8 @@ using System;
                 postInitCtx.AddSource(
                     "StarKid_Attributes.g.cs",
                     SourceText.From(_attributeCode, Encoding.UTF8)
-                ));
+                )
+        );
 
         var langVersionSource
             = context
