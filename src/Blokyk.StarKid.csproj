@@ -42,7 +42,8 @@
   <PropertyGroup>
     <PackageId>Blokyk.StarKid</PackageId>
     <Version>0.4</Version>
-    <Version Condition="'$(Configuration)'=='Debug'">$([System.DateTime]::UtcNow.ToString(yyyy)).$([System.DateTime]::UtcNow.ToString(MMdd)).$([System.DateTime]::UtcNow.ToString(HHmm)).1$([System.DateTime]::UtcNow.ToString(ss))</Version>
+    <Version Condition="'$(Configuration)'=='Debug'">$([System.DateTime]::UtcNow.ToString(yyyy)).$([System.DateTime]::UtcNow.ToString(MMdd)).$([System.DateTime]::UtcNow.ToString(HHmm)).$([System.DateTime]::UtcNow.ToString(ss))</Version>
+    <Version>$(Version.Replace(".0", "."))</Version>
     <Authors>Blokyk</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/blokyk/starkid</RepositoryUrl>
