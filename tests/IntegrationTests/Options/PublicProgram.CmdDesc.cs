@@ -1,17 +1,17 @@
 #nullable disable
-using static StarKid.Tests.Options.OptionTest; // i'm lazy i don't care
+using static StarKid.Tests.Options.Main; // i'm lazy i don't care
 
 namespace StarKid.Generated;
 
 internal static partial class StarKidProgram
 {
     static partial void ResetCmdDescs() {
-        OptionTestCmdDesc.Reset();
-        OptionTest_DummyCmdDesc.Reset();
-        OptionTest_Dummy2CmdDesc.Reset();
+        MainCmdDesc.Reset();
+        Main_DummyCmdDesc.Reset();
+        Main_Dummy2CmdDesc.Reset();
     }
 
-    public static partial class OptionTestCmdDesc {
+    public static partial class MainCmdDesc {
         public static void Reset() {
             // switch
             SimpleSwitch = false;
@@ -71,11 +71,11 @@ internal static partial class StarKidProgram
         }
     }
 
-    public static partial class OptionTest_DummyCmdDesc {
+    public static partial class Main_DummyCmdDesc {
         public static void Reset() {}
     }
 
-    public static partial class OptionTest_Dummy2CmdDesc {
+    public static partial class Main_Dummy2CmdDesc {
         public static void Reset() {
             defaultOpt = 5;
             hasdefaultOptActionBeenTriggered = false;

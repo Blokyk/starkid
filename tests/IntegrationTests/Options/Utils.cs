@@ -20,6 +20,5 @@ internal static partial class Utils
         return res;
     }
 
-    public static object GetHostState()
-        => OptionTest.GetState();
+    public static object GetHostState() => Main.GetState();
 }

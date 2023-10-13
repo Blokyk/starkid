@@ -178,7 +178,7 @@ public class Tests
         AssertStateChange(new { GlobalSwitch = true });
 
         Assert.Equal(0, StarKidProgram.TestMain("dummy2", "--cmd-opt-with-default", "32", "--global-switch"));
-        Assert.True(OptionTest.GlobalSwitch);
+        Assert.True(Main.GlobalSwitch);
     }
 
     // [Fact]

@@ -1,11 +1,9 @@
 using System.Net;
 
-using StarKid.Tests;
-
 namespace StarKid.Tests.Options;
 
 [CommandGroup("test")]
-public static partial class OptionTest {
+public static partial class Main {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // edit Utils.cs and PublicProgram.CmdDesc.cs when adding new options!!!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -90,7 +88,7 @@ public static partial class OptionTest {
         };
 }
 
-public static partial class OptionTest {
+public static partial class Main {
     [Option("global-switch", IsGlobal = true)] public static bool GlobalSwitch { get; set; }
 
     internal static object Dummy2State = new();
