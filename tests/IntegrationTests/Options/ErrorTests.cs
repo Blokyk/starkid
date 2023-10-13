@@ -34,7 +34,7 @@ public class ErrorTests
         Assert.Equal(1, StarKidProgram.TestMain(new[] { "--parsed-switch=foo", "dummy" }, out var stdout, out var stderr));
         Assert.Empty(stdout);
         Assert.Equal(
-            "Expression 'foo' is not a valid value for option '--parsed-switch': Couldn't parse 'foo' as an argument of type 'bool'\n",
+            "Expression 'foo' is not a valid value for option '--parsed-switch': Couldn't parse 'foo' as an argument of type 'bool'",
             stderr
         );
     }
@@ -46,7 +46,7 @@ public class ErrorTests
         Assert.Equal(1, StarKidProgram.TestMain(new[] { "--throwing-setter", "hey", "dummy" }, out var stdout, out var stderr));
         Assert.Empty(stdout);
         Assert.StartsWith(
-            "Expression 'hey' is not a valid value for option '--throwing-setter': Faulty setter!\n",
+            "Expression 'hey' is not a valid value for option '--throwing-setter': Faulty setter!",
             stderr
         );
     }
