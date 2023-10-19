@@ -233,7 +233,7 @@ public sealed record MinimalParameterInfo(
             symbol.GetDefaultLocation()
         );
 
-    public override string ToString() => SyntaxUtils.GetSafeName(Name);
+    public override string ToString() => '@' + Name;
 
     public bool IsNullable => Type.IsNullable;
 
