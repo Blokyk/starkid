@@ -1,4 +1,4 @@
-namespace StarKid.Generator;
+namespace StarKid.Generator.SymbolModel;
 
 internal readonly record struct AttributeListInfo(
     CommandGroupAttribute? CommandGroup,

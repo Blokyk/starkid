@@ -1,4 +1,4 @@
-namespace StarKid.Generator.Model;
+namespace StarKid.Generator.CommandModel;
 
 public sealed record DescriptionInfo(
     string? ShortDesc,

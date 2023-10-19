@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace StarKid.Generator;
+namespace StarKid.Generator.Utils;
 
 /// <summary>
 /// This method provides a wrapper for an <see cref="ImmutableArray{T}" /> that overrides the equality operation to provide elementwise comparison.
@@ -34,7 +34,7 @@ public readonly record struct ImmutableValueArray<T>(ImmutableArray<T> Array, IE
     public override int GetHashCode() {
         int res = 0;
         for (int i = 0; i < Array.Length; i++)
-            res = Utils.CombineHashCodes(res, Array[i] is null ? 0 : Comparer.GetHashCode(Array[i]!));
+            res = MiscUtils.CombineHashCodes(res, Array[i] is null ? 0 : Comparer.GetHashCode(Array[i]!));
         return res;
     }
 

@@ -1,9 +1,9 @@
 using System.IO;
 using System.Reflection;
 
-namespace StarKid.Generator;
+namespace StarKid.Generator.Utils;
 
-internal static class Utils
+internal static class MiscUtils
 {
     // polyfill for netstandard2.0
 #if NETSTANDARD2_0
@@ -16,6 +16,15 @@ internal static class Utils
         }
 
         return defaultVal;
+    }
+
+    public static void Deconstruct<TKey, TValue>(
+        this KeyValuePair<TKey, TValue> pair,
+        out TKey key,
+        out TValue value
+    ) {
+        key = pair.Key;
+        value = pair.Value;
     }
 
 #pragma warning disable RCS1197 // Optimize StringBuilder call
@@ -32,60 +41,21 @@ internal static class Utils
     public static StringBuilder AppendJoin<T>(this StringBuilder sb, char separator, IEnumerable<T> values)
         => sb.Append(String.Join(separator.ToString(), values));
 #pragma warning restore RCS1197
+
+    public static int CombineHashCodes(int h1, int h2) => ((h1 << 5) + h1) ^ h2;
+#else
+    public static int CombineHashCodes(int h1, int h2) => HashCode.Combine(h1, h2);
 #endif // NETSTANDARD2_0
 
-    private static readonly Assembly _starkidAssembly = typeof(Utils).Assembly;
+    private static readonly Assembly _starkidAssembly = typeof(MiscUtils).Assembly;
     public static string GetStaticResource(string filePath) {
         using var stream = _starkidAssembly.GetManifestResourceStream("Blokyk.StarKid.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'StarKid.Static." + filePath + "' was not found");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
 
-    public static void Deconstruct<TKey, TValue>(
-        this KeyValuePair<TKey, TValue> pair,
-        out TKey key,
-        out TValue value
-    ) {
-        key = pair.Key;
-        value = pair.Value;
-    }
-
-    public static Location GetLocation(this SyntaxReference syntaxRef)
-        => syntaxRef.SyntaxTree.GetLocation(syntaxRef.Span);
-
-    public static Location GetApplicationLocation(AttributeData attr)
-        => attr.ApplicationSyntaxReference?.GetLocation() ?? Location.None;
-
-    public static int CombineHashCodes(int h1, int h2) =>  ((h1 << 5) + h1) ^ h2;
-
     public static bool IsAsciiLetter(char c) => (uint)((c | 0x20) - 'a') <= 'z' - 'a';
     public static bool IsAsciiDigit(char c) => (uint)(c - '0') <= '9' - '0';
-
-    public readonly struct SequenceComparer<T> : IEqualityComparer<IEnumerable<T>>
-    {
-        public static readonly SequenceComparer<T> Instance = new();
-
-        public bool Equals(IEnumerable<T>? x, IEnumerable<T>? y)
-            => x is null
-                ? y is null
-                : y is not null
-                    && x.SequenceEqual(y);
-
-        public int GetHashCode(IEnumerable<T> obj) {
-            int acc = 0;
-
-            foreach (var item in obj) {
-                acc = CombineHashCodes(
-                        acc,
-                        item is null
-                            ? acc
-                            : EqualityComparer<T>.Default.GetHashCode(item)
-                    );
-            }
-
-            return acc;
-        }
-    }
 
     public static IEqualityComparer<T> CreateComparerFrom<T>(Func<T, T, bool> eq, Func<T, int> hash)
         => new PredicateEqualityComparer<T>(eq, hash);
@@ -135,40 +105,4 @@ internal static class Utils
         readonly System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             => Array.Empty<KeyValuePair<TKey, TValue>>().GetEnumerator();
     }
-}
-
-internal class TupleComparer<T, U> : IEqualityComparer<Tuple<T, U>>, IEqualityComparer<ValueTuple<T, U>>
-{
-    private readonly IEqualityComparer<T> _tComparer;
-    private readonly IEqualityComparer<U> _uComparer;
-
-    public TupleComparer() : this(EqualityComparer<T>.Default, EqualityComparer<U>.Default) {}
-    public TupleComparer(IEqualityComparer<T> tComparer, IEqualityComparer<U> uComparer) {
-        _tComparer = tComparer;
-        _uComparer = uComparer;
-    }
-
-    public bool Equals(Tuple<T, U>? x, Tuple<T, U>? y)
-        =>  x is null
-                ? y is null
-                : y is not null
-                    && _tComparer.Equals(
-                            x.Item1,
-                            y.Item1
-                        )
-                    && _uComparer.Equals(
-                            x.Item2,
-                            y.Item2
-                        );
-
-    public int GetHashCode(Tuple<T, U> obj)
-        => GetHashCode(obj.ToValueTuple());
-
-    public bool Equals((T, U) x, (T, U) y)
-        => _tComparer.Equals(x.Item1, y.Item1) && _uComparer.Equals(x.Item2, y.Item2);
-    public int GetHashCode((T, U) obj)
-        => Utils.CombineHashCodes(
-            obj.Item1 is null ? 0 : _tComparer.GetHashCode(obj.Item1),
-            obj.Item2 is null ? 0 : _uComparer.GetHashCode(obj.Item2)
-        );
 }

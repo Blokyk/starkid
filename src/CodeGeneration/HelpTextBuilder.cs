@@ -1,7 +1,4 @@
-using System.IO;
-using System.Diagnostics;
-
-namespace StarKid.Generator;
+namespace StarKid.Generator.CodeGeneration;
 
 public sealed class HelpTextBuilder
 {

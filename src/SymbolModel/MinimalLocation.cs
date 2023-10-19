@@ -1,4 +1,4 @@
-namespace StarKid.Generator.Model;
+namespace StarKid.Generator.SymbolModel;
 
 public sealed class MinimalLocation
 {
@@ -29,9 +29,9 @@ public sealed class MinimalLocation
         => "MinimalLocation { FilePath = " + FilePath + ", TextSpan = " + TextSpan + ", LineSpan = " + LineSpan + " }";
 
     public override int GetHashCode()
-        => Utils.CombineHashCodes(
+        => MiscUtils.CombineHashCodes(
             FilePath.GetHashCode(),
-            Utils.CombineHashCodes(
+            MiscUtils.CombineHashCodes(
                 TextSpan.GetHashCode(),
                 LineSpan.GetHashCode()
             )

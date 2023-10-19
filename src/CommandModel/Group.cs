@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 
-namespace StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+
+namespace StarKid.Generator.CommandModel;
 
 public sealed record Group(
     string Name,
@@ -30,23 +32,23 @@ public sealed record Group(
         => DefaultCommand = cmd;
 
     internal static readonly IEqualityComparer<Group> FastIDComparer
-        = Utils.CreateComparerFrom<Group>(
+        = MiscUtils.CreateComparerFrom<Group>(
             (g1, g2) => g1?.ID.GetHashCode() == g2?.ID.GetHashCode(),
             g => g.ID.GetHashCode()
         );
 
     public override int GetHashCode()
-        => Utils.CombineHashCodes(
+        => MiscUtils.CombineHashCodes(
             base.GetHashCode(),
-            Utils.CombineHashCodes(
-                Utils.SequenceComparer<Command>.Instance.GetHashCode(_cmds),
-                Utils.CombineHashCodes(
-                    Utils.SequenceComparer<Group>.Instance.GetHashCode(_subgroups),
-                    Utils.CombineHashCodes(
+            MiscUtils.CombineHashCodes(
+                SequenceComparer<Command>.Instance.GetHashCode(_cmds),
+                MiscUtils.CombineHashCodes(
+                    SequenceComparer<Group>.Instance.GetHashCode(_subgroups),
+                    MiscUtils.CombineHashCodes(
                         FullClassName.GetHashCode(),
-                        Utils.CombineHashCodes(
+                        MiscUtils.CombineHashCodes(
                             ParentClassFullName?.GetHashCode() ?? 0,
-                            Utils.CombineHashCodes(
+                            MiscUtils.CombineHashCodes(
                                 BackingClass.GetHashCode(),
                                 DefaultCommand?.GetHashCode() ?? 0
                             )

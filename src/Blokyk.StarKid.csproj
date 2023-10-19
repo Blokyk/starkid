@@ -24,14 +24,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Remove="System.IO" />
+    <Using Include="StarKid.Generator.Utils" />
+
     <Using Include="System.Text" />
     <Using Include="System.Collections.Immutable" />
     <Using Include="System.Diagnostics.CodeAnalysis" />
+
     <Using Include="Microsoft.CodeAnalysis" />
     <Using Include="Microsoft.CodeAnalysis.Text" />
     <Using Include="Microsoft.CodeAnalysis.CSharp" />
     <Using Include="Microsoft.CodeAnalysis.CSharp.Syntax" />
+
+    <Using Remove="System.IO" />
   </ItemGroup>
 
   <ItemGroup>

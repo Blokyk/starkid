@@ -1,5 +1,6 @@
 using StarKid.Generator;
-using StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+using StarKid.Generator.CommandModel;
 
 namespace StarKid.Tests;
 

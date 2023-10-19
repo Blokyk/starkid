@@ -16,7 +16,7 @@ using System.IO;
 
             _ = SyntaxTree.WithMarkedNode(source, out var node);
 
-            var usings = MainGenerator.GetReachableNamespaceNames(node);
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System", "System.IO" }, usings);
         }
 
@@ -33,7 +33,7 @@ using static System.Console;
 
             _ = SyntaxTree.WithMarkedNode(source, out var node);
 
-            var usings = MainGenerator.GetReachableNamespaceNames(node);
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System", "System.IO" }, usings);
         }
 
@@ -48,7 +48,7 @@ using io = System.IO;
 
             _ = SyntaxTree.WithMarkedNode(source, out var node);
 
-            var usings = MainGenerator.GetReachableNamespaceNames(node);
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System" }, usings);
         }
 
@@ -66,7 +66,7 @@ namespace Foo.Bar.Baz {
 
             _ = SyntaxTree.WithMarkedNode(source, out var node);
 
-            var usings = MainGenerator.GetReachableNamespaceNames(node);
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System.IO", "Foo.Bar.Baz" }, usings);
         }
 
@@ -86,7 +86,7 @@ namespace Foo {
 
             _ = SyntaxTree.WithMarkedNode(source, out var node);
 
-            var usings = MainGenerator.GetReachableNamespaceNames(node);
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System.IO", "Foo.Bar.Baz" }, usings);
         }
 
@@ -104,7 +104,7 @@ namespace Foo {
 
             _ = SyntaxTree.WithMarkedNode(source, out var node);
 
-            var usings = MainGenerator.GetReachableNamespaceNames(node);
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System.IO", "System.Diagnostics", "Foo" }, usings);
         }
 
@@ -126,7 +126,7 @@ namespace Foo {
 
             _ = SyntaxTree.WithMarkedNode(source, out var node);
 
-            var usings = MainGenerator.GetReachableNamespaceNames(node);
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System.IO", "System.Diagnostics", "Microsoft.CodeAnalysis", "Foo.Bar" }, usings);
         }
     }

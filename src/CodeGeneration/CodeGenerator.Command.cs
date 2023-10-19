@@ -1,8 +1,9 @@
 #pragma warning disable RCS1197 // Optimize StringBuilder call
 
-using StarKid.Generator.Model;
+using StarKid.Generator.CommandModel;
+using StarKid.Generator.SymbolModel;
 
-namespace StarKid.Generator;
+namespace StarKid.Generator.CodeGeneration;
 
 internal sealed partial class CodeGenerator
 {
@@ -10,11 +11,12 @@ internal sealed partial class CodeGenerator
         sb.Append(@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625
+    [StackTraceHidden]
     static partial class ").Append(cmd.ID).Append("CmdDesc {")
         .AppendLine();
 
         foreach (var opt in cmd.Options) {
-            AddOptionFunction(sb, opt, cmd);
+            AddOptionFieldAndSetter(sb, opt, cmd);
         }
 
         AddOptionLookup(sb, cmd, isFlags: false);
@@ -22,7 +24,7 @@ internal sealed partial class CodeGenerator
         sb.AppendLine();
 
         foreach (var flag in cmd.Flags) {
-            AddOptionFunction(sb, flag, cmd);
+            AddOptionFieldAndSetter(sb, flag, cmd);
         }
 
         AddOptionLookup(sb, cmd, isFlags: true);
@@ -50,7 +52,7 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        AddHelpTextLine(sb, cmd);
+        AppendHelpTextField(sb, cmd);
 
         sb.AppendLine();
 
@@ -78,6 +80,8 @@ internal sealed partial class CodeGenerator
     }
 
     void AddPosArgActions(StringBuilder sb, Command cmd) {
+        var requiredArgs = cmd.Arguments.Count;
+
         foreach (var arg in cmd.Arguments) {
             sb
             .Append("\t\tprivate static ")
@@ -86,6 +90,8 @@ internal sealed partial class CodeGenerator
             .Append(arg.BackingSymbol.Name);
 
             if (arg.DefaultValueExpr is not null) {
+                requiredArgs--;
+
                 sb
                 .Append(" = ")
                 .Append(arg.DefaultValueExpr);
@@ -95,7 +101,7 @@ internal sealed partial class CodeGenerator
         }
 
         sb.Append(@"
-        internal const int _requiredArgCount = ").Append(cmd.Arguments.Count(a => a.DefaultValueExpr is null)).Append(';').Append(@"
+        internal const int _requiredArgCount = ").Append(requiredArgs).Append(';').Append(@"
         internal static readonly Action<string>[] _posArgActions = ");
 
         if (cmd.Arguments.Count == 0) {
@@ -124,14 +130,16 @@ internal sealed partial class CodeGenerator
         };").AppendLine();
     }
 
+    /// <summary>
+    ///     Generates the field containing the delegate for the
+    ///     command's function (as well as the delegate type itself)
+    /// </summary>
     void AddCommandFunc(StringBuilder sb, MinimalMethodInfo method) {
         var typeName = method.ReturnType.FullName;
 
         sb.Append(@"
         private delegate ").Append(typeName).Append(" __funcT(");
-
         sb.Append(String.Join(", ", method.Parameters.Select((p, i) => p.Type.FullName + " param" + i)));
-
         sb.Append(");\n");
 
         sb.Append(@"
@@ -139,6 +147,9 @@ internal sealed partial class CodeGenerator
         .AppendLine();
     }
 
+    /// <summary>
+    ///     Generates the <see cref="Func{Int32}"/> field that invokes the command
+    /// </summary>
     void AddInvokeCmdField(StringBuilder sb, Command cmd) {
         sb.Append(@"
         internal static readonly Func<int> _invokeCmd = ");
@@ -146,13 +157,14 @@ internal sealed partial class CodeGenerator
         var isVoid = cmd.BackingMethod.ReturnsVoid;
         var methodParams = cmd.BackingMethod.Parameters;
 
-        // if _func is basically Func<int>
+        // if _func is basically Func<int> 8
         if (!isVoid && methodParams.Length == 0) {
             sb.Append("new Func<int>(__func)"); // explicit cast between delegates, same as `() => __func()` but no display class
         } else {
-            // lambda attributes are only supported since C#10
-            if (_config.LanguageVersion >= LanguageVersion.CSharp10)
-                sb.Append("[System.Diagnostics.StackTraceHidden]");
+            // [StackTraceHidden] doesn't apply to nested types, including
+            // lambdas' display classes, so we need to specify it again
+            if (_config.LanguageVersion >= LanguageVersion.CSharp10) // lambda attributes are only supported since C#10
+                sb.Append("[StackTraceHidden]");
 
             sb.Append("() => "); // can't be static because of _params
 

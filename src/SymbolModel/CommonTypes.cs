@@ -1,12 +1,7 @@
-using StarKid.Generator.Model;
-
-namespace StarKid.Generator;
+namespace StarKid.Generator.SymbolModel;
 
 internal static class CommonTypes
 {
-    static CommonTypes() {
-    }
-
     internal static MinimalTypeInfo BOOL = new(
         "Boolean",
         null,
@@ -14,6 +9,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Boolean };
+
     internal static MinimalTypeInfo INT32 = new(
         "Int32",
         null,
@@ -21,6 +17,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Int32 };
+
     internal static MinimalTypeInfo CHAR = new(
         "Char",
         null,
@@ -28,6 +25,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Char };
+
     internal static MinimalTypeInfo STR = new(
         "String",
         null,
@@ -35,6 +33,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_String };
+
     internal static MinimalTypeInfo VOID = new(
         "void",
         null,
@@ -42,6 +41,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Void };
+
     internal static MinimalTypeInfo EXCEPTION = new(
         "Exception",
         null,
@@ -49,6 +49,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.None };
+
     internal static MinimalTypeInfo NULLABLE = new(
         "Nullable<T>",
         null,
@@ -56,6 +57,7 @@ internal static class CommonTypes
         true,
         Location.None
     ) { SpecialType = SpecialType.System_Nullable_T };
+
     internal static MinimalTypeInfo ENUM = new(
         "Enum",
         null,
@@ -63,6 +65,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Enum };
+
     internal static MinimalTypeInfo DOUBLE = new(
         "Double",
         null,
@@ -70,6 +73,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Double };
+
     internal static MinimalTypeInfo SINGLE = new(
         "Single",
         null,
@@ -77,6 +81,7 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_Single };
+
     internal static MinimalTypeInfo DATE_TIME = new(
         "DateTime",
         null,
@@ -84,12 +89,4 @@ internal static class CommonTypes
         false,
         Location.None
     ) { SpecialType = SpecialType.System_DateTime };
-
-    internal static SymbolDisplayFormat memberMinimalDisplayFormat = new(
-        parameterOptions: SymbolDisplayParameterOptions.IncludeName,
-        //typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-        //genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-        //memberOptions: SymbolDisplayMemberOptions.IncludeContainingType,
-        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers
-    );
 }

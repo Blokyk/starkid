@@ -121,7 +121,7 @@ internal class AttributeParser
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.ParseWithMustBeNameOfExpr,
-                    Utils.GetApplicationLocation(attr),
+                    SyntaxUtils.GetApplicationLocation(attr),
                     argList[0].Expression
                 )
             );
@@ -148,7 +148,7 @@ internal class AttributeParser
             _addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.ValidateWithMustBeNameOfExpr,
-                    Utils.GetApplicationLocation(attr),
+                    SyntaxUtils.GetApplicationLocation(attr),
                     argList[0].Expression
                 )
             );

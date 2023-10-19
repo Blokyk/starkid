@@ -1,8 +1,9 @@
 #pragma warning disable RCS1197 // Optimize StringBuilder call
 
-using StarKid.Generator.Model;
+using StarKid.Generator.CommandModel;
+using StarKid.Generator.SymbolModel;
 
-namespace StarKid.Generator;
+namespace StarKid.Generator.CodeGeneration;
 
 internal static class CodegenHelpers
 {
@@ -40,7 +41,7 @@ internal static class CodegenHelpers
 
         var targetType = parser.TargetType;
 
-        if (targetType.SpecialType == SpecialType.System_Boolean) {
+        if (targetType.SpecialType is SpecialType.System_Boolean) {
             expr = "__arg is null ? true : ";
         }
 
@@ -86,14 +87,16 @@ internal static class CodegenHelpers
                     throw new Exception(validator.GetType().Name + " is not a supported ValidatorInfo type.");
             }
 
-            // var throwFunc = isNullable ? "ThrowIfNotValidNullable(" : "ThrowIfNotValid(";
+            var throwFunc = isNullable ? "ThrowIfNotValidNullable(" : "ThrowIfNotValid(";
+
+            var msg = validator.Message is null ? "null" : SymbolDisplay.FormatLiteral(validator.Message, quote: false);
 
             currExpr =
-                "ThrowIfNotValid(" +
+                throwFunc +
                     $"{currExpr}, " +
                     $"{funcExpr}, " +
                     $"\"{argName}\", " +
-                    $"{(validator.Message is null ? "null" : SyntaxFactory.Literal(validator.Message))}, " +
+                    $"{msg}, " +
                     $"\"{exprStr}\"" +
                 ")";
         }

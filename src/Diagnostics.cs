@@ -1,20 +1,6 @@
 namespace StarKid.Generator;
 
 internal static class Diagnostics {
-    public static readonly DiagnosticDescriptor TimingInfo
-        = new(
-            "CLI000",
-            "{0} took: {1:0}ms ({1:0.000)}",
-            "{0} took: {1:0}ms ({1:0.000)}",
-            "StarKid.Debug",
-            DiagnosticSeverity.Info,
-#if DEBUG
-            true
-#else
-            false
-#endif
-        );
-
     public static readonly DiagnosticDescriptor GiveUp
         = new(
             "CLI000",
@@ -170,26 +156,6 @@ internal static class Diagnostics {
             "CLI104",
             "Couldn't find a command named '{0}' in this group",
             "Couldn't find a command named '{0}' in this group",
-            "StarKid.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor CouldntFindParentCmd
-        = new(
-            "CLI105",
-            "Couldn't find parent method '{1}' for sub-command '{0}'",
-            "'{1}' must be the name of a method marked with [Command] or [SubCommand]",
-            "StarKid.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor TooManyRootCmd
-        = new(
-            "CLI106",
-            "Ambiguity between methods '{1}' and '{2}'",
-            "More than one method with name '{0}' for entry point",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -391,16 +357,6 @@ internal static class Diagnostics {
             "CLI400",
             "Constructor or Parse/TryParse method must be internal or public to be used for parsing",
             "Constructor or Parse/TryParse method must be internal or public to be used for parsing",
-            "StarKid.Analysis",
-            DiagnosticSeverity.Error,
-            true
-        );
-
-    public static readonly DiagnosticDescriptor NoGenericAutoParser
-        = new(
-            "CLI401",
-            "Can't auto-parse unbound generic type '{0}'",
-            "Auto-parsing generic types is not supported",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true

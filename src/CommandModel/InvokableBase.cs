@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 
-namespace StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+
+namespace StarKid.Generator.CommandModel;
 
 [System.Diagnostics.DebuggerDisplay("{ID,nq}")]
 public abstract record InvokableBase : IEquatable<InvokableBase> {
@@ -50,11 +52,11 @@ public abstract record InvokableBase : IEquatable<InvokableBase> {
 
     public override int GetHashCode()
         // we don't compare parents here because otherwise it'd just be recursion
-        => Utils.CombineHashCodes(
+        => MiscUtils.CombineHashCodes(
             Description?.GetHashCode() ?? 0,
-            Utils.CombineHashCodes(
-                Utils.SequenceComparer<Option>.Instance.GetHashCode(_options),
-                Utils.SequenceComparer<Flag>.Instance.GetHashCode(_flags)
+            MiscUtils.CombineHashCodes(
+                SequenceComparer<Option>.Instance.GetHashCode(_options),
+                SequenceComparer<Flag>.Instance.GetHashCode(_flags)
             )
         );
 

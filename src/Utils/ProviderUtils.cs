@@ -1,4 +1,4 @@
-namespace StarKid.Generator;
+namespace StarKid.Generator.Utils;
 
 internal static class ProviderUtils
 {

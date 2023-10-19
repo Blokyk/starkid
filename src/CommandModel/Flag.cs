@@ -1,4 +1,6 @@
-namespace StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+
+namespace StarKid.Generator.CommandModel;
 
 public sealed record Flag : Option, IEquatable<Flag> {
     public Flag(string Name, char Alias, bool IsGlobal, ParserInfo parser, MinimalSymbolInfo backingSymbol, string? defaultValueExpr)

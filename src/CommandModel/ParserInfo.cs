@@ -1,4 +1,6 @@
-namespace StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+
+namespace StarKid.Generator.CommandModel;
 
 public abstract record ParserInfo {
     public static readonly DirectMethod AsBool = new("StarKid.Generated.StarKidProgram.AsBool", CommonTypes.BOOL);

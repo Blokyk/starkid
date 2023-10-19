@@ -1,5 +1,5 @@
-using StarKid.Generator.Model;
-using System.Diagnostics;
+using StarKid.Generator.CommandModel;
+using StarKid.Generator.SymbolModel;
 
 namespace StarKid.Generator;
 

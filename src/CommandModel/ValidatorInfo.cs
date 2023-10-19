@@ -1,4 +1,6 @@
-namespace StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+
+namespace StarKid.Generator.CommandModel;
 
 public abstract record ValidatorInfo() {
     public string? Message { get; init; }

@@ -1,16 +1,17 @@
-using StarKid.Generator.Model;
+using StarKid.Generator.CommandModel;
+using StarKid.Generator.SymbolModel;
 
 namespace StarKid.Generator;
 
 [Generator(LanguageNames.CSharp)]
-public partial class MainGenerator : IIncrementalGenerator
+public partial class StarKidGenerator : IIncrementalGenerator
 {
     private static readonly string _cmdGroupAttributeName = typeof(CommandGroupAttribute).FullName!;
 
     private static readonly string _starkidProgramCode;
 
-    static MainGenerator() {
-        _starkidProgramCode = Utils.GetStaticResource("StarKidProgram.nocs");
+    static StarKidGenerator() {
+        _starkidProgramCode = MiscUtils.GetStaticResource("StarKidProgram.nocs");
 
         var sb = new StringBuilder();
 
@@ -32,7 +33,7 @@ using System;
         };
 
         foreach (var name in attribs)
-            sb.AppendLine(Utils.GetStaticResource("Attributes." + name + ".cs"));
+            sb.AppendLine().AppendLine(MiscUtils.GetStaticResource("Attributes." + name + ".cs"));
 
         _attributeCode = sb.ToString();
     }

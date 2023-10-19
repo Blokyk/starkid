@@ -1,4 +1,6 @@
-namespace StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+
+namespace StarKid.Generator.CommandModel;
 
 public sealed record Argument(ParserInfo Parser, MinimalParameterInfo BackingSymbol, string? DefaultValueExpr) {
     public string? Description { get; set; }

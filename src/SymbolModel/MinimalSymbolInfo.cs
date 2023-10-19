@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace StarKid.Generator.Model;
+namespace StarKid.Generator.SymbolModel;
 
 public abstract record MinimalSymbolInfo(
     string Name,
@@ -13,7 +13,7 @@ public abstract record MinimalSymbolInfo(
             : ContainingType.ToString() + '.' + Name;
 
     public override int GetHashCode()
-        => Utils.CombineHashCodes(
+        => MiscUtils.CombineHashCodes(
             Name.GetHashCode(),
             ContainingType?.GetHashCode() ?? 0
         );
@@ -84,10 +84,10 @@ public record MinimalTypeInfo(
     }
 
     public override int GetHashCode() =>
-        Utils.CombineHashCodes(
+        MiscUtils.CombineHashCodes(
             base.GetHashCode(),
-            Utils.CombineHashCodes(
-                Utils.CombineHashCodes(
+            MiscUtils.CombineHashCodes(
+                MiscUtils.CombineHashCodes(
                     SpecialType.GetHashCode(),
                     TypeArguments.GetHashCode()
                 ),
@@ -115,7 +115,7 @@ public sealed record MinimalArrayTypeInfo(
         );
     }
 
-    public override int GetHashCode() => Utils.CombineHashCodes(base.GetHashCode(), ElementType.GetHashCode());
+    public override int GetHashCode() => MiscUtils.CombineHashCodes(base.GetHashCode(), ElementType.GetHashCode());
 }
 
 [DebuggerDisplay("`{Name,nq}")]
@@ -129,7 +129,7 @@ public sealed record MinimalTypeParameterInfo(
     public static MinimalTypeParameterInfo FromSymbol(ITypeParameterSymbol type)
         => new(type.Name, SymbolUtils.IsNullable(type), type.GetDefaultLocation());
 
-    public override int GetHashCode() => Utils.CombineHashCodes(Name.GetHashCode(), IsNullable ? 1 : 0);
+    public override int GetHashCode() => MiscUtils.CombineHashCodes(Name.GetHashCode(), IsNullable ? 1 : 0);
 }
 
 public sealed record MinimalNullableValueTypeInfo(
@@ -176,7 +176,7 @@ public record MinimalMemberInfo(
         throw new ArgumentException("Trying to create a MemberInfo from symbol type '" + symbol.GetType().Name + "'.", nameof(symbol));
     }
 
-    public override int GetHashCode() => Utils.CombineHashCodes(base.GetHashCode(), Type.GetHashCode());
+    public override int GetHashCode() => MiscUtils.CombineHashCodes(base.GetHashCode(), Type.GetHashCode());
 }
 
 public sealed record MinimalMethodInfo(
@@ -203,9 +203,9 @@ public sealed record MinimalMethodInfo(
         );
 
     public override int GetHashCode()
-        => Utils.CombineHashCodes(
+        => MiscUtils.CombineHashCodes(
             base.GetHashCode(),
-            Utils.CombineHashCodes(
+            MiscUtils.CombineHashCodes(
                 Parameters.GetHashCode(),
                 TypeParameters.GetHashCode()
             )
@@ -233,14 +233,14 @@ public sealed record MinimalParameterInfo(
             symbol.GetDefaultLocation()
         );
 
-    public override string ToString() => SymbolUtils.GetSafeName(Name);
+    public override string ToString() => SyntaxUtils.GetSafeName(Name);
 
     public bool IsNullable => Type.IsNullable;
 
     public override int GetHashCode() =>
-        Utils.CombineHashCodes(
+        MiscUtils.CombineHashCodes(
             base.GetHashCode(),
-            Utils.CombineHashCodes(
+            MiscUtils.CombineHashCodes(
                 Type.GetHashCode(),
                 IsParams ? 0 : 1
             )

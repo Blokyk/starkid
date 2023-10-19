@@ -1,4 +1,5 @@
-using StarKid.Generator.Model;
+using StarKid.Generator.CommandModel;
+using StarKid.Generator.SymbolModel;
 
 namespace StarKid.Generator;
 

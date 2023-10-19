@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace StarKid.Generator;
+namespace StarKid.Generator.Utils;
 
 // non-nullable field must contain a null value when exiting constructor
 #pragma warning disable CS8618

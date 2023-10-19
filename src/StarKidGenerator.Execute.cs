@@ -1,9 +1,12 @@
 using Microsoft.CodeAnalysis.Diagnostics;
-using StarKid.Generator.Model;
+
+using StarKid.Generator.CodeGeneration;
+using StarKid.Generator.CommandModel;
+using StarKid.Generator.SymbolModel;
 
 namespace StarKid.Generator;
 
-public partial class MainGenerator
+public partial class StarKidGenerator
 {
     static void GenerateFromData(Group? rootGroup, ImmutableArray<string> usings, AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, SourceProductionContext spc) {
         if (rootGroup is null)

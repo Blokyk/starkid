@@ -1,10 +1,8 @@
 #pragma warning disable RCS1197 // Optimize StringBuilder call
 
-using System.Linq;
+using StarKid.Generator.CommandModel;
 
-using StarKid.Generator.Model;
-
-namespace StarKid.Generator;
+namespace StarKid.Generator.CodeGeneration;
 
 internal sealed partial class CodeGenerator
 {
@@ -12,6 +10,7 @@ internal sealed partial class CodeGenerator
         sb.Append(@"
 #pragma warning disable CS8618
 #pragma warning disable CS8625
+    [StackTraceHidden]
     static partial class ").Append(group.ID).Append("CmdDesc {")
         .AppendLine();
 
@@ -25,13 +24,13 @@ internal sealed partial class CodeGenerator
         //       command name instead of defaulting to it
 
         foreach (var opt in group.Options) {
-            AddOptionFunction(sb, opt, group);
+            AddOptionFieldAndSetter(sb, opt, group);
         }
 
         AddOptionLookup(sb, group, isFlags: false);
 
         foreach (var flag in group.Flags) {
-            AddOptionFunction(sb, flag, group);
+            AddOptionFieldAndSetter(sb, flag, group);
         }
 
         AddOptionLookup(sb, group, isFlags: true);
@@ -58,7 +57,7 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        AddHelpTextLine(sb, group);
+        AppendHelpTextField(sb, group);
 
         sb.AppendLine();
 

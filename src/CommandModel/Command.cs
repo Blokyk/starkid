@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 
-namespace StarKid.Generator.Model;
+using StarKid.Generator.SymbolModel;
+
+namespace StarKid.Generator.CommandModel;
 
 [System.Diagnostics.DebuggerDisplay("<{Name,nq}>")]
 public sealed record Command : InvokableBase, IEquatable<Command> {
@@ -45,13 +47,13 @@ public sealed record Command : InvokableBase, IEquatable<Command> {
     public bool HasParams => ParamsArg is not null;
 
     public override int GetHashCode()
-        => Utils.CombineHashCodes(
+        => MiscUtils.CombineHashCodes(
             base.GetHashCode(),
-            Utils.CombineHashCodes(
+            MiscUtils.CombineHashCodes(
                 BackingMethod.GetHashCode(),
-                Utils.CombineHashCodes(
-                    Utils.SequenceComparer<Argument>.Instance.GetHashCode(_args),
-                    Utils.CombineHashCodes(
+                MiscUtils.CombineHashCodes(
+                    SequenceComparer<Argument>.Instance.GetHashCode(_args),
+                    MiscUtils.CombineHashCodes(
                         ParamsArg?.GetHashCode() ?? 0,
                         IsHiddenCommand ? 1 : 0
                     )

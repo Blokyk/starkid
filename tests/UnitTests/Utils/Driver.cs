@@ -9,7 +9,7 @@ internal static class Driver
 
     public static GeneratorDriver Create(CSharpParseOptions parseOptions, AnalyzerConfigOptionsProvider configProvider)
         => CSharpGeneratorDriver.Create(
-            new[] { new MainGenerator().AsSourceGenerator() },
+            new[] { new StarKidGenerator().AsSourceGenerator() },
             parseOptions: parseOptions,
             optionsProvider: configProvider,
             driverOptions: DriverOptions.Default

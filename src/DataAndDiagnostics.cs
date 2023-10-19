@@ -33,7 +33,7 @@ internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
     public override readonly int GetHashCode()
         => Data is null
          ? _diags.GetHashCode()
-         : Utils.CombineHashCodes(Data.GetHashCode(), _diags.GetHashCode());
+         : MiscUtils.CombineHashCodes(Data.GetHashCode(), _diags.GetHashCode());
 
     public override readonly bool Equals(object? obj)
         => obj is DataAndDiagnostics<T> generatorDataWrapper && Equals(generatorDataWrapper);

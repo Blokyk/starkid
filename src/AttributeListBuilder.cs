@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace StarKid.Generator;
+namespace StarKid.Generator.SymbolModel;
 
 internal enum CLIMemberKind {
     None,
@@ -124,7 +124,7 @@ internal class AttributeListBuilder
 
                     isValid = ValidateName(
                         group.GroupName,
-                        Utils.GetApplicationLocation(attr),
+                        SyntaxUtils.GetApplicationLocation(attr),
                         isForCommands: true
                     );
 
@@ -135,7 +135,7 @@ internal class AttributeListBuilder
 
                     isValid = ValidateName(
                         cmd.CmdName,
-                        Utils.GetApplicationLocation(attr),
+                        SyntaxUtils.GetApplicationLocation(attr),
                         isForCommands: true
                     );
 
@@ -147,7 +147,7 @@ internal class AttributeListBuilder
                     isValid = ValidateOptionName(
                         opt.LongName,
                         opt.Alias,
-                        Utils.GetApplicationLocation(attr)
+                        SyntaxUtils.GetApplicationLocation(attr)
                     );
 
                     break;
@@ -216,10 +216,10 @@ internal class AttributeListBuilder
 
         var nameIsValid
             = name.All(
-                c => Utils.IsAsciiLetter(c)
-                  || Utils.IsAsciiDigit(c)
+                (Func<char, bool>)(                c => MiscUtils.IsAsciiLetter(c)
+                  || MiscUtils.IsAsciiDigit(c)
                   || c == '-'
-                  || c == '_'
+                  || c == '_')
             );
 
         if (nameIsValid)
@@ -241,7 +241,7 @@ internal class AttributeListBuilder
     }
 
     public bool ValidateOptionName(string longName, char alias, Location location) {
-        if (alias != '\0' && !Utils.IsAsciiLetter(alias) && !Utils.IsAsciiDigit(alias)) {
+        if (alias != '\0' && !MiscUtils.IsAsciiLetter(alias) && !MiscUtils.IsAsciiDigit(alias)) {
             _addDiagnostic(
                 Diagnostic.Create(
                     Char.IsWhiteSpace(alias) ? Diagnostics.EmptyOptAlias : Diagnostics.InvalidOptAlias,

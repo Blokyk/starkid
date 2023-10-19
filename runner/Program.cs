@@ -18,7 +18,7 @@ var dotnetTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + dotnetP
 var stuffTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + stuffPath));
 var lotusTree = CSharpSyntaxTree.ParseText(File.ReadAllText(sampleDir + lotusPath));
 
-var generator = new MainGenerator();
+var generator = new StarKidGenerator();
 
 GeneratorDriver driver = CSharpGeneratorDriver.Create(
     new[] { generator.AsSourceGenerator() },

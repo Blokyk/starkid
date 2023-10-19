@@ -9,7 +9,7 @@ public record StarKidConfig(
     LanguageVersion LanguageVersion
 );
 
-public partial class MainGenerator
+public partial class StarKidGenerator
 {
     public const string COLUMN_LENGTH_PROP_NAME = "StarKid_Help_MaxCharsPerLine";
     public const string HELP_EXIT_CODE_PROP_NAME = "StarKid_Help_ExitCode";

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace StarKid.Generator.Model;
+namespace StarKid.Generator.SymbolModel;
 
 internal static class SymbolInfoCache
 {
