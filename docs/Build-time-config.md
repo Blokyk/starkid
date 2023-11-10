@@ -69,3 +69,34 @@ Example usage:
     <StarKid_AllowRepeatingOptions>true</StarKid_AllowRepeatingOptions>
 </PropertyGroup>
 ```
+
+## `StarKid_ArgNameCasing` -- Don't complain about repeated options in command lines
+
+Property name:
+    `StarKid_ArgNameCasing`
+
+Purpose:
+    Changes the casing of the argument names as displayed in the help
+    text. Applies to both command arguments and option arguments
+    (e.g. `--foo <some-val>`.) This is based on the name of the member
+    or parameter associated with that argument. See
+    [the section on help text customization](StarKid-overview.md#customization)
+    for more info.
+
+Allowed values:
+- `Original`/`None`
+- `CamelCase`
+- `PascalCase`
+- `kebab-case`
+- `snake_case`
+- `ALL_CAPS`
+- `TRAIN-CASE`
+
+Default value: `kebab-case`
+
+Example usage:
+```xml
+<PropertyGroup>
+    <StarKid_ArgNameCasing>TRAIN-CASE</StarKid_ArgNameCasing>
+</PropertyGroup>
+```
