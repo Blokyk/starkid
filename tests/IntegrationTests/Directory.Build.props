@@ -1,8 +1,8 @@
 <Project>
-
     <PropertyGroup>
         <TargetFramework>net7</TargetFramework>
         <ImplicitUsings>true</ImplicitUsings>
+        <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>

@@ -5,13 +5,11 @@ using StarKid.Generator.CommandModel;
 
 namespace StarKid.Generator.CodeGeneration;
 
-internal sealed class HelpGenerator
+internal sealed partial class HelpGenerator(StarKidConfig config)
 {
     private const string padding = "  ";
     private const int padSize = 2;
-    private readonly int _maxLineLength;
-
-    public HelpGenerator(StarKidConfig config) => _maxLineLength = config.ColumnLength;
+    private readonly int _maxLineLength = config.ColumnLength;
 
     public void AddHelpText(StringBuilder sb, InvokableBase groupOrCmd) {
         AddDescription(sb, groupOrCmd);
@@ -26,7 +24,7 @@ internal sealed class HelpGenerator
 
         if (groupOrCmd is Command cmd) {
             foreach (var arg in cmd.Arguments)
-                builder.AddArgumentDescription(arg.Name, arg.Description);
+                builder.AddArgumentDescription(FormatArgName(arg.Name), arg.Description);
         }
 
         builder.AddOptionDescription(
@@ -42,7 +40,7 @@ internal sealed class HelpGenerator
 
             var argStr
                 = opt is not Flag
-                ? " <" + opt.ArgName + ">"
+                ? " <" + FormatArgName(opt.ArgName) + ">"
                 : "";
 
             builder.AddOptionDescription(
@@ -66,7 +64,7 @@ internal sealed class HelpGenerator
                 string argStr
                     = subcmd.Arguments.Count switch {
                         0 => "",
-                        1 => argStr = " <" + subcmd.Arguments[0].Name + ">",
+                        1 => argStr = " <" + FormatArgName(subcmd.Arguments[0].Name) + ">",
                         _ => " <args>",
                     };
 
@@ -145,7 +143,7 @@ internal sealed class HelpGenerator
 
         foreach (var arg in args) {
             sb.Append('<');
-            sb.Append(arg.Name);
+            sb.Append(FormatArgName(arg.Name));
 
             if (arg.IsParams)
                 sb.Append("...");
@@ -182,7 +180,7 @@ internal sealed class HelpGenerator
             if (opt is not Flag) {
                 sb
                     .Append(" <")
-                    .Append(opt.ArgName)
+                    .Append(FormatArgName(opt.ArgName))
                     .Append('>');
             }
 
@@ -202,7 +200,7 @@ internal sealed class HelpGenerator
             length += opt.Name.Length + 5;
 
             if (opt is not Flag)
-                length += opt.ArgName.Length + 3;
+                length += FormatArgName(opt.ArgName).Length + 3;
         }
 
         return length - 1; // minus the last space
@@ -273,4 +271,8 @@ internal sealed class HelpGenerator
             }
         }
     }
+
+    private readonly Cache<string, string> _formattedNameCache
+        = new(StringComparer.InvariantCulture, s => NameFormatter.Format(s, config.ArgNameCasing));
+    private string FormatArgName(string s) => _formattedNameCache.GetValue(s);
 }

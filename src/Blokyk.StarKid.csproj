@@ -4,7 +4,7 @@
     <TargetFrameworks>net7;netstandard2.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>true</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>preview</LangVersion>
     <NoWarn>$(NoWarn),RS1024,RS2008,IDE0046,IDE1006,CA1822</NoWarn>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>

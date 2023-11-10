@@ -56,6 +56,16 @@ internal static class MiscUtils
 
     public static bool IsAsciiLetter(char c) => (uint)((c | 0x20) - 'a') <= 'z' - 'a';
     public static bool IsAsciiDigit(char c) => (uint)(c - '0') <= '9' - '0';
+    public static bool IsAsciiLetterLower(char c) => (uint)(c - 'a') <= 'z' - 'a';
+    public static bool IsAsciiLetterUpper(char c) => (uint)(c - 'A') <= 'Z' - 'A';
+
+    public static string CapitalizeString(string s) {
+        if (String.IsNullOrWhiteSpace(s))
+            return s;
+        var chars = s.ToCharArray();
+        chars[0] = Char.ToUpperInvariant(chars[0]);
+        return new string(chars);
+    }
 
     public static IEqualityComparer<T> CreateComparerFrom<T>(Func<T, T, bool> eq, Func<T, int> hash)
         => new PredicateEqualityComparer<T>(eq, hash);

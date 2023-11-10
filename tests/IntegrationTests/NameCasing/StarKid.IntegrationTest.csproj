@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <StarKid_ArgNameCasing>TrainCase</StarKid_ArgNameCasing>
+    </PropertyGroup>
+</Project>
