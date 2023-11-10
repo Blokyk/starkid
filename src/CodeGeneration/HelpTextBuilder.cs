@@ -1,6 +1,6 @@
 namespace StarKid.Generator.CodeGeneration;
 
-public sealed class HelpTextBuilder
+public sealed class HelpTextBuilder(int spacing, int maxTotalSize)
 {
     private readonly struct TextInfo {
         public static readonly TextInfo Empty = new();
@@ -27,21 +27,12 @@ public sealed class HelpTextBuilder
         }
     }
 
-    private readonly string _padding;
-    private readonly int _padSize;
-
-    private readonly int _maxTotalSize;
+    private readonly string _padding = new(' ', spacing);
     private int _nameMaxSize = 0;
 
     private readonly Dictionary<string, TextInfo> _args = new();
     private readonly Dictionary<string, TextInfo> _opts = new();
     private readonly Dictionary<string, TextInfo> _subs = new();
-
-    public HelpTextBuilder(int spacing, int maxTotalSize) {
-        _padSize = spacing;
-        _padding = new(' ', spacing);
-        _maxTotalSize = maxTotalSize;
-    }
 
     private void AddDescription(Dictionary<string, TextInfo> dict, string name, string? desc) {
         var info
@@ -89,7 +80,7 @@ public sealed class HelpTextBuilder
     }
 
     private void AddAllDescriptions(StringBuilder sb, Dictionary<string, TextInfo> descriptions) {
-        int nameColumnSize = _nameMaxSize + (2 * _padSize);
+        int nameColumnSize = _nameMaxSize + (2 * spacing);
         //                                  ^^^^^^^^^^^^^^
         //                         there's padding before AND after
 
@@ -108,7 +99,7 @@ public sealed class HelpTextBuilder
             // printing the description
             if (_nameMaxSize - name.Length < 0) {
                 sb.AppendLine();
-                sb.Append(' ', nameColumnSize - _padSize);
+                sb.Append(' ', nameColumnSize - spacing);
                 //                            ^^^^^^^^^^
                 //                we call sb.Append(_padding) just after
             } else {
@@ -130,20 +121,20 @@ public sealed class HelpTextBuilder
 
                 var line = desc.lines[i];
 
-                if (line.Length <= _maxTotalSize - nameColumnSize) {
+                if (line.Length <= maxTotalSize - nameColumnSize) {
                     // not AppendLine because the next iteration will call it (and add padding)
                     sb.Append(line);
                     continue;
                 }
 
-                int charsLeft = _maxTotalSize - nameColumnSize;
+                int charsLeft = maxTotalSize - nameColumnSize;
 
                 foreach (var word in line.Split(' ')) {
                     if (word.Length + 1 > charsLeft) {
                         sb
                             .AppendLine()
                             .Append(' ', nameColumnSize);
-                        charsLeft = _maxTotalSize - nameColumnSize;
+                        charsLeft = maxTotalSize - nameColumnSize;
                     }
 
                     sb.Append(word).Append(' ');

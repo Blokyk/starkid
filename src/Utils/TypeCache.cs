@@ -1,21 +1,13 @@
 namespace StarKid.Generator.Utils;
 
-public readonly struct TypeCache<TValue>
-{
-    private readonly Cache<ITypeSymbol, TValue> _map;
-
-    private readonly Dictionary<SpecialType, TValue> _specialMap;
-
-    public TypeCache(
-        Func<ITypeSymbol, TValue> getter,
-        Dictionary<SpecialType, TValue> specialMap
-    ) {
-        _map = new(SymbolEqualityComparer.Default, getter);
-        _specialMap = specialMap;
-    }
+public readonly struct TypeCache<TValue>(
+    Func<ITypeSymbol, TValue> getter,
+    Dictionary<SpecialType, TValue> specialMap
+) {
+    private readonly Cache<ITypeSymbol, TValue> _map = new(SymbolEqualityComparer.Default, getter);
 
     public TValue GetValue(ITypeSymbol type) {
-        if (_specialMap.TryGetValue(type.SpecialType, out var val))
+        if (specialMap.TryGetValue(type.SpecialType, out var val))
             return val;
 
         if (type.SpecialType == SpecialType.System_Nullable_T)

@@ -1,23 +1,18 @@
 namespace StarKid.Generator.Utils;
 
-public readonly struct Cache<TKey, TValue> where TKey : notnull
+public readonly struct Cache<TKey, TValue>(
+    IEqualityComparer<TKey> comparer,
+    Func<TKey, TValue> generator
+) where TKey : notnull
 {
-    private readonly Dictionary<TKey, TValue> _map;
-    private readonly Func<TKey, TValue> _getter;
-
-    public readonly bool IsInitialized = false;
-
-    public Cache(IEqualityComparer<TKey> comparer, Func<TKey, TValue> generator) {
-        _getter = generator;
-        _map = new(comparer);
-        IsInitialized = true;
-    }
+    private readonly Dictionary<TKey, TValue> _map = new(comparer);
+    public readonly bool IsInitialized = true;
 
     public TValue GetValue(TKey key) {
         ThrowIfNotInitialized();
 
         if (!_map.TryGetValue(key, out var val)) {
-            val = _getter(key);
+            val = generator(key);
             _map.Add(key, val);
         }
 
@@ -36,20 +31,18 @@ public readonly struct Cache<TKey, TValue> where TKey : notnull
     }
 }
 
-public readonly struct Cache<TKey, TArg, TValue>
-{
-    private readonly Dictionary<(TKey, TArg), TValue> _map;
-    private readonly Func<TKey, TArg, TValue> _getter;
-
-    public Cache(IEqualityComparer<TKey> keyComparer, IEqualityComparer<TArg> argComparer, Func<TKey, TArg, TValue> generator) {
-        _getter = generator;
-        _map = new(new TupleComparer<TKey, TArg>(keyComparer, argComparer));
-    }
+public readonly struct Cache<TKey, TArg, TValue>(
+    IEqualityComparer<TKey> keyComparer,
+    IEqualityComparer<TArg> argComparer,
+    Func<TKey, TArg, TValue> generator
+) {
+    private readonly Dictionary<(TKey, TArg), TValue> _map
+        = new(new TupleComparer<TKey, TArg>(keyComparer, argComparer));
 
     [System.Diagnostics.DebuggerHidden]
     public TValue GetValue(TKey key, TArg arg) {
         if (!_map.TryGetValue((key, arg), out var val)) {
-            val = _getter(key, arg);
+            val = generator(key, arg);
             _map.Add((key, arg), val);
         }
 

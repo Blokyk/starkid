@@ -4,16 +4,9 @@ using StarKid.Generator.CommandModel;
 
 namespace StarKid.Generator.CodeGeneration;
 
-internal sealed partial class CodeGenerator
+internal sealed partial class CodeGenerator(StarKidConfig _config)
 {
-    private readonly StarKidConfig _config;
-
-    private readonly HelpGenerator _helpGenerator;
-
-    private CodeGenerator(StarKidConfig config) {
-        _config = config;
-        _helpGenerator = new(config);
-    }
+    private readonly HelpGenerator _helpGenerator = new(_config);
 
     /// <summary>
     /// Generates the full source code for a group's command descriptor (CmdDesc)

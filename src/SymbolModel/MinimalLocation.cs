@@ -1,18 +1,14 @@
 namespace StarKid.Generator.SymbolModel;
 
-public sealed class MinimalLocation
+public sealed class MinimalLocation(string filePath, TextSpan textSpan, LinePositionSpan lineSpan)
 {
     public static readonly MinimalLocation Default
         = new("", TextSpan.FromBounds(0, 0), new(LinePosition.Zero, LinePosition.Zero));
 
-    public string FilePath { get; }
-    public TextSpan TextSpan { get; }
-    public LinePositionSpan LineSpan { get; }
-    public MinimalLocation(string filePath, TextSpan textSpan, LinePositionSpan lineSpan) {
-        FilePath = filePath;
-        TextSpan = textSpan;
-        LineSpan = lineSpan;
-    }
+    public string FilePath { get; } = filePath;
+    public TextSpan TextSpan { get; } = textSpan;
+    public LinePositionSpan LineSpan { get; } = lineSpan;
+
 
     public static implicit operator Location(MinimalLocation loc)
         => Location.Create(loc.FilePath, loc.TextSpan, loc.LineSpan);

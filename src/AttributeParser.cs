@@ -1,11 +1,7 @@
 namespace StarKid.Generator;
 
-internal class AttributeParser
+internal class AttributeParser(Action<Diagnostic> addDiagnostic)
 {
-    private readonly Action<Diagnostic> _addDiagnostic;
-    public AttributeParser(Action<Diagnostic> addDiagnostic)
-        => _addDiagnostic = addDiagnostic;
-
     public bool TryParseCmdAttrib(AttributeData attr, [NotNullWhen(true)] out CommandAttribute? cmdAttr) {
         cmdAttr = null;
 
@@ -118,7 +114,7 @@ internal class AttributeParser
             return false;
 
         if (!TryGetNameOfArg(argList[0].Expression, out var parserName)) {
-            _addDiagnostic(
+            addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.ParseWithMustBeNameOfExpr,
                     SyntaxUtils.GetApplicationLocation(attr),
@@ -145,7 +141,7 @@ internal class AttributeParser
             return false;
 
         if (!TryGetNameOfArg(argList[0].Expression, out var validatorName)) {
-            _addDiagnostic(
+            addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.ValidateWithMustBeNameOfExpr,
                     SyntaxUtils.GetApplicationLocation(attr),

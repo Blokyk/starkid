@@ -70,23 +70,18 @@ internal static class MiscUtils
     public static IEqualityComparer<T> CreateComparerFrom<T>(Func<T, T, bool> eq, Func<T, int> hash)
         => new PredicateEqualityComparer<T>(eq, hash);
 
-    private class PredicateEqualityComparer<T> : IEqualityComparer<T>
+    private class PredicateEqualityComparer<T>(
+        Func<T, T, bool> equality,
+        Func<T, int> hash
+    ) : IEqualityComparer<T>
     {
-        private readonly Func<T, T, bool> _predicate;
-        private readonly Func<T, int> _hash;
-
-        public PredicateEqualityComparer(Func<T, T, bool> equality, Func<T, int> hash) {
-            _predicate = equality;
-            _hash = hash;
-        }
-
         public bool Equals(T? a, T? b)
             => a is null
                 ? b is null
-                : b is not null && _predicate(a, b);
+                : b is not null && equality(a, b);
 
         public int GetHashCode(T a)
-            => _hash(a);
+            => hash(a);
     }
 
     public static IReadOnlyDictionary<TKey, TValue> EmptyDictionary<TKey, TValue>() => default(EmptyMapImpl<TKey, TValue>);
