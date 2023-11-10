@@ -9,13 +9,13 @@
         <CompilerVisibleProperty Include="StarKid_Help_MaxCharsPerLine" />
         <CompilerVisibleProperty Include="StarKid_Help_ExitCode" />
         <CompilerVisibleProperty Include="StarKid_AllowRepeatingOptions" />
-        <CompilerVisibleProperty Include="StarKid_ArgNameCasing" />
+        <CompilerVisibleProperty Include="StarKid_Help_ArgNameCasing" />
     </ItemGroup>
 
     <PropertyGroup>
         <StarKid_Help_MaxCharsPerLine Condition="$(StarKid_Help_MaxCharsPerLine) == ''">80</StarKid_Help_MaxCharsPerLine>
         <StarKid_Help_ExitCode Condition="$(StarKid_Help_ExitCode) == ''">1</StarKid_Help_ExitCode>
         <StarKid_AllowRepeatingOptions Condition="$(StarKid_AllowRepeatingOptions) == ''">false</StarKid_AllowRepeatingOptions>
-        <StarKid_ArgNameCasing Condition="$(StarKid_ArgNameCasing) == ''">kebab-case</StarKid_ArgNameCasing>
+        <StarKid_Help_ArgNameCasing Condition="$(StarKid_Help_ArgNameCasing) == ''">kebab-case</StarKid_Help_ArgNameCasing>
     </PropertyGroup>
 </Project>

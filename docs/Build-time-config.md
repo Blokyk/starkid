@@ -70,10 +70,10 @@ Example usage:
 </PropertyGroup>
 ```
 
-## `StarKid_ArgNameCasing` -- Don't complain about repeated options in command lines
+## `StarKid_Help_ArgNameCasing` -- Don't complain about repeated options in command lines
 
 Property name:
-    `StarKid_ArgNameCasing`
+    `StarKid_Help_ArgNameCasing`
 
 Purpose:
     Changes the casing of the argument names as displayed in the help
@@ -97,6 +97,6 @@ Default value: `kebab-case`
 Example usage:
 ```xml
 <PropertyGroup>
-    <StarKid_ArgNameCasing>TRAIN-CASE</StarKid_ArgNameCasing>
+    <StarKid_Help_ArgNameCasing>TRAIN-CASE</StarKid_Help_ArgNameCasing>
 </PropertyGroup>
 ```

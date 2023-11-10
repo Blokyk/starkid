@@ -453,7 +453,7 @@ as manual parsers (in addition to [StarKid's general restrictions](#restrictions
 
 > todo: allowed xml tags
 > todo: StarKid_Help_MaxCharsPerLine
-> todo: StarKid_ArgNameCasing
+> todo: StarKid_Help_ArgNameCasing
 
 #### Custom argument/option value names
 

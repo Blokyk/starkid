@@ -15,7 +15,7 @@ public partial class StarKidGenerator
     public const string COLUMN_LENGTH_PROP_NAME = "StarKid_Help_MaxCharsPerLine";
     public const string HELP_EXIT_CODE_PROP_NAME = "StarKid_Help_ExitCode";
     public const string REPEATED_OPT_PROP_NAME = "StarKid_AllowRepeatingOptions";
-    public const string NAMING_CONV_PROP_NAME = "StarKid_ArgNameCasing";
+    public const string NAMING_CONV_PROP_NAME = "StarKid_Help_ArgNameCasing";
 
     public const int DEFAULT_COLUMN_LENGTH = 80, DEFAULT_HELP_EXIT_CODE = 1;
     public const bool DEFAULT_REPEATED_OPT = false;
