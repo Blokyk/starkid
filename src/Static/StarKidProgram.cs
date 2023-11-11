@@ -321,8 +321,25 @@ partial class StarKidProgram
         throw new FormatException("Couldn't understand '" + val + "' as a boolean value");
     }
 
-    private static T WrapParseEnum<T>(string str) where T : struct {
-        if (!System.Enum.TryParse<T>(str, ignoreCase: true, out var val))
+    private static bool TryParseEnum<T>(string str, out T val) where T : struct, Enum {
+        if (str.Length == 0) {
+            val = default(T);
+            return false;
+        }
+
+        unchecked {
+            uint offsetFirstChar = (uint)(str[0] - '0');
+            if (offsetFirstChar <= '9' - '0' || offsetFirstChar is (uint)('-' - '0')) {
+                val = default(T);
+                return false;
+            }
+        }
+
+        return System.Enum.TryParse<T>(str, ignoreCase: true, out val);
+    }
+
+    private static T WrapParseEnum<T>(string str) where T : struct, Enum {
+        if (!TryParseEnum<T>(str, out var val))
             throw new FormatException($"'{str}' isn't a valid {typeof(T).Name} value");
         return val;
     }

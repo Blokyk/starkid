@@ -8,6 +8,31 @@ namespace StarKid.Tests.ProgramTests;
 
 public class Tests
 {
+    static T Invoke<T>(string s, params object?[]? args) => (T)Invoke(s, args);
+
+    static object Invoke(string s, params object?[]? args) {
+        var type = typeof(StarKidProgram);
+
+        var method
+            = type.GetMethod(
+                s,
+                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static,
+                args?.Select(arg => arg?.GetType() ?? typeof(object)).ToArray() ?? Type.EmptyTypes
+            );
+
+        try {
+            return method!.Invoke(null, args)!;
+        } catch (TargetInvocationException e) when (e.InnerException != null) {
+            ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+            throw;
+        }
+    }
+
+    static object GetField(string s)
+        => typeof(StarKidProgram).GetField(s, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)!.GetValue(null)!;
+    static void SetField(string s, object? value)
+        => typeof(StarKidProgram).GetField(s, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)!.SetValue(null, value);
+
     public class AsBool {
         [Theory]
         [InlineData("true"), InlineData("True"), InlineData(null)]
@@ -95,5 +120,32 @@ public class Tests
         [InlineData(typeof(GenericInner<>.GenericInnerInner<,>), "GenericInnerInner<U, V>")]
         [InlineData(typeof(GenericInner<int>.GenericInnerInner<string, float>), "GenericInnerInner<string, float>")]
         public void Nested(Type t, string expected) => Assert.Equal(expected, pGetFriendlyNameOf(t));
+    }
+
+    public class ParseEnum
+    {
+        public enum Fruits { Apple, Orange, Pear }
+
+        [Fact]
+        public void Base() {
+            Assert.Equal(Fruits.Apple, pWrapParseEnum<Fruits>("Apple"));
+            Assert.Equal(Fruits.Orange, pWrapParseEnum<Fruits>("Orange"));
+            Assert.Equal(Fruits.Pear, pWrapParseEnum<Fruits>("Pear"));
+        }
+
+        [Theory]
+        [InlineData("pear"), InlineData("PEAR"), InlineData("pEaR")]
+        public void IgnoreCase(string s)
+            => Assert.Equal(Fruits.Pear, pWrapParseEnum<Fruits>(s));
+
+        [Theory]
+        [InlineData("Strawberry"), InlineData("_pear"), InlineData(""), InlineData("\"Apple\"")]
+        public void RejectInvalid(string s)
+            => Assert.Throws<FormatException>(() => pWrapParseEnum<Fruits>(s));
+
+        [Theory]
+        [InlineData("0"), InlineData("5"), InlineData("-6")]
+        public void RejectNonDefined(string s)
+            => Assert.Throws<FormatException>(() => pWrapParseEnum<Fruits>(s));
     }
 }
