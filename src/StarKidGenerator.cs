@@ -11,7 +11,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
     private static readonly string _starkidProgramCode;
 
     static StarKidGenerator() {
-        _starkidProgramCode = MiscUtils.GetStaticResource("StarKidProgram.nocs");
+        _starkidProgramCode = MiscUtils.GetStaticResource("StarKidProgram.cs");
 
         var sb = new StringBuilder();
 

@@ -84,6 +84,7 @@
 
   <!-- Make sure the .props file (with the <CompilerVisible...> stuff) is included in the package -->
   <ItemGroup>
+    <Compile Remove="Static/StarKidProgram.cs" />
     <None Include="Blokyk.StarKid.props" Pack="true" PackagePath="build" Condition="Exists('./Blokyk.StarKid.props')" />
     <None Include="Blokyk.StarKid.targets" Pack="true" PackagePath="build" Condition="Exists('./Blokyk.StarKid.targets')" />
   </ItemGroup>
