@@ -448,40 +448,90 @@ partial class StarKidProgram
 
     private static string GetFriendlyNameOf(Type t) {
         if (t.IsArray) {
-            return GetFriendlyNameOf(t.GetElementType()!) + "[]";
+            var itemName = GetFriendlyNameOf(t.GetElementType()!);
+
+            var rank = t.GetArrayRank();
+
+            return rank == 1
+                ? itemName + "[]"
+                : itemName + "[" + new string(',', rank - 1) + "]";
         }
 
         if (!t.IsGenericType) {
-            return t.Name switch {
+            var name = t.Name;
+
+            return name switch {
+                "Int32"   => "int",
+                "String"  => "string",
+                "Single"  => "float",
+                "Object"  => "object",
                 "Boolean" => "bool",
                 "Char"    => "char",
                 "Byte"    => "byte",
                 "Int16"   => "short",
                 "UInt16"  => "ushort",
-                "Int32"   => "int",
                 "UInt32"  => "uint",
                 "Int64"   => "long",
                 "UInt64"  => "ulong",
-                "String"  => "string",
-                _         => t.Name
+                "Double"  => "double",
+                _ => name
             };
         }
 
-        if (t.IsConstructedGenericType) {
-            if (t.Name == typeof(Nullable<>).Name)
-                return GetFriendlyNameOf(t.GenericTypeArguments[0]) + "?";
-            else if (t.Name
-                is "ValueTuple`1" or "ValueTuple`2" or "ValueTuple`3" or "ValueTuple`4"
-                or "ValueTuple`5" or "ValueTuple`6" or "ValueTuple`7" or "ValueTuple`8"
-                or "Tuple`1" or "Tuple`2" or "Tuple`3" or "Tuple`4"
-                or "Tuple`5" or "Tuple`6" or "Tuple`7" or "Tuple`8"
-            )
-                return '(' + String.Join(", ", t.GenericTypeArguments.Select(GetFriendlyNameOf)) + ')';
+        static Type[] getTypeArgsOrParams(Type t)
+            => t.IsConstructedGenericType
+            ? t.GenericTypeArguments
+            : t.GetGenericArguments();
+
+        var typeArgsAsArray = getTypeArgsOrParams(t);
+        var typeArgsCount = typeArgsAsArray.Length;
+
+        var typeArgs = (IEnumerable<Type>)typeArgsAsArray;
+
+        // if it's Outer.Inner<>, we don't have to special case anything
+        if (t.IsNested && (t.DeclaringType!.IsConstructedGenericType || t.DeclaringType!.ContainsGenericParameters)) {
+            // note: the arity of the outer type adds up with the inner's arity
+            //      - typeof(Outer<>.Inner).GenericArgs.Length == 1
+            //      - typeof(Outer<>.Inner<>).GenericArgs.Length == 2
+            //
+            // when you write:
+            //      class Outer<T> { class Inner<M> { } }
+            // it gets compiled to:
+            //      .class Inner`1<T, M>
+
+            var outer = t.DeclaringType;
+            var outerArgs = getTypeArgsOrParams(outer);
+
+            typeArgsCount = typeArgsCount - outerArgs.Length;
+
+            // if Inner isn't generic, it'll have the same arity as Outer
+            if (typeArgsCount == 0)
+                return t.Name; // returns "Inner"
+
+            // if inner IS generic, we ignore the first $outer.arity params
+            // and then the normal logic applies
+
+            typeArgs = typeArgs.Skip(outerArgs.Length);
+        } else {
+            // * this bit of code only cares about non-nested types
+            // typeArgs == typeArgsAsArray
+            if (t.IsConstructedGenericType) {
+                if (t.Name == typeof(Nullable<>).Name)
+                    return GetFriendlyNameOf(typeArgsAsArray[0]) + "?";
+                else if (t.Name
+                    is "ValueTuple`1" or "ValueTuple`2" or "ValueTuple`3" or "ValueTuple`4"
+                    or "ValueTuple`5" or "ValueTuple`6" or "ValueTuple`7" or "ValueTuple`8"
+                    or "Tuple`1" or "Tuple`2" or "Tuple`3" or "Tuple`4"
+                    or "Tuple`5" or "Tuple`6" or "Tuple`7" or "Tuple`8"
+                )
+                    return '(' + String.Join(", ", typeArgsAsArray.Select(GetFriendlyNameOf)) + ')';
+            }
         }
 
-        var baseName = t.Name[..^(t.GenericTypeArguments.Length < 10 ? 2 : 3)];
+        // remove the `N at the end of generic type name
+        var baseName = t.Name[..^(typeArgsCount < 10 ? 2 : 3)];
 
-        return baseName + "<" + string.Join(',', t.GenericTypeArguments.Select(GetFriendlyNameOf)) + ">";
+        return baseName + "<" + string.Join(", ", typeArgs.Select(GetFriendlyNameOf)) + ">";
     }
 
     // for starkid's tests
