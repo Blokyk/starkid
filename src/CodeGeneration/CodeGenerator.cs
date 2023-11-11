@@ -48,7 +48,11 @@ sb.Append(@"
 
 namespace StarKid.Generated;
 
-internal static partial class StarKidProgram
+internal
+#if !__STARKID_TESTING_NON_STATIC_PROGRAM
+    static
+#endif
+partial class StarKidProgram
 {
     static void Initialize() => ").Append(rootGroup.ID).AppendLine("CmdDesc.Activate();");
     }

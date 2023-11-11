@@ -13,7 +13,11 @@ namespace StarKid.Generated;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 [StackTraceHidden]
-internal static partial class StarKidProgram
+internal
+#if !__STARKID_TESTING_NON_STATIC_PROGRAM
+    static
+#endif
+partial class StarKidProgram
 {
 #pragma warning disable CS8618
     static StarKidProgram() => Initialize();
