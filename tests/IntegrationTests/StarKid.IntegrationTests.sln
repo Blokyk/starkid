@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTests.Op
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTests.NameCasing", "NameCasing\StarKid.IntegrationTest.csproj", "{01BDF117-20E8-460B-8BF1-7537F670DDE1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTest", "ProgramTests\StarKid.IntegrationTest.csproj", "{485D367B-C80F-49DF-A4FE-846574D19ABC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{01BDF117-20E8-460B-8BF1-7537F670DDE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01BDF117-20E8-460B-8BF1-7537F670DDE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01BDF117-20E8-460B-8BF1-7537F670DDE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{485D367B-C80F-49DF-A4FE-846574D19ABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{485D367B-C80F-49DF-A4FE-846574D19ABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{485D367B-C80F-49DF-A4FE-846574D19ABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{485D367B-C80F-49DF-A4FE-846574D19ABC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <DefineConstants>$(DefineConstants);__STARKID_TESTING_NON_STATIC_PROGRAM</DefineConstants>
+    </PropertyGroup>
+</Project>
