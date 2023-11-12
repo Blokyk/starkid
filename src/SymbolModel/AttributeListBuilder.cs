@@ -81,6 +81,10 @@ internal class AttributeListBuilder
     }
 
     public static CLIMemberKind CategorizeAttributeList(AttributeListInfo attrList) {
+        // we check here cause otherwise can't pattern-match on valid.Length
+        if (attrList.IsUninitialized)
+            return CLIMemberKind.Invalid;
+
         var (group, cmd, opt, parse, valid, isOnParam) = attrList;
 
         return
@@ -103,7 +107,7 @@ internal class AttributeListBuilder
     }
 
     (bool, AttributeListInfo) TryGetAttributeList(ISymbol symbol) {
-        var attribList = new AttributeListInfo();
+        var attribList = default(AttributeListInfo);
         var attrs = symbol.GetAttributes();
 
         CommandGroupAttribute? group = null;

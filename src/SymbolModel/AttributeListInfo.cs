@@ -15,6 +15,8 @@ internal readonly record struct AttributeListInfo(
         && ParseWith is null
         && ValidateWithList.Length == 0
         ;
+    internal bool IsUninitialized
+        => ValidateWithList.Array.IsDefault;
 
     internal CLIMemberKind Kind => AttributeListBuilder.CategorizeAttributeList(this);
 }
