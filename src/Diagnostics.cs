@@ -332,6 +332,16 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor IsGlobalOnNonGroupOpt
+        = new(
+            "CLI299",
+            "The 'IsGlobal' property will not have any effect here, as it only affects group-wide options",
+            "The 'IsGlobal' property will not have any effect here, as it only affects group-wide options",
+            "StarKid.Analysis",
+            DiagnosticSeverity.Warning,
+            true
+        );
+
     public static readonly DiagnosticDescriptor CouldntFindAutoParser
         = new(
             "CLI400",

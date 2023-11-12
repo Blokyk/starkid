@@ -192,6 +192,13 @@ internal sealed class GroupBuilder
                 if (!TryCreateOptionFrom(param, paramAttrList, out var opt))
                     return false;
 
+                // having a global option in a non-group command is useless
+                if (opt.IsGlobal) {
+                    _addDiagnostic(
+                        Diagnostic.Create(Diagnostics.IsGlobalOnNonGroupOpt, param.GetDefaultLocation())
+                    );
+                }
+
                 TryBindChildDocInfo(ref opt, docInfo);
 
                 cmd.AddOption(opt);
