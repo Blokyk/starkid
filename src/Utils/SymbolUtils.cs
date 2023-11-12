@@ -85,7 +85,7 @@ internal static class SymbolUtils
     public static string GetErrorName(this ISymbol symbol)
         => symbol switch {
             IParameterSymbol param => param.Name,
-            _ => symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat),
+            _ => symbol.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat),
         };
 
     public static bool IsBaseOf(this ITypeSymbol baseType, ITypeSymbol derived) {
