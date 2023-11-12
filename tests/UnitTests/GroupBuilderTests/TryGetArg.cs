@@ -4,9 +4,9 @@ using StarKid.Generator.CommandModel;
 
 namespace StarKid.Tests;
 
-public static class GroupBuilderTests
+public static partial class GroupBuilderTests
 {
-    public class TryGetArg
+    public partial class TryGetArg
     {
         [Fact]
         public void SingleString() {
@@ -202,22 +202,6 @@ class C {
                 },
                 arg
             );
-        }
-
-        [Fact]
-        public void DoesntCrashOnInvalidParams() {
-            var source = @"
-class C {
-    public void M(params string arg1) {}
-}
-";
-
-            var comp = Compilation.From(source);
-            var param = ((IMethodSymbol)comp.GetSymbolsWithName("M").First()).Parameters[0];
-
-            var (diags, gb) = GetBuilder(comp);
-
-            gb.TryGetArg_(param, out Argument arg); // checks no crash
         }
     }
 
