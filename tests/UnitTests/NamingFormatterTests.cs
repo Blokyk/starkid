@@ -7,230 +7,116 @@ public static class NamingFormatterTests
 {
     public class ExtractPartsTests
     {
-        [Fact]
-        public void BaseTests() {
-            Assert.Equal(
-                new[] { "hello" },
-                ExtractParts("hello")
-            );
+        [Theory]
+        [InlineData("hello", "hello")]
+        [InlineData("myOption", "my", "Option")]
+        [InlineData("SomeLongerName", "Some", "Longer", "Name")]
+        [InlineData("sOLD_var", "s", "OLD", "var")]
+        [InlineData("mi6SecretCupcake", "mi6", "Secret", "Cupcake")]
+        [InlineData("")] // empty
+        public void BaseTests(string str, params string[] parts)
+            => Assert.Equal(parts, ExtractParts(str));
 
-            Assert.Equal(
-                new[] { "my", "Option" },
-                ExtractParts("myOption")
-            );
+        [Theory]
+        [InlineData("RemoteURIScheme", "Remote", "URI", "Scheme")]
+        [InlineData("someURLAsURI", "some", "URL", "As", "URI")]
+        public void ConsecutiveUpper(string str, params string[] parts)
+            => Assert.Equal(parts, ExtractParts(str));
 
-            Assert.Equal(
-                new[] { "Some", "Longer", "Name" },
-                ExtractParts("SomeLongerName")
-            );
+        [Theory]
+        [InlineData("someStuffA", "some", "Stuff", "A")]
+        [InlineData("heyDUDE", "hey", "DUDE")]
+        [InlineData("i_like_underscores_", "i", "like", "underscores", "")]
+        [InlineData("hey-dude-", "hey", "dude", "")]
+        public void HandleSingleCharSegmentAtEndCorrectly(string str, params string[] parts)
+            => Assert.Equal(parts, ExtractParts(str));
 
-            Assert.Equal(
-                new[] { "s", "OLD", "var" },
-                ExtractParts("sOLD_var")
-            );
+        [Theory]
+        [InlineData("hello_world", "hello", "world")]
+        [InlineData("safe_FTP_Getter_Methods", "safe", "FTP", "Getter", "Methods")]
+        public void SnakeSupport(string str, params string[] parts)
+            => Assert.Equal(parts, ExtractParts(str));
 
-            Assert.Empty(ExtractParts(""));
-        }
+        [Theory]
+        [InlineData("hello-world", "hello", "world")]
+        [InlineData("safe-FTP-Getter-Methods", "safe", "FTP", "Getter", "Methods")]
+        public void KebabSupport(string str, params string[] parts)
+            => Assert.Equal(parts, ExtractParts(str));
 
-        [Fact]
-        public void ConsecutiveUpper() {
-            Assert.Equal(
-                new[] { "Remote", "URI", "Scheme" },
-                ExtractParts("RemoteURIScheme")
-            );
-
-            Assert.Equal(
-                new[] { "some", "URL", "As", "URI" },
-                ExtractParts("someURLAsURI")
-            );
-        }
-
-        [Fact]
-        public void HandleSingleCharSegmentAtEndCorrectly() {
-            Assert.Equal(
-                new[] { "some", "Stuff", "A" },
-                ExtractParts("someStuffA")
-            );
-
-            Assert.Equal(
-                new[] { "hey", "DUDE" },
-                ExtractParts("heyDUDE")
-            );
-
-            Assert.Equal(
-                new[] { "i", "like", "underscores", "" },
-                ExtractParts("i_like_underscores_")
-            );
-
-            Assert.Equal(
-                new[] { "hey", "dude", "" },
-                ExtractParts("hey-dude-")
-            );
-        }
-
-        [Fact]
-        public void SnakeSupport() {
-            Assert.Equal(
-                new[] { "hello", "world" },
-                ExtractParts("hello_world")
-            );
-
-            var l = ExtractParts("safe_FTP_Getter_Method").ToArray();
-
-            Assert.Equal(
-                new[] { "safe", "FTP", "Getter", "Method" },
-                l
-            );
-        }
-
-        [Fact]
-        public void KebabSupport() {
-            Assert.Equal(
-                new[] { "hello", "world" },
-                ExtractParts("hello-world")
-            );
-
-            Assert.Equal(
-                new[] { "safe", "FTP", "Getter", "Method" },
-                ExtractParts("safe-FTP-Getter-Method")
-            );
-        }
-
-        [Fact]
-        public void MixedCaseSupport() {
-            Assert.Equal(
-                new[] { "safe", "FTP", "Getter", "Method", "URL", "Provider" },
-                ExtractParts("safe-FTP-GetterMethod-URLProvider")
-            );
-        }
+        [Theory]
+        [InlineData("safe-FTP_GetterMethod-URLProvider", "safe", "FTP", "Getter", "Method", "URL", "Provider")]
+        public void MixedCaseSupport(string str, params string[] parts)
+            => Assert.Equal(parts, ExtractParts(str));
     }
 
     public class Format
     {
-        [Fact]
-        public void OriginalTest() {
-            Assert.Equal(
-                "helloWorld",
-                Format("helloWorld", Original)
-            );
+        const string s1 = "helloWorld";
+        const string
+            s1_camel   = "helloWorld",  s1_pascal = "HelloWorld",
+            s1_kebab   = "hello-world", s1_snake  = "hello_world",
+            s1_allCaps = "HELLO_WORLD", s1_train  = "HELLO-WORLD";
 
-            Assert.Equal(
-                "URIHandler",
-                Format("URIHandler", Original)
-            );
 
-            Assert.Equal(
-                "safe-FTP-GetterMethodURLProvider",
-                Format("safe-FTP-GetterMethodURLProvider", None)
-            );
-        }
+        const string s2 = "URIHandler";
+        const string
+            s2_camel   = "uriHandler",  s2_pascal = "URIHandler",
+            s2_kebab   = "uri-handler", s2_snake  = "uri_handler",
+            s2_allCaps = "URI_HANDLER", s2_train  = "URI-HANDLER";
 
-        [Fact]
-        public void CamelCaseTest() {
-            Assert.Equal(
-                "helloWorld",
-                Format("helloWorld", CamelCase)
-            );
+        const string s3 = "safe-FTP-GetterMethodURLProvider";
+        const string
+            s3_camel = "safeFTPGetterMethodURLProvider", s3_pascal = "SafeFTPGetterMethodURLProvider",
+            s3_kebab = "safe-ftp-getter-method-url-provider", s3_snake = "safe_ftp_getter_method_url_provider",
+            s3_allCaps = "SAFE_FTP_GETTER_METHOD_URL_PROVIDER", s3_train = "SAFE-FTP-GETTER-METHOD-URL-PROVIDER";
 
-            Assert.Equal(
-                "uriHandler",
-                Format("URIHandler", CamelCase)
-            );
+        [Theory]
+        [InlineData(s1, s1)]
+        [InlineData(s2, s2)]
+        [InlineData(s3, s3)]
+        public void OriginalTest(string str, string expected)
+            => Assert.Equal(expected, Format(str, None));
 
-            Assert.Equal(
-                "safeFTPGetterMethodURLProvider",
-                Format("safe-FTP-GetterMethodURLProvider", CamelCase)
-            );
-        }
+        [Theory]
+        [InlineData(s1, s1_camel)]
+        [InlineData(s2, s2_camel)]
+        [InlineData(s3, s3_camel)]
+        public void CamelCaseTest(string str, string expected)
+            => Assert.Equal(expected, Format(str, CamelCase));
 
-        [Fact]
-        public void PascalCaseTest() {
-            Assert.Equal(
-                "HelloWorld",
-                Format("helloWorld", PascalCase)
-            );
+        [Theory]
+        [InlineData(s1, s1_pascal)]
+        [InlineData(s2, s2_pascal)]
+        [InlineData(s3, s3_pascal)]
+        public void PascalCaseTest(string str, string expected)
+            => Assert.Equal(expected, Format(str, PascalCase));
 
-            Assert.Equal(
-                "URIHandler",
-                Format("URIHandler", PascalCase)
-            );
+        [Theory]
+        [InlineData(s1, s1_kebab)]
+        [InlineData(s2, s2_kebab)]
+        [InlineData(s3, s3_kebab)]
+        public void KebabCaseTest(string str, string expected)
+            => Assert.Equal(expected, Format(str, KebabCase));
 
-            Assert.Equal(
-                "SafeFTPGetterMethodURLProvider",
-                Format("safe-FTP-GetterMethodURLProvider", PascalCase)
-            );
-        }
+        [Theory]
+        [InlineData(s1, s1_snake)]
+        [InlineData(s2, s2_snake)]
+        [InlineData(s3, s3_snake)]
+        public void SnakeCaseTest(string str, string expected)
+            => Assert.Equal(expected, Format(str, SnakeCase));
 
-        [Fact]
-        public void KebabCaseTest() {
-            Assert.Equal(
-                "hello-world",
-                Format("helloWorld", KebabCase)
-            );
+        [Theory]
+        [InlineData(s1, s1_allCaps)]
+        [InlineData(s2, s2_allCaps)]
+        [InlineData(s3, s3_allCaps)]
+        public void AllCapsTest(string str, string expected)
+            => Assert.Equal(expected, Format(str, AllCaps));
 
-            Assert.Equal(
-                "uri-handler",
-                Format("URIHandler", KebabCase)
-            );
-
-            Assert.Equal(
-                "safe-ftp-getter-method-url-provider",
-                Format("safe-FTP-GetterMethodURLProvider", KebabCase)
-            );
-        }
-
-        [Fact]
-        public void SnakeCaseTest() {
-            Assert.Equal(
-                "hello_world",
-                Format("hello_world", SnakeCase)
-            );
-
-            Assert.Equal(
-                "uri_handler",
-                Format("URIHandler", SnakeCase)
-            );
-
-            Assert.Equal(
-                "safe_ftp_getter_method_url_provider",
-                Format("safe-FTP-GetterMethod_URLProvider", SnakeCase)
-            );
-        }
-
-        [Fact]
-        public void AllCapsCaseTest() {
-            Assert.Equal(
-                "HELLO_WORLD",
-                Format("helloWorld", AllCaps)
-            );
-
-            Assert.Equal(
-                "URI_HANDLER",
-                Format("URIHandler", AllCaps)
-            );
-
-            Assert.Equal(
-                "SAFE_FTP_GETTER_METHOD_URL_PROVIDER",
-                Format("safe-FTP-GetterMethodURLProvider", AllCaps)
-            );
-        }
-
-        [Fact]
-        public void TrainCaseTest() {
-            Assert.Equal(
-                "HELLO-WORLD",
-                Format("helloWorld", TrainCase)
-            );
-
-            Assert.Equal(
-                "URI-HANDLER",
-                Format("URIHandler", TrainCase)
-            );
-
-            Assert.Equal(
-                "SAFE-FTP-GETTER-METHOD-URL-PROVIDER",
-                Format("safe-FTP-GetterMethodURLProvider", TrainCase)
-            );
-        }
+        [Theory]
+        [InlineData(s1, s1_train)]
+        [InlineData(s2, s2_train)]
+        [InlineData(s3, s3_train)]
+        public void TrainCaseTest(string str, string expected)
+            => Assert.Equal(expected, Format(str, TrainCase));
     }
 }
