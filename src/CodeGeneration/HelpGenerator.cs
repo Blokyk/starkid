@@ -24,7 +24,7 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
 
         if (groupOrCmd is Command cmd) {
             foreach (var arg in cmd.Arguments)
-                builder.AddArgumentDescription(FormatArgName(arg.Name), arg.Description);
+                builder.AddArgumentDescription(FormatArgName(arg), arg.Description);
         }
 
         builder.AddOptionDescription(
@@ -40,7 +40,7 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
 
             var argStr
                 = opt is not Flag
-                ? " <" + FormatArgName(opt.ArgName) + ">"
+                ? " <" + FormatArgName(opt) + ">"
                 : "";
 
             builder.AddOptionDescription(
@@ -64,7 +64,7 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
                 string argStr
                     = subcmd.Arguments.Count switch {
                         0 => "",
-                        1 => argStr = " <" + FormatArgName(subcmd.Arguments[0].Name) + ">",
+                        1 => argStr = " <" + FormatArgName(subcmd.Arguments[0]) + ">",
                         _ => " <args>",
                     };
 
@@ -143,7 +143,7 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
 
         foreach (var arg in args) {
             sb.Append('<');
-            sb.Append(FormatArgName(arg.Name));
+            sb.Append(FormatArgName(arg));
 
             if (arg.IsParams)
                 sb.Append("...");
@@ -180,7 +180,7 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
             if (opt is not Flag) {
                 sb
                     .Append(" <")
-                    .Append(FormatArgName(opt.ArgName))
+                    .Append(FormatArgName(opt))
                     .Append('>');
             }
 
@@ -200,7 +200,7 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
             length += opt.Name.Length + 5;
 
             if (opt is not Flag)
-                length += FormatArgName(opt.ArgName).Length + 3;
+                length += FormatArgName(opt).Length + 3;
         }
 
         return length - 1; // minus the last space
@@ -274,5 +274,8 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
 
     private readonly Cache<string, string> _formattedNameCache
         = new(StringComparer.InvariantCulture, s => NameFormatter.Format(s, config.ArgNameCasing));
-    private string FormatArgName(string s) => _formattedNameCache.GetValue(s);
+    private string FormatArgName(Argument arg) => _formattedNameCache.GetValue(arg.Name);
+    private string FormatArgName(Option opt)
+        // if the option was given a custom name, then don't format it
+        => opt.CustomArgName ?? _formattedNameCache.GetValue(opt.BackingSymbol.Name);
 }

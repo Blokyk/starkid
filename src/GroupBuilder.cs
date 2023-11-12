@@ -267,14 +267,14 @@ internal sealed class GroupBuilder
             typeMinInfo,
             longName,
             shortName,
-            argName ?? symbol.Name,
             isGlobal,
             parser,
             backingSymbol,
             defaultValStr
         ) {
             Validators = validators.ToValueArray(),
-            Description = docInfo?.Summary
+            Description = docInfo?.Summary,
+            CustomArgName = argName
         };
 
         return true;

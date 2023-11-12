@@ -17,6 +17,7 @@ public class Tests {
     [InlineData(0, "SOME-VAL")]
     [InlineData(1, "URL-MAX-LENGTH")]
     [InlineData(2, "S-SOME-NIGHTMARISH-VAR-NAME")]
+    [InlineData(3, "customName")]
     public void Opts(int i, string expected) {
         Assert.Contains($"--opt{i+1} <{expected}>", _mainOptionsSection[i]);
     }

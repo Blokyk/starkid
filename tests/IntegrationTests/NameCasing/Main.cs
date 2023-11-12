@@ -13,6 +13,9 @@ public static class Main {
     [Option("opt3")]
     public static string? s_someNightmarish_VARName;
 
+    [Option("opt4", ArgName = "customName")]
+    public static string opt4Value = "hello";
+
     [Command("dummy")]
     public static void Dummy(
         string SomeVal,
