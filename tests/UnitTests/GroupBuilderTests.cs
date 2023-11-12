@@ -176,6 +176,49 @@ class C {
                 arg
             );
         }
+
+        [Fact]
+        public void IntParamsArg() {
+            var source = @"
+class C {
+    public void M(params int[] arg1) {}
+}
+";
+
+            var comp = Compilation.From(source);
+            var param = ((IMethodSymbol)comp.GetSymbolsWithName("M").First()).Parameters[0];
+
+            var (diags, gb) = GetBuilder(comp);
+
+            Assert.True(gb.TryGetArg_(param, out Argument arg));
+            Assert.Empty(diags);
+
+            Assert.Equivalent(
+                new {
+                    Type = new { Name = "Int32[]" },
+                    Name = "arg1",
+                    Parser = new ParserInfo.DirectMethod("System.Int32.Parse", CommonTypes.INT32),
+                    IsParams = true
+                },
+                arg
+            );
+        }
+
+        [Fact]
+        public void DoesntCrashOnInvalidParams() {
+            var source = @"
+class C {
+    public void M(params string arg1) {}
+}
+";
+
+            var comp = Compilation.From(source);
+            var param = ((IMethodSymbol)comp.GetSymbolsWithName("M").First()).Parameters[0];
+
+            var (diags, gb) = GetBuilder(comp);
+
+            gb.TryGetArg_(param, out Argument arg); // checks no crash
+        }
     }
 
     private static (List<Diagnostic> diags, dynamic gb) GetBuilder(CSharpCompilation comp) {

@@ -291,8 +291,10 @@ internal sealed class GroupBuilder
         arg = null;
 
         var parserTargetType
-            = param.IsParams
-            ? (param.Type as IArrayTypeSymbol)!.ElementType
+            // we have to check for IArrayTypeSymbol cause it's possible
+            // we have to parse invalid code like `params int nums`
+            = param.IsParams && param.Type is IArrayTypeSymbol { ElementType: var itemType }
+            ? itemType
             : param.Type;
 
         if (!TryGetParser(attrList.ParseWith, parserTargetType, param, out var parser))
