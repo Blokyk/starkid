@@ -1,3 +1,5 @@
+using StarKid.Generator;
+
 namespace StarKid.Tests;
 
 internal static class Compilation
@@ -6,6 +8,15 @@ internal static class Compilation
     public static CSharpCompilation From(string source, CSharpParseOptions parseOptions) => From(source, parseOptions, CompilationOptions.DefaultConsole);
     public static CSharpCompilation From(string source, CSharpCompilationOptions options) => From(source, ParseOptions.Default, options);
     public static CSharpCompilation From(string source, CSharpParseOptions parseOptions, CSharpCompilationOptions compOptions) => From(CSharpSyntaxTree.ParseText(source, parseOptions), compOptions);
+
+    public static GeneratorDriverRunResult RunStarKid(this CSharpCompilation comp)
+        => CSharpGeneratorDriver.Create(
+            [new StarKidGenerator().AsSourceGenerator()],
+            driverOptions: new GeneratorDriverOptions(
+                disabledOutputs: IncrementalGeneratorOutputKind.None,
+                trackIncrementalGeneratorSteps: true
+            )
+        ).RunGenerators(comp).GetRunResult();
 
     public static CSharpCompilation From(RS.SyntaxTree tree) => From(tree, CompilationOptions.DefaultConsole);
     public static CSharpCompilation From(
