@@ -129,5 +129,27 @@ namespace Foo {
             var usings = StarKidGenerator.GetReachableNamespaceNames(node);
             Assert.Equivalent(new[] { "System.IO", "System.Diagnostics", "Microsoft.CodeAnalysis", "Foo.Bar" }, usings);
         }
+
+        [Fact]
+        public void InsideNestedClass() {
+            var source = @"
+using System.IO;
+
+namespace Foo {
+    using System.Diagnostics;
+
+    namespace Bar {
+        using Microsoft.CodeAnalysis;
+
+        class C1 { class C2 { [|public int M;|] }}
+    }
+}
+";
+
+            _ = SyntaxTree.WithMarkedNode(source, out var node);
+
+            var usings = StarKidGenerator.GetReachableNamespaceNames(node);
+            Assert.Equivalent(new[] { "System.IO", "System.Diagnostics", "Microsoft.CodeAnalysis", "Foo.Bar" }, usings);
+        }
     }
 }
