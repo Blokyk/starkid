@@ -60,9 +60,8 @@
     <PackageType>Dependency</PackageType>
 
     <PackageTags>Source Generator; Roslyn; CLI; Command line; Command-line; AOT; AOT-friendly</PackageTags>
-    <Description>
-        A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).
-    </Description>
+    <Description
+      >A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).</Description>
   </PropertyGroup>
 
   <!-- Packaging stuff -->
