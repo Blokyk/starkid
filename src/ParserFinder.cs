@@ -16,13 +16,13 @@ public class ParserFinder
     private static readonly Dictionary<SpecialType, ParserInfo> _specialTypesMap
         = new() { {
                 SpecialType.System_String,
-                ParserInfo.StringIdentity
+                ParserInfo.StringIdentity.Instance
             }, {
                 SpecialType.System_Boolean,
-                ParserInfo.AsBool
+                ParserInfo.AsBool.Instance
             }, {
                 SpecialType.System_Object,
-                ParserInfo.StringIdentity
+                ParserInfo.StringIdentity.Instance
             }, {
                 SpecialType.System_Char,
                 new ParserInfo.DirectMethod(
@@ -147,7 +147,7 @@ public class ParserFinder
 
     ParserInfo FindParserForTypeCore(ITypeSymbol sourceType) {
         if (sourceType.SpecialType == SpecialType.System_String)
-            return ParserInfo.StringIdentity;
+            return ParserInfo.StringIdentity.Instance;
 
         if (sourceType is not INamedTypeSymbol targetType) {
             return new ParserInfo.Invalid(Diagnostics.NotValidParserType);

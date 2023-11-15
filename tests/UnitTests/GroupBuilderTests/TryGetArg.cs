@@ -27,7 +27,7 @@ class C {
                 new {
                     Type = new { FullName = "System.String" },
                     Name = "arg1",
-                    Parser = ParserInfo.StringIdentity
+                    Parser = ParserInfo.StringIdentity.Instance
                 },
                 arg
             );
@@ -61,7 +61,7 @@ class D {
                 new {
                     Type = CommonTypes.STR,
                     Name = "arg1",
-                    Parser = ParserInfo.StringIdentity,
+                    Parser = ParserInfo.StringIdentity.Instance,
                     IsParams = false,
                     DefaultValueExpr = "\"foo\""
                 },
@@ -169,7 +169,7 @@ class C {
                 new {
                     Type = new { Name = "String[]" },
                     Name = "arg1",
-                    Parser = ParserInfo.StringIdentity,
+                    Parser = ParserInfo.StringIdentity.Instance,
                     IsParams = true
                 },
                 arg

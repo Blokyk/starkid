@@ -29,14 +29,6 @@ internal static class CodegenHelpers
         );
 
     public static string GetParsingExpression(ParserInfo parser, string? defaultValueExpr) {
-        if (parser == ParserInfo.AsBool) {
-            var name = ParserInfo.AsBool.FullName;
-            if (defaultValueExpr is null)
-                return name + "(__arg)";
-            else
-                return name + "(__arg, !" + defaultValueExpr + ")";
-        }
-
         string expr = "";
 
         var targetType = parser.TargetType;
@@ -52,9 +44,14 @@ internal static class CodegenHelpers
 
         expr += parser switch {
             ParserInfo.Identity => "__arg",
-            ParserInfo.DirectMethod dm => "ThrowIfParseError<" + getNonNullableTypeName(targetType) + ">(" + dm.FullName + ", __arg ?? \"\")",
-            ParserInfo.Constructor ctor => "new " + getNonNullableTypeName(ctor.TargetType) + "(__arg ?? \"\")",
-            ParserInfo.BoolOutMethod bom => "ThrowIfTryParseNotTrue<" + getNonNullableTypeName(targetType) + ">(" + bom.FullName + ", __arg ?? \"\")",
+            ParserInfo.AsBool
+                => ParserInfo.AsBool.FullName + (defaultValueExpr is null ? "(__arg)" : "(__arg, !" + defaultValueExpr + ")"),
+            ParserInfo.DirectMethod dm
+                => "ThrowIfParseError<" + getNonNullableTypeName(targetType) + ">(" + dm.FullName + ", __arg ?? \"\")",
+            ParserInfo.Constructor ctor
+                => "new " + getNonNullableTypeName(ctor.TargetType) + "(__arg ?? \"\")",
+            ParserInfo.BoolOutMethod bom
+                => "ThrowIfTryParseNotTrue<" + getNonNullableTypeName(targetType) + ">(" + bom.FullName + ", __arg ?? \"\")",
             _ => throw new Exception(parser.GetType().Name + " is not a supported ParserInfo type."),
         };
 
