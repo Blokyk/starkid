@@ -192,7 +192,7 @@ public static void PleaseNeverDoThis(
   ...36 parameters later...
   float pixelDensity,
   FileInfo idCardSignature
-) => Console.WriteLine("Nope.");
+) => Console.WriteLine("l.o.l.");
 ```
 
 ### Options and flags
@@ -220,8 +220,8 @@ Hello, Max!
 
 Flags (sometimes also called switches) are simply options with the
 `bool` type. While options always require an operand, flags will
-always be set to true when specified, unless the user uses
-`--my-flag=false`.
+always be set to true when used, unless the user uses the
+`--my-flag=false` syntax.
 
 ```csharp
 [Command("greet")]
@@ -244,16 +244,61 @@ Hello, Emily!
 
 ### Command groups
 
-### Special arguments
+Now that we know the ins-and-outs of commands and options, we're ready
+to tackle the last big concept in StarKid: command groups. As the name
+implies, they allow you to group related commands under a parent
+command. For example, `git remote` is a group of commands that operate
+on remotes: `add`, `show`, `remove`, etc. In fact, `git` itself is
+also a group of commands that all operate on git repos: `status`,
+`add`, `commit`, etc. Those all have multiple common options or flags,
+like `--git-dir`, which would be annoying to reimlplement for each
+subcommand.
 
-> todo: params
-> todo: optional args
+StarKid has been built with command groups at its heart, and since
+commands are represented by methods, it seems only natural that groups
+of commands would be classes. Naturally, you can also have groups
+inside groups; this is achieved by nesting classes (and not
+subclassing, because [everything in StarKid is static](#classesmethodsfields-must-be-static))
+inside each other. Let's try to model `git`'s CLI using StarKid:
+
+```csharp
+[CommandGroup("git")]
+static class ToyGit {
+    [Option("git-dir")] public static FileInfo gitDir;
+
+    [Command("add")]
+    public static void Add(FileInfo pathspec)
+	=> Console.WriteLine($"Adding {pathspec} to index.");
+
+    [CommandGroup("remote")]
+    public static class RemoteCmd {
+        [Command("add")]
+        public static void Add(string name, Uri url)
+            => Console.WriteLine($"Adding {name} remote from {url}");
+
+        [Command("show")]
+        public static void Show()
+            => Console.WriteLine($"List of remotes: ...");
+
+        [Command("remove")]
+        public static void Remove(string name)
+            => Console.WriteLine($"Removing remote {name}");
+    }
+}
+```
+
+> todo: the rest
 
 ### Global options
 
 ### Default commands
 
 #### Bonus: Using default commands to write a single-command app
+
+### Special arguments
+
+> todo: params
+> todo: optional args
 
 ## Parsing & validation
 
