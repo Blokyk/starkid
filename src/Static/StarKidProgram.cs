@@ -312,10 +312,10 @@ partial class StarKidProgram
         if (val is null)
             return defaultVal;
 
-        if (val is "true" or "True")
+        if (val is "true" or "True" or "1")
             return true;
 
-        if (val is "false" or "False")
+        if (val is "false" or "False" or "0")
             return false;
 
         throw new FormatException("Couldn't understand '" + val + "' as a boolean value");

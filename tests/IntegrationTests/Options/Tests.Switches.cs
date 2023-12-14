@@ -6,7 +6,7 @@ public static partial class Main {
 
     [Option("true-switch")] public static bool TrueSwitch = true;
 
-    internal static bool BinaryToBool(string? s) => s switch { "0" => false, "1" => true, null => true, _ => throw new Exception() };
+    internal static bool BinaryToBool(string? s) => s switch { "f" => false, "t" => true, null => true, _ => throw new Exception() };
     [ParseWith(nameof(BinaryToBool))]
     [Option("parsed-switch")] public static bool ParsedSwitch { get; set; }
 }
@@ -19,8 +19,15 @@ public partial class Tests
             TestMainDummy("--switch");
             AssertStateChange(new { SimpleSwitch = true });
 
+            TestMainDummy("--switch=true");
+            AssertStateChange(new { SimpleSwitch = true });
             TestMainDummy("--switch=false");
-            AssertStateChange(new { SimpleSwitch = false }); // could be just DefaultState but it's clearer that way
+            AssertStateChange(new { SimpleSwitch = false });
+
+            TestMainDummy("--switch=1");
+            AssertStateChange(new { SimpleSwitch = true });
+            TestMainDummy("--switch=0");
+            AssertStateChange(new { SimpleSwitch = false });
         }
 
         [Fact]
@@ -43,11 +50,11 @@ public partial class Tests
             TestMainDummy("--parsed-switch");
             AssertStateChange(new { ParsedSwitch = true });
 
-            TestMainDummy("--parsed-switch=1");
+            TestMainDummy("--parsed-switch=t");
             AssertStateChange(new { ParsedSwitch = true });
 
-            TestMainDummy("--parsed-switch=0");
-            AssertStateChange(new { ParsedSwitch = false }); // technically could be empty but it's clearer that way
+            TestMainDummy("--parsed-switch=f");
+            AssertStateChange(new { ParsedSwitch = false });
         }
     }
 }
