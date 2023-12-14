@@ -1,9 +1,8 @@
 using StarKid.Generated;
-using System.Net;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
-namespace StarKid.Tests.Options;
+namespace StarKid.Tests.OperandParser;
 
 public class Tests
 {
@@ -21,7 +20,7 @@ public class Tests
         StarKidProgram.TestMain(new[] { "sum", "1", "1" }, out var stdout, out var stderr);
 
         Assert.Empty(stderr);
-        Assert.Equal("2", stdout);
+        Assert.Equal("2\n", stdout);
     }
 
     [Fact]
@@ -29,6 +28,6 @@ public class Tests
         StarKidProgram.TestMain(new[] { "sum" }, out var stdout, out var stderr);
 
         Assert.Empty(stdout);
-        Assert.Equal("Expected at least 2 arguments, but only got 0", stderr);
+        Assert.Equal("Expected at least 2 arguments, but only got 0\n", stderr);
     }
 }

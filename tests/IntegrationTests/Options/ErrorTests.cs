@@ -1,6 +1,4 @@
 using StarKid.Generated;
-using System.Diagnostics;
-using Xunit.Sdk;
 
 namespace StarKid.Tests.Options;
 

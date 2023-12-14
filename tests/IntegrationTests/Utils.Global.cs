@@ -24,9 +24,6 @@ internal static partial class Utils {
     public static bool AreEquivalent(object expected, object actual, bool strict = false)
         => _equivalent(expected, actual, strict) is null;
 
-    // i know this not actually correct but... i'm lazy
-    private static bool IsAnonymous(this Type t) => t.Name.Contains("AnonymousType");
-
     private static IEnumerable<MemberInfo> GetFieldsAndProps(object obj)
         => obj
             .GetType()
@@ -46,7 +43,7 @@ internal static partial class Utils {
     public static object With(this object target, object modifiedMembers) {
         var targetType = target.GetType();
 
-        if (!targetType.IsAnonymous() || !modifiedMembers.GetType().IsAnonymous())
+        if (!isAnonymous(targetType) || !isAnonymous(modifiedMembers.GetType()))
             throw new InvalidOperationException("The With() method is meant to be used with anonymous objects only.");
 
         // anon types only have one ctor, with every property in order
@@ -55,23 +52,38 @@ internal static partial class Utils {
         var propInfos = GetFieldsAndProps(target).Cast<PropertyInfo>().ToArray();
         var modifiedValues = AsMemberDictionary(modifiedMembers);
 
+        var changedValues = 0;
+
         var newValues = propInfos.Select(prop => {
-            if (!modifiedValues.TryGetValue(prop.Name, out var val))
+            if (!modifiedValues.TryGetValue(prop.Name, out var val)) {
                 return prop.GetValue(target);
+            }
+
+            changedValues++;
 
             var valType = val.GetType();
             var propType = withoutNullable(prop.PropertyType);
 
-            if (propType.IsAnonymous() && valType.IsAnonymous())
+            if (isAnonymous(propType) && isAnonymous(valType))
                 return prop.GetValue(target)?.With(val) ?? val;
 
-            if (propType != valType)
-                throw new InvalidOperationException($"Type mismatch for property {prop.Name}: trying to assign value of type {valType} to {propType}.");
+            if (propType == valType)
+                return val;
 
-            return val;
-        });
+            throw new InvalidOperationException($"Type mismatch for property {prop.Name}: trying to assign value of type {valType} to {propType}.");
+        }).ToArray();
 
-        return ctor.Invoke(newValues.ToArray());
+        if (modifiedValues.Count != changedValues) {
+            throw new InvalidOperationException(
+                $"Tried to change non-existant properties of anonymous object. "+
+                $"Changed {changedValues} values, but expected to modify {modifiedValues.Count}!"
+            );
+        }
+
+        return ctor.Invoke(newValues);
+
+        // i know this not actually correct but... i'm lazy
+        static bool isAnonymous(Type t) => t.Name.Contains("AnonymousType");
 
         static Type withoutNullable(Type t)
             =>  t.Name.StartsWith("Nullable`1")

@@ -42,8 +42,8 @@ internal static partial class StarKidProgram
             EnumOption = FileMode.Open;
             hasEnumOptionActionBeenTriggered = false;
 
-            FooOption = default;
-            hasFooOptionActionBeenTriggered = false;
+            AutoUserOption = default;
+            hasAutoUserOptionActionBeenTriggered = false;
 
             ParsedStringOption = "blank1";
             hasParsedStringOptionActionBeenTriggered = false;
