@@ -52,7 +52,7 @@
         Condition="'$(Configuration)'=='Debug' AND '$(_IsDesignTimeBuild)' != 'true'"
       >$([System.DateTime]::UtcNow.ToString("yyyy.MMdd.HHmm.ss"))</Version>
     <Version Condition="'$(Configuration)'=='Debug' AND '$(_IsDesignTimeBuild)' != 'true'"
-      >$(Version.Replace(".0", ".").Replace(".0", ".").Replace(".0", "."))</Version>
+      >$(Version.Replace(".0000", "").Replace(".0", ".").Replace(".0", ".").Replace(".0", "."))</Version>
     <Authors>Blokyk</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/blokyk/starkid</RepositoryUrl>
