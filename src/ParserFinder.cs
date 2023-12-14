@@ -10,7 +10,7 @@ public class ParserFinder
     private readonly Cache<ITypeSymbol, ITypeSymbol, bool> _implicitConversionsCache;
     private readonly TypeCache<ParserInfo> _typeParserCache;
 
-    private readonly SemanticModel _model;
+    private readonly Compilation _compilation;
 
     // todo: convert this to an array and lookup by casting to numeric underlying type
     private static readonly Dictionary<SpecialType, ParserInfo> _specialTypesMap
@@ -56,17 +56,17 @@ public class ParserFinder
             }
         };
 
-    public ParserFinder(Action<Diagnostic> addDiagnostic, SemanticModel model) {
+    public ParserFinder(Action<Diagnostic> addDiagnostic, Compilation compilation) {
         this.addDiagnostic = addDiagnostic;
-        _model = model;
 
-        // todo: make those static and reset them on every end of the pipeline
+        _compilation = compilation;
+
         _typeParserCache = new(FindParserForTypeCore, _specialTypesMap);
 
         _implicitConversionsCache = new(
             SymbolEqualityComparer.Default,
             SymbolEqualityComparer.Default,
-            _model.Compilation.HasImplicitConversion
+            _compilation.HasImplicitConversion
         );
     }
 
@@ -88,8 +88,9 @@ public class ParserFinder
     }
 
     ParserInfo GetParserFromNameCore(ParseWithAttribute attr, ITypeSymbol targetType) {
-        var members =
-            _model.GetMemberGroup(attr.ParserNameSyntaxRef.GetSyntax())
+        var members
+            = _compilation
+                .GetMemberGroup(attr.ParserNameSyntaxRef.GetSyntax())
                 .OfType<IMethodSymbol>()
                 .ToArray();
 

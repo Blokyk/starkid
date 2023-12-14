@@ -7,7 +7,7 @@ internal sealed class GroupBuilder
 {
     private readonly HashSet<string> _cmdNames = new();
 
-    private readonly SemanticModel _model;
+    private readonly Compilation _compilation;
     private readonly AttributeListBuilder _attrListBuilder;
     private readonly ParserFinder _parserFinder;
     private readonly ValidatorFinder _validatorFinder = null!;
@@ -15,18 +15,18 @@ internal sealed class GroupBuilder
     private readonly Action<Diagnostic> _addDiagnostic;
 
     // protected because test project inherits to instantiate it
-    internal GroupBuilder(AttributeListBuilder attrListBuilder, SemanticModel model, Action<Diagnostic> addDiagnostic) {
+    internal GroupBuilder(AttributeListBuilder attrListBuilder, Compilation compilation, Action<Diagnostic> addDiagnostic) {
         _attrListBuilder = attrListBuilder;
-        _model = model;
+        _compilation = compilation;
         _addDiagnostic = addDiagnostic;
-        _parserFinder = new(_addDiagnostic, _model);
-        _validatorFinder = new(_addDiagnostic, _model);
+        _parserFinder = new(_addDiagnostic, _compilation);
+        _validatorFinder = new(_addDiagnostic, _compilation);
     }
 
-    public static bool TryCreateGroupFrom(INamedTypeSymbol classSymbol, AttributeListBuilder attrListBuilder, SemanticModel model, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out Group? group) {
+    public static bool TryCreateGroupFrom(INamedTypeSymbol classSymbol, AttributeListBuilder attrListBuilder, Compilation compilation, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out Group? group) {
         group = null;
 
-        var groupBuilder = new GroupBuilder(attrListBuilder, model, addDiagnostic);
+        var groupBuilder = new GroupBuilder(attrListBuilder, compilation, addDiagnostic);
 
         if (!groupBuilder.IsValidGroupClass(classSymbol))
             return false;

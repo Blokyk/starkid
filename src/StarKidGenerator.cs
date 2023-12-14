@@ -165,7 +165,7 @@ using System;
             return null;
         }
 
-        if (!GroupBuilder.TryCreateGroupFrom(classSymbol, attrListBuilder, model, addDiagnostic, out var group))
+        if (!GroupBuilder.TryCreateGroupFrom(classSymbol, attrListBuilder, model.Compilation, addDiagnostic, out var group))
             return bail();
 
         return group;

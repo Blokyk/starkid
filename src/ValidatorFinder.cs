@@ -10,11 +10,11 @@ public class ValidatorFinder
     private readonly Cache<ValidateWithAttribute, ITypeSymbol, ValidatorInfo> _attrValidatorCache;
     private readonly Cache<ITypeSymbol, ITypeSymbol, bool> _implicitConversionsCache;
 
-    private readonly SemanticModel _model;
+    private readonly Compilation _compilation;
 
-    public ValidatorFinder(Action<Diagnostic> addDiagnostic, SemanticModel model) {
+    public ValidatorFinder(Action<Diagnostic> addDiagnostic, Compilation compilation) {
         this.addDiagnostic = addDiagnostic;
-        _model = model;
+        _compilation = compilation;
 
         _attrValidatorCache = new(
             EqualityComparer<ValidateWithAttribute>.Default,
@@ -25,7 +25,7 @@ public class ValidatorFinder
         _implicitConversionsCache = new(
             SymbolEqualityComparer.Default,
             SymbolEqualityComparer.Default,
-            _model.Compilation.HasImplicitConversion
+            _compilation.HasImplicitConversion
         );
     }
 
@@ -50,7 +50,7 @@ public class ValidatorFinder
         if (type is not INamedTypeSymbol argType)
             return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, type.GetErrorName());
 
-        var members = _model.GetMemberGroup(attr.ValidatorNameSyntaxRef.GetSyntax());
+        var members = _compilation.GetMemberGroup(attr.ValidatorNameSyntaxRef.GetSyntax());
 
         int candidateMethods = 0;
         ValidatorInfo? validator = null;
@@ -85,7 +85,7 @@ public class ValidatorFinder
         if (type is not INamedTypeSymbol argType)
             return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, type.GetErrorName());
 
-        var memberSymbolInfo = _model.GetSymbolInfo(attr.ValidatorNameSyntaxRef.GetSyntax());
+        var memberSymbolInfo = _compilation.GetSymbolInfo(attr.ValidatorNameSyntaxRef.GetSyntax());
 
         if (memberSymbolInfo.Symbol is not null) {
             var symbol = memberSymbolInfo.Symbol;

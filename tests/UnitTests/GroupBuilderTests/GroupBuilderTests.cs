@@ -18,7 +18,7 @@ internal class GroupBuilderProxy : PrivateProxy<GroupBuilder>
     private static AttributeListBuilder CreateAndOutAttrBuilder(List<Diagnostic> diags, out AttributeListBuilder attrBuilder)
         => attrBuilder = new(diags.Add);
     public GroupBuilderProxy(ref List<Diagnostic> diags, CSharpCompilation comp)
-    : base(new(CreateAndOutAttrBuilder(diags, out var builder), comp.GetDefaultSemanticModel(), diags.Add))
+    : base(new(CreateAndOutAttrBuilder(diags, out var builder), comp, diags.Add))
     => _attrBuilder = builder;
 
     internal bool TryGetArg_(IParameterSymbol param, [NotNullWhen(true)] out Argument? arg) {
