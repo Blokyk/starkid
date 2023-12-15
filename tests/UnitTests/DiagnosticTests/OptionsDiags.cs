@@ -20,7 +20,7 @@ public class OptionDiags
 
         var tree = SyntaxTree.WithMarkedNode(source, out var paramNode);
 
-        var comp = Compilation.From(tree);
+        var comp = Compilation.From(tree).WithoutStarKidAttributes();
         var genResult = comp.RunStarKid();
 
         Assert.Single(

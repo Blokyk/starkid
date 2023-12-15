@@ -2,10 +2,11 @@ namespace StarKid.Tests;
 
 public static class SyntaxTree
 {
-    public static RS.SyntaxTree Of(string source) => Of(source, ParseOptions.Default);
-    public static RS.SyntaxTree Of(string source, CSharpParseOptions options) => CSharpSyntaxTree.ParseText(source, options);
+    public static CSharpSyntaxTree Of(string source) => Of(source, ParseOptions.Default);
+    public static CSharpSyntaxTree Of(string source, CSharpParseOptions options)
+        => (CSharpSyntaxTree)CSharpSyntaxTree.ParseText(source, options);
 
-    public static RS.SyntaxTree WithMarkedNode(string source, out SyntaxNode node) {
+    public static CSharpSyntaxTree WithMarkedNode(string source, out SyntaxNode node) {
         var startMarkerIdx = source.IndexOf("[|");
 
         if (startMarkerIdx == -1)
@@ -31,6 +32,6 @@ public static class SyntaxTree
         return tree;
     }
 
-    public static bool TryGetNodeContainingText(this RS.SyntaxTree tree, string text, [NotNullWhen(true)] out SyntaxNode? node)
+    public static bool TryGetNodeContainingText(this CSharpSyntaxTree tree, string text, [NotNullWhen(true)] out SyntaxNode? node)
         => (node = tree.GetRoot().DescendantNodes(_ => true).FirstOrDefault(n => n.ToFullString().Contains(text))) != null;
 }

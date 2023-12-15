@@ -6,6 +6,9 @@ namespace StarKid.Tests;
 
 public static partial class GroupBuilderTests
 {
+    private static readonly ParserInfo.DirectMethod _intParser
+        = new("System.Int32.Parse", CommonTypes.INT32);
+
     private static (List<Diagnostic> diags, dynamic gb) GetBuilder(CSharpCompilation comp) {
         var diags = new List<Diagnostic>();
         return (diags, new GroupBuilderProxy(ref diags, comp));

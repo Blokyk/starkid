@@ -60,11 +60,6 @@ internal static partial class StarKidProgram {
             stderr = stderrStream.ToString();
             stdoutStream.Dispose();
             stderrStream.Dispose();
-
-            if (stdout.EndsWith('\n'))
-                stdout = stdout[..^1];
-            if (stderr.EndsWith('\n'))
-                stderr = stderr[..^1];
         }
     }
 }

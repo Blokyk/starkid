@@ -8,7 +8,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
 {
     private static readonly string _cmdGroupAttributeName = typeof(CommandGroupAttribute).FullName!;
 
-    private static readonly string _starkidProgramCode;
+    internal static readonly string _starkidProgramCode;
 
     static StarKidGenerator() {
         _starkidProgramCode = MiscUtils.GetStaticResource("StarKidProgram.cs");
@@ -38,7 +38,7 @@ using System;
         _attributeCode = sb.ToString();
     }
 
-    private static readonly string _attributeCode;
+    internal static readonly string _attributeCode;
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         context.RegisterPostInitializationOutput(

@@ -12,7 +12,7 @@ public class ErrorTests
         Assert.Equal(1, StarKidProgram.TestMain(new[] { "--switch", "--switch", "dummy" }, out var stdout, out var stderr));
         Assert.Empty(stdout);
         Assert.StartsWith(
-            "Option '--switch' has already been specified\n",
+            "Option '--switch' has already been specified",
             stderr
         );
     }
@@ -22,7 +22,7 @@ public class ErrorTests
         Assert.Equal(1, StarKidProgram.TestMain(new[] { "--cogito-ergo-sum", "dummy" }, out var stdout, out var stderr));
         Assert.Empty(stdout);
         Assert.StartsWith( // we don't care about help text
-            "Command 'test' doesn't have any option named '--cogito-ergo-sum'\n",
+            "Command 'test' doesn't have any option named '--cogito-ergo-sum'",
             stderr
         );
     }
@@ -31,8 +31,9 @@ public class ErrorTests
     public void DirectParserFail() {
         Assert.Equal(1, StarKidProgram.TestMain(new[] { "--parsed-switch=foo", "dummy" }, out var stdout, out var stderr));
         Assert.Empty(stdout);
-        Assert.Equal(
-            "Expression 'foo' is not a valid value for option '--parsed-switch': Couldn't parse 'foo' as an argument of type 'bool'",
+        Assert.StartsWith(
+            "Expression 'foo' is not a valid value for option '--parsed-switch': "+
+            "Couldn't parse 'foo' as an argument of type 'bool'",
             stderr
         );
     }

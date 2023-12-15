@@ -196,7 +196,7 @@ class C {
                 new {
                     Type = new { Name = "Int32[]" },
                     Name = "arg1",
-                    Parser = new ParserInfo.DirectMethod("System.Int32.Parse", CommonTypes.INT32),
+                    Parser = _intParser,
                     IsParams = true
                 },
                 arg
