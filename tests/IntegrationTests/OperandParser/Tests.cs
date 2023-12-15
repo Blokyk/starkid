@@ -17,7 +17,7 @@ public class Tests
 
     [Fact]
     public void BasicSum() {
-        StarKidProgram.TestMain(new[] { "sum", "1", "1" }, out var stdout, out var stderr);
+        StarKidProgram.TestMain(["sum", "1", "1"], out var stdout, out var stderr);
 
         Assert.Empty(stderr);
         Assert.Equal("2\n", stdout);
@@ -25,7 +25,7 @@ public class Tests
 
     [Fact]
     public void SumNotEnoughArgs() {
-        StarKidProgram.TestMain(new[] { "sum" }, out var stdout, out var stderr);
+        StarKidProgram.TestMain(["sum"], out var stdout, out var stderr);
 
         Assert.Empty(stdout);
         Assert.Equal("Expected at least 2 arguments, but only got 0\n", stderr);

@@ -31,7 +31,7 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        sb.Append(@"
+        sb.AppendLine(@"
         internal static bool TryUpdateCommand(string _) => false;");
 
         AddActivateFunc(sb);

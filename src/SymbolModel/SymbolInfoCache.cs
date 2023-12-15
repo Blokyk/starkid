@@ -4,7 +4,9 @@ namespace StarKid.Generator.SymbolModel;
 
 internal static class SymbolInfoCache
 {
-    // todo: turn those into lock'd dictionaries
+    // todo: use dictionaries in thread static storage
+    //    -> different threads might mean different compilation, making
+    //       the extra effort of making this concurrent kinda pointless...
     private static readonly SymbolEqualityComparer symbolComparer = SymbolEqualityComparer.IncludeNullability;
     private static readonly ConcurrentDictionary<ITypeSymbol, string> _typeFullNameMap = new(symbolComparer);
     private static readonly ConcurrentDictionary<ITypeSymbol, string> _typeShortNameMap = new(symbolComparer);

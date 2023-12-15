@@ -49,7 +49,7 @@ internal static class MiscUtils
 
     private static readonly Assembly _starkidAssembly = typeof(MiscUtils).Assembly;
     public static string GetStaticResource(string filePath) {
-        using var stream = _starkidAssembly.GetManifestResourceStream("Blokyk.StarKid.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'StarKid.Static." + filePath + "' was not found");
+        using var stream = _starkidAssembly.GetManifestResourceStream("Blokyk.StarKid.Static." + filePath) ?? throw new InvalidOperationException("The requested resource 'Blokyk.StarKid.Static." + filePath + "' was not found");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }

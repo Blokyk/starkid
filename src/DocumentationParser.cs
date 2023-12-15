@@ -94,7 +94,7 @@ public static class DocumentationParser
     static string TrimAndJoin(string s)
         => String.Join(" ", TrimAndSplit(s));
 
-    static readonly char[] __newLineArrayForSplit = new[] { '\n' };
+    static readonly char[] __newLineArrayForSplit = ['\n'];
     static readonly bool _doesFrameworkSupportTrimOption
         = typeof(StringSplitOptions).GetMember("TrimEntries") is not null;
     static IEnumerable<string> TrimAndSplit(string s)

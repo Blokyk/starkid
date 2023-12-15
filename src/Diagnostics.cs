@@ -436,7 +436,7 @@ internal static class Diagnostics {
         = new(
             "CLI408",
             "This parser doesn't return a type compatible with '{0}'",
-            "There is no implicit conversion from return type '{1}' to target type '{0}'",
+            "There is no implicit conversion from parser's return type '{1}' to target type '{0}'",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -516,8 +516,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor UnvalidatableType
         = new(
             "CLI501",
-            "Can't use a validator with an array, pointer, or unbound generic type",
-            "Can't use a validator with an array, pointer, or unbound generic type",
+            "Can't use a validator with a pointer or unbound generic type",
+            "Can't use a validator with a pointer or unbound generic type",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -526,8 +526,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor PropertyValidatorNotOnArgType
         = new(
             "CLI501",
-            "Property '{0}' must be a member of '{1}' to be used for validation",
-            "Property '{0}' must be a member of '{1}' to be used for validation",
+            "'{0}.{1}' isn't applicable for argument type '{2}'",
+            "'{0}.{1}' isn't applicable for argument type '{2}'",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true

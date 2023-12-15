@@ -90,7 +90,7 @@ partial class StarKidProgram
         IEnumerable<Option> opts = isFlags ? groupOrCmd.Flags : groupOrCmd.Options;
         // if there's no options, just return false
         if (!opts.Any()) {
-            sb.Append(" =>").Append(defaultReturn).AppendLine(";");
+            sb.Append("=> ").Append(defaultReturn).AppendLine(";");
             return;
         }
 

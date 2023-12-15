@@ -224,8 +224,9 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
         // not AppendLine cause that's handled in the loop
         sb.Append("Description:");
         AppendAllLines(sb, desc, padding);
-        sb.AppendLine();
-        sb.AppendLine();
+        sb
+            .AppendLine()
+            .AppendLine();
     }
 
     void AddNotes(StringBuilder sb, InvokableBase groupOrCmd) {
@@ -234,13 +235,11 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
         if (String.IsNullOrEmpty(notes))
             return;
 
-        if (notes[0] != '\n')
-            sb.AppendLine();
+        notes.Trim();
 
+        sb.AppendLine();
         AppendAllLines(sb, notes, padding: "");
-
-        if (notes[^1] != '\n')
-            sb.AppendLine();
+        sb.AppendLine();
     }
 
     void AppendAllLines(StringBuilder sb, string s, string padding) {
