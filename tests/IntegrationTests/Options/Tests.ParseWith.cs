@@ -26,6 +26,15 @@ public static partial class Main {
     // ensure parser nullability variance
     [Option("direct-parsed-nullable-struct-opt")]
     [ParseWith(nameof(Int32.Parse))] public static int? DirectParsedNullableStructOption { get; set; }
+
+#pragma warning disable CS8618 // see #41
+    [ParseWith(nameof(StringToUpper))]
+    [Option("repeat-manual-item-opt")] public static string[] RepeatManualItemOption { get; set; }
+#pragma warning restore
+
+    public static char[] AsUpperCharArray(string s) => s.ToUpper().ToCharArray();
+    [ParseWith(nameof(AsUpperCharArray))]
+    [Option("manual-array-opt")] public static char[]? ManualArrayOption { get; set; }
     #endregion
 
     #region TryParse
@@ -80,6 +89,18 @@ public partial class Tests {
         public void DirectParsedNullableStructOption() {
             TestMainDummy("--direct-parsed-nullable-struct-opt", "47");
             AssertStateChange(new { DirectParsedNullableStructOption = 47 });
+        }
+
+        [Fact]
+        public void RepeatManualItemOption() {
+            TestMainDummy("--repeat-manual-item-opt", "hey", "--repeat-manual-item-opt", "hi");
+            AssertStateChange(new { RepeatManualItemOption = (string[])[ "HEY", "HI" ] });
+        }
+
+        [Fact]
+        public void ManualArrayOption() {
+            TestMainDummy("--manual-array-opt", "hey");
+            AssertStateChange(new { ManualArrayOption = (char[])[ 'H', 'E', 'Y' ] });
         }
     }
 }

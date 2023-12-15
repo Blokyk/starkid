@@ -26,8 +26,6 @@ public partial class ErrorTests
         );
     }
 
-    // todo: check that enum opts don't accept numbers
-
     [Fact]
     public void ThrowingOption() { // todo: make a similar one for subcommands just to check the parser has the right help
         Assert.Equal(1, StarKidProgram.TestMain(["--throwing-setter", "hey", "dummy"], out var stdout, out var stderr));

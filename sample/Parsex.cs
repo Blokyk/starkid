@@ -76,6 +76,9 @@ public static partial class Lotus
         }
     }
 
+    [Option("filter")]
+    public static string[] filters;
+
     /// <summary>
     /// Range of possible positron-metastasis levels
     /// </summary>

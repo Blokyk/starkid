@@ -12,6 +12,14 @@ public static class MyApp {
 
     public static int? ParserNullableInt(string s) => Int32.Parse(s);
 
+    [Option("resolution")]
+    public static int[] resolutions = Array.Empty<int>();
+
+    public static string whatever(string s) => null!;
+    [Option("ext", IsGlobal = true)]
+    // [ParseWith(nameof(whatever))]
+    public static string[] ext = Array.Empty<string>();
+
     [Option("something")]
     // [ParseWith(nameof(ParserNullableInt))]
     [ValidateWith(nameof(Int32.IsPositive))]
@@ -27,8 +35,15 @@ public static class MyApp {
     public static void Announce(string name, [Option("quiet")] bool isQuiet, [ParseWith(nameof(ParseNegInt))] params int[] nums) {
         var displayName = isQuiet ? name : name.ToUpperInvariant();
         Console.WriteLine($"Here comes... {displayName}!");
-        foreach (var i in nums) {
+
+        Console.WriteLine("ext = ");
+        foreach (var s in ext) Console.WriteLine($"- '{s}'");
+
+        foreach (var i in nums)
     		Console.WriteLine(i);
-        }
+
+        Console.WriteLine("Resolutions:");
+        foreach (var res in resolutions)
+            Console.WriteLine(res);
     }
 }

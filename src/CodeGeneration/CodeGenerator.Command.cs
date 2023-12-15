@@ -34,6 +34,10 @@ internal sealed partial class CodeGenerator
         sb.AppendLine(@"
         internal static bool TryUpdateCommand(string _) => false;");
 
+        AddFlushBuildersFunc(sb, cmd);
+
+        sb.AppendLine();
+
         AddActivateFunc(sb);
 
         sb.AppendLine();
@@ -152,47 +156,39 @@ internal sealed partial class CodeGenerator
     /// </summary>
     void AddInvokeCmdField(StringBuilder sb, Command cmd) {
         sb.Append(@"
-        internal static readonly Func<int> _invokeCmd = ");
+        internal static readonly Func<int> _invokeCmd =
+            ");
 
         var isVoid = cmd.BackingMethod.ReturnsVoid;
         var methodParams = cmd.BackingMethod.Parameters;
 
-        // if _func is basically Func<int> 8
-        if (!isVoid && methodParams.Length == 0) {
-            sb.Append("new Func<int>(__func)"); // explicit cast between delegates, same as `() => __func()` but no display class
-        } else {
-            // [StackTraceHidden] doesn't apply to nested types, including
-            // lambdas' display classes, so we need to specify it again
-            if (_config.LanguageVersion >= LanguageVersion.CSharp10) // lambda attributes are only supported since C#10
-                sb.Append("[StackTraceHidden]");
+        // [StackTraceHidden] doesn't apply to nested types, including
+        // lambdas' display classes, so we need to specify it again
+        if (_config.LanguageVersion >= LanguageVersion.CSharp10) // lambda attributes are only supported since C#10
+            sb.Append("[StackTraceHidden] ");
 
-            sb.Append("() => "); // can't be static because of _params
+        sb.Append("static () => ");
 
-            if (isVoid)
-                sb.Append("{ ");
+        sb.Append(@"{ FlushState(); ");
 
-            sb.Append("__func(");
+        var argList = new string[methodParams.Length];
 
-            var defArgName = new string[methodParams.Length];
-
-            for (int i = 0; i < methodParams.Length; i++) {
-                defArgName[i]
-                    = methodParams[i].IsParams
-                        ? "_params.ToArray()"
-                        : "@" + methodParams[i].Name + "!";
-            }
-
-            sb.Append(String.Join(", ", defArgName));
-
-            sb.Append(')');
-
-            if (isVoid)
-                sb.Append("; return 0; }");
+        for (int i = 0; i < methodParams.Length; i++) {
+            argList[i]
+                = methodParams[i].IsParams
+                    ? "_params.ToArray()"
+                    : "@" + methodParams[i].Name + "!";
         }
 
-        sb
-        .Append(';')
-        .AppendLine();
+        if (!isVoid)
+            sb.Append("return ");
+
+        sb.Append("__func(").Append(String.Join(", ", argList)).Append("); ");
+
+        if (isVoid)
+            sb.Append("return 0; ");
+
+        sb.AppendLine("};");
     }
 
     void AddCommandName(StringBuilder sb, Command cmd)

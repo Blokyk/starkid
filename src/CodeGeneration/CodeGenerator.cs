@@ -171,11 +171,8 @@ partial class StarKidProgram
 
     public void AddOptionFieldAndSetter(StringBuilder sb, Option opt, InvokableBase groupOrCmd) {
         if (groupOrCmd is not Group) {
-            sb
-            .Append("\t\tprivate static ")
-            .Append(opt.Type.FullName)
-            .Append(" @")
-            .Append(opt.BackingSymbol.Name);
+            sb.Append(@"
+        private static ").Append(opt.Type.FullName).Append(" @").Append(opt.BackingSymbol.Name);
 
             if (opt.DefaultValueExpr is not null) {
                 sb
@@ -188,18 +185,30 @@ partial class StarKidProgram
             .AppendLine();
         }
 
-        var fieldPrefix
-            = groupOrCmd is Group group
-            ? "@" + group.FullClassName + ".@"
-            : "@";
+        var isOptRepeatable = opt.IsRepeatableOption();
 
-        string expr
-            = fieldPrefix + opt.BackingSymbol.Name + " = " + CodegenHelpers.GetFullExpression(opt);
+        var expr = CodegenHelpers.GetFullExpression(opt);
+
+        string stmt;
+        if (isOptRepeatable) {
+            sb.Append(@"
+        private static List<").Append(opt.Parser.TargetType.FullName).Append("> ")
+            .Append(opt.BackingSymbol.Name).Append("Builder = new();");
+
+            stmt = opt.BackingSymbol.Name + "Builder.Add(" + expr + ")";
+        } else {
+            var fieldPrefix
+                = groupOrCmd is Group group
+                ? "@" + group.FullClassName + ".@"
+                : "@";
+
+            stmt = fieldPrefix + opt.BackingSymbol.Name + " = " + expr;
+        }
 
         var actionName = opt.BackingSymbol.Name + "Action";
         var argType = opt is Flag ? "string?" : "string";
 
-        if (!_config.AllowRepeatingOptions) {
+        if (!isOptRepeatable && !_config.AllowRepeatingOptions) {
             sb
             .Append(@"
         private static bool has").Append(actionName).Append("BeenTriggered;");
@@ -216,7 +225,7 @@ partial class StarKidProgram
             .Append(@"
         internal static void ").Append(actionName).Append('(').Append(argType).Append(" __arg) {");
 
-        if (!_config.AllowRepeatingOptions) {
+        if (!isOptRepeatable && !_config.AllowRepeatingOptions) {
             sb
                 .Append(@"
             if (has").Append(actionName).Append("BeenTriggered)")
@@ -228,7 +237,64 @@ partial class StarKidProgram
 
         sb
             .Append(@"
-            ").Append(expr).AppendLine(@";
+            ").Append(stmt).AppendLine(@";
+        }");
+    }
+
+    void AddFlushBuildersFunc(StringBuilder sb, InvokableBase invokable) {
+        sb.Append(@"
+        internal static void FlushState() {
+            ");
+
+        // if there's any parent, flush them first
+        if (invokable.ParentGroup is not null)
+            sb.Append(invokable.ParentGroup.ID).AppendLine(@"CmdDesc.FlushState();
+            ");
+
+        var fieldPrefix
+            = invokable is Group group
+            ? "@" + group.FullClassName + ".@"
+            : "@";
+
+        foreach (var opt in invokable.Options) {
+            if (!opt.IsRepeatableOption())
+                continue;
+
+            var validatingExpr = CodegenHelpers.GetValidatingExpression(
+                opt.BackingSymbol.Name + "Builder",
+                opt.Name,
+                opt.Type.IsNullable,
+                opt.Validators.Where(v => !v.IsElementWiseValidator)
+            );
+
+            // if there's no custom arg name, just say "invalid values for option '--foo'"
+            // however, if there *is* a custom name, say "invalid {name} values for option '--foo'"
+            string errorFmtStart, valuesName;
+            if (opt.CustomArgName is null) {
+                errorFmtStart = "Invalid values";
+                valuesName = "";
+            } else {
+                errorFmtStart = "Invalid {0} values";
+                valuesName = opt.CustomArgName;
+            }
+
+            sb.Append(@"try {
+                ").Append(fieldPrefix).Append(opt.BackingSymbol.Name).Append(" = ")
+                .Append(validatingExpr).Append(@".ToArray();
+            } catch (Exception e) {
+                if (_displayHelp)
+                    return;
+
+                ExitWithError(
+                    """).Append(errorFmtStart).Append(" for option '--").Append(opt.Name).Append(@"': {1}"",
+                    """).Append(valuesName).Append(@""", e.Message
+                );
+
+                return;
+            }");
+        }
+
+        sb.Append(@"
         }");
     }
 

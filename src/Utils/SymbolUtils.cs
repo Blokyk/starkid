@@ -29,16 +29,6 @@ internal static class SymbolUtils
         ?  type.NullableAnnotation == NullableAnnotation.Annotated
         :  IsNullableValue(type);
 
-    public static ITypeSymbol GetCoreTypeOfNullable(INamedTypeSymbol type) {
-        if (type.TypeParameters.Length != 1)
-            return type;
-
-        if (type.ConstructedFrom.SpecialType is SpecialType.System_Nullable_T)
-            return type.TypeArguments[0];
-
-        return type;
-    }
-
     public static string GetRawName(ISymbol symbol) {
         if (symbol is IArrayTypeSymbol arrayTypeSymbol) {
             return GetNameWithNull(arrayTypeSymbol.ElementType) + "[]";
@@ -88,15 +78,29 @@ internal static class SymbolUtils
             _ => symbol.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat),
         };
 
-    public static bool IsBaseOf(this ITypeSymbol baseType, ITypeSymbol derived) {
+    public static bool IsInterfaceOn(this INamedTypeSymbol baseType, INamedTypeSymbol derived) {
+        if (baseType.TypeKind is not TypeKind.Interface)
+            return false;
+
+        return derived.AllInterfaces.Contains(baseType, SymbolEqualityComparer.Default);
+    }
+
+    public static bool IsBaseOf(this INamedTypeSymbol baseType, INamedTypeSymbol derived) {
         var current = derived;
 
         while (current is not null && Equals(baseType, current))
             current = current.BaseType;
 
-        // if we exited early, then it will be null
+        // it'll only be null if we exited early
         return current is not null;
     }
+
+    public static bool IsBaseOrInterfaceOf(this ITypeSymbol baseType, ITypeSymbol derived)
+        => derived is INamedTypeSymbol derivedType && baseType.TypeKind switch {
+            TypeKind.Class => IsBaseOf((INamedTypeSymbol)baseType, derivedType),
+            TypeKind.Interface => IsInterfaceOn((INamedTypeSymbol)baseType, derivedType),
+            _ => false
+        };
 
     public static string? GetDefaultValue(ISymbol symbol) {
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

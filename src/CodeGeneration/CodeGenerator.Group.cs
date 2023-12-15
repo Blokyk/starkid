@@ -41,6 +41,10 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
+        AddFlushBuildersFunc(sb, group);
+
+        sb.AppendLine();
+
         AddActivateFunc(sb);
 
         sb.AppendLine();

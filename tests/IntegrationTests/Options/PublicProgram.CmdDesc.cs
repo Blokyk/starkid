@@ -66,6 +66,24 @@ internal static partial class StarKidProgram
             DirectParsedNullableStructOption = default;
             hasDirectParsedNullableStructOptionActionBeenTriggered = false;
 
+            RepeatableStringOption = Array.Empty<string>();
+            RepeatableStringOptionBuilder = new();
+
+            RepeatableAutoOption = Array.Empty<int>();
+            RepeatableAutoOptionBuilder = new();
+
+            RepeatManualItemOption = Array.Empty<string>();
+            RepeatManualItemOptionBuilder = new();
+
+            ManualArrayOption = default;
+            hasManualArrayOptionActionBeenTriggered = false;
+
+            RepeatManualItemValidatorOption = Array.Empty<string>();
+            RepeatManualItemValidatorOptionBuilder = new();
+
+            RepeatItemArrayValidatorOption = Array.Empty<int>();
+            RepeatItemArrayValidatorOptionBuilder = new();
+
             // ThrowingOption = "this shouldn't be set, remember?";
             hasThrowingOptionActionBeenTriggered = false;
         }

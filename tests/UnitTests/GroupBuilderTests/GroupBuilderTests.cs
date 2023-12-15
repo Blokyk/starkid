@@ -29,4 +29,10 @@ internal class GroupBuilderProxy : PrivateProxy<GroupBuilder>
         return _attrBuilder.TryGetAttributeList(param, out var attrList)
             && ((dynamic)this).TryGetArg(param, attrList, out arg);
     }
+
+    internal bool TryCreateOptionFrom_(ISymbol symbol, [NotNullWhen(true)] out Option? opt) {
+        opt = null;
+        return _attrBuilder.TryGetAttributeList(symbol, out var attrList)
+            && ((dynamic)this).TryCreateOptionFrom(symbol, attrList, out opt);
+    }
 }

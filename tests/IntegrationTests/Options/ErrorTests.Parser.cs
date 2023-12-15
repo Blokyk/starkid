@@ -16,5 +16,17 @@ public partial class ErrorTests
                 stderr
             );
         }
+
+        [Fact]
+        public void DontRepeatManualArrayOpt() {
+            Assert.Equal(1, StarKidProgram.TestMain(["--manual-array-opt", "hey", "--manual-array-opt", "hi", "dummy"], out var stdout, out var stderr));
+            Assert.Empty(stdout);
+            Assert.StartsWith(
+                "Option '--manual-array-opt' has already been specified",
+                stderr
+            );
+        }
+
+        // todo: check that enum opts don't accept numbers
     }
 }

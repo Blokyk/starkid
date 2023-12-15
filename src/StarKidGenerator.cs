@@ -43,6 +43,9 @@ using System;
     internal static readonly string _attributeCode;
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
+        if (Debugger.IsAttached)
+            Debugger.Break();
+
         context.RegisterPostInitializationOutput(
             static postInitCtx =>
                 postInitCtx.AddSource(

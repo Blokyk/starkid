@@ -2,6 +2,8 @@
 
 A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).
 
+[[ Quick Start ]](#tldr-docs-📖) | [[ Tutorial ]](docs/Your-first-app-with-StarKid.md) | [[ Overview ]](docs/StarKid-overview.md) | [[ Docs ]](docs/)
+
 ## What can it actually do?
 
 StarKid allows you to write code that matches perfectly your command line interface's structure, by using nesting to represent your CLI's hierarchy of verbs and subcommands.
@@ -19,6 +21,25 @@ dotnet add package Blokyk.StarKid
 That's it! For a quick tutorial, check out [Your first app with StarKid](docs/Your-first-app-with-StarKid.md), or have a look through the TL;DR docs below. If you want to deep-dive directly in, you can check out the [overview](docs/StarKid-overview.md) and the rest of the [docs folder](docs/)
 
 ## TL;DR docs 📖
+
+```csharp
+using Blokyk.StarKid;
+
+[CommandGroup("my-app")]
+public static class MyApp {
+    [Option("verbose", 'v')]
+    public bool ShouldBeVerbose { get; set; }
+
+    [Command("greet")]
+    // ./my-app greet <name> [--greeting greetingPhrase]
+    public void Greet(string name, [Option("greeting", 'g')] string greetingPhrase = "Hello, ") {
+        if (ShouldBeVerbose)
+            Console.Error.WriteLine($"Running command 'greet' with name '{name}' and phrase '{greetingPhrase}'");
+
+        Console.WriteLine(greetingPhrase + name + "!")
+    }
+}
+```
 
 - Commands are represented by methods marked with `[Command]`, *groups* of commands by (static) classes marked with `[CommandGroup]`.
 

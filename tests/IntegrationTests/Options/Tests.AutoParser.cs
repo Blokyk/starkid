@@ -13,6 +13,12 @@ public static partial class Main {
     [Option("auto-user-opt")] public static AsciiString AutoUserOption { get; set; }
 
     [Option("auto-parsed-nullable-struct-opt")] public static Int128? AutoParsedNullableStructOption { get; set; }
+
+#pragma warning disable CS8618 // see #41
+    [Option("repeatable-str-opt")] public static string[] RepeatableStringOption { get; set; }
+
+    [Option("repeatable-auto-opt")] public static int[] RepeatableAutoOption { get; set; }
+#pragma warning restore
 }
 
 public partial class Tests {
@@ -88,6 +94,30 @@ public partial class Tests {
         public void AutoParsedNullableStructOption() {
             TestMainDummy("--auto-parsed-nullable-struct-opt", "123456789");
             AssertStateChange(new { AutoParsedNullableStructOption = (Int128?)123456789 });
+        }
+
+        [Fact]
+        public void RepeatableStringOption() {
+            TestMainDummy("--repeatable-str-opt", "hello");
+            AssertStateChange(new { RepeatableStringOption = (string[])[ "hello" ] });
+
+            TestMainDummy("--repeatable-str-opt", "hello", "--repeatable-str-opt", "world");
+            AssertStateChange(new { RepeatableStringOption = (string[])[ "hello", "world" ] });
+
+            TestMainDummy();
+            AssertStateChange(new { RepeatableStringOption = Array.Empty<string>() }); // check empty
+        }
+
+        [Fact]
+        public void RepeatableAutoOption() {
+            TestMainDummy("--repeatable-auto-opt", "56");
+            AssertStateChange(new { RepeatableAutoOption = (int[])[ 56 ] });
+
+            TestMainDummy("--repeatable-auto-opt", "56", "--repeatable-auto-opt", "-1");
+            AssertStateChange(new { RepeatableAutoOption = (int[])[ 56, -1 ] });
+
+            TestMainDummy();
+            AssertStateChange(new { RepeatableAutoOption = Array.Empty<int>() }); // check empty
         }
     }
 }

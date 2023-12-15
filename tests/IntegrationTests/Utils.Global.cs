@@ -74,9 +74,12 @@ internal static partial class Utils {
         }).ToArray();
 
         if (modifiedValues.Count != changedValues) {
+            var nonExistantNames = modifiedValues.Keys.Except(propInfos.Select(p => p.Name));
+
             throw new InvalidOperationException(
                 $"Tried to change non-existant properties of anonymous object. "+
-                $"Changed {changedValues} values, but expected to modify {modifiedValues.Count}!"
+                $"Changed {changedValues} values, but expected to modify {modifiedValues.Count}! "+
+                $"Leftovers: {String.Join(", ", nonExistantNames)}"
             );
         }
 

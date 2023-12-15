@@ -61,7 +61,12 @@ public class ParserFinder
 
         _compilation = compilation;
 
-        _typeParserCache = new(FindParserForTypeCore, _specialTypesMap);
+        _typeParserCache = new(
+            t => t is INamedTypeSymbol target
+                ? FindParserForTypeCore(target)
+                : InvalidParserType(t),
+            _specialTypesMap
+        );
 
         _implicitConversionsCache = new(
             SymbolEqualityComparer.Default,
@@ -70,11 +75,23 @@ public class ParserFinder
         );
     }
 
-    public bool TryGetParserFromName(ParseWithAttribute attr, ITypeSymbol targetType, out ParserInfo parser) {
+    public bool TryGetParserFromName(ParseWithAttribute attr, ITypeSymbol targetType, bool isOption, out ParserInfo parser) {
         parser = GetParserFromNameCore(attr, targetType);
 
         if (parser is not ParserInfo.Invalid invalidParser)
             return true;
+
+        // if this is an array option, the parser might be for items instead of the array
+        if (targetType is IArrayTypeSymbol { ElementType: var itemType }) {
+            if (isOption) {
+                parser = GetParserFromNameCore(attr, itemType);
+
+                if (parser is not ParserInfo.Invalid invalidItemParser)
+                    return true;
+
+                invalidParser = invalidItemParser;
+            }
+        }
 
         addDiagnostic(
             Diagnostic.Create(
@@ -126,8 +143,8 @@ public class ParserFinder
         );
     }
 
-    public bool TryFindParserForType(ITypeSymbol sourceType, Location queryLocation, out ParserInfo parser) {
-        parser = FindParserForType(sourceType);
+    public bool TryFindParserForType(ITypeSymbol targetType, Location queryLocation, out ParserInfo parser) {
+        parser = FindParserForType(targetType);
 
         if (parser is not ParserInfo.Invalid invalidParser)
             return true;
@@ -143,32 +160,33 @@ public class ParserFinder
         return false;
     }
 
-    ParserInfo FindParserForType(ITypeSymbol sourceType)
-        => _typeParserCache.GetValue(sourceType);
+    private static ParserInfo.Invalid InvalidParserType(ITypeSymbol type)
+        => new(Diagnostics.NotValidParserType, type);
 
-    ParserInfo FindParserForTypeCore(ITypeSymbol sourceType) {
+    ParserInfo FindParserForType(ITypeSymbol t)
+        => t is INamedTypeSymbol targetType
+            ? _typeParserCache.GetValue(targetType)
+            : InvalidParserType(t);
+
+    ParserInfo FindParserForTypeCore(INamedTypeSymbol sourceType) {
         if (sourceType.SpecialType == SpecialType.System_String)
             return ParserInfo.StringIdentity.Instance;
 
-        if (sourceType is not INamedTypeSymbol targetType) {
-            return new ParserInfo.Invalid(Diagnostics.NotValidParserType);
-        }
-
         // this will only be true for nullable *value types*, contrary to SymbolUtils.IsNullable
-        if (targetType.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T) {
-            return FindParserForType(targetType.TypeArguments[0]);
+        if (sourceType.ConstructedFrom.SpecialType is SpecialType.System_Nullable_T) {
+            return FindParserForType(sourceType.TypeArguments[0]);
         }
 
         // * too costly for now
         // if (_implicitConversionsCache.GetValue(CommonTypes.STR, sourceType))
         //     return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
 
-        if (targetType.IsUnboundGenericType) {
+        if (sourceType.IsUnboundGenericType) {
             return new ParserInfo.Invalid(Diagnostics.GiveUp);
         }
 
-        if (targetType.EnumUnderlyingType is not null) {
-            var minTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
+        if (sourceType.EnumUnderlyingType is not null) {
+            var minTypeInfo = MinimalTypeInfo.FromSymbol(sourceType);
 
             return new ParserInfo.DirectMethod(
                 "WrapParseEnum<" + minTypeInfo.FullName + ">",
@@ -178,8 +196,8 @@ public class ParserFinder
 
         ParserInfo? parserInfo = null;
 
-        foreach (var ctor in targetType.Constructors) {
-            if (TryGetCtorParserInfo(ctor, targetType, out parserInfo))
+        foreach (var ctor in sourceType.Constructors) {
+            if (TryGetCtorParserInfo(ctor, sourceType, out parserInfo))
                 return parserInfo;
         }
 
@@ -189,27 +207,27 @@ public class ParserFinder
 
         int candidateCount = 0;
 
-        var directMembers = targetType.GetMembers("Parse").OfType<IMethodSymbol>();
+        var directMembers = sourceType.GetMembers("Parse").OfType<IMethodSymbol>();
         foreach (var method in directMembers) {
             candidateCount++;
-            if (TryGetDirectParserInfo(method, targetType, out parserInfo))
+            if (TryGetDirectParserInfo(method, sourceType, out parserInfo))
                 return parserInfo;
         }
 
-        var boolOutMembers = targetType.GetMembers("TryParse").OfType<IMethodSymbol>();
+        var boolOutMembers = sourceType.GetMembers("TryParse").OfType<IMethodSymbol>();
         foreach (var method in boolOutMembers) {
             candidateCount++;
-            if (TryGetBoolOutParserInfo(method, targetType, out parserInfo))
+            if (TryGetBoolOutParserInfo(method, sourceType, out parserInfo))
                 return parserInfo;
         }
 
         switch (candidateCount) {
             case 0:
-                return new ParserInfo.Invalid(Diagnostics.CouldntFindAutoParser, targetType.GetErrorName());
+                return new ParserInfo.Invalid(Diagnostics.CouldntFindAutoParser, sourceType.GetErrorName());
             case 1:
                 return parserInfo!; // notnull: parserInfo gets set at the same time as candidateCount gets incremented
             default:
-                return new ParserInfo.Invalid(Diagnostics.NoValidAutoParser, targetType.GetErrorName());
+                return new ParserInfo.Invalid(Diagnostics.NoValidAutoParser, sourceType.GetErrorName());
         }
     }
 

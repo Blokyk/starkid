@@ -352,6 +352,16 @@ internal static class Diagnostics {
             true
         );
 
+    public static readonly DiagnosticDescriptor NoAutoParserForArrayArg
+        = new(
+            "CLI400",
+            "Arguments with an array type can't be auto-parsed",
+            "Arguments with an array type can't be auto-parsed. Consider marking it as 'params'.",
+            "StarKid.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
     public static readonly DiagnosticDescriptor NoValidAutoParser
         = new(
             "CLI400",

@@ -81,9 +81,9 @@ public class ValidatorFinder
         );
     }
 
-    ValidatorInfo GetValidatorCore(ValidateWithAttribute attr, ITypeSymbol type) {
-        if (type is not INamedTypeSymbol argType)
-            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, type.GetErrorName());
+    ValidatorInfo GetValidatorCore(ValidateWithAttribute attr, ITypeSymbol operandType) {
+        if (operandType is not (INamedTypeSymbol or IArrayTypeSymbol))
+            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, operandType.GetErrorName());
 
         var memberSymbolInfo = _compilation.GetSymbolInfo(attr.ValidatorNameSyntaxRef.GetSyntax());
 
@@ -97,7 +97,7 @@ public class ValidatorFinder
                 goto COULDNT_FIND_VALIDATOR;
 
             // we return even if it's invalid because there's no alternative anyway
-            return GetValidatorFromProperty(propSymbol, argType);
+            return GetValidatorFromProperty(propSymbol, operandType);
         } else if (memberSymbolInfo.CandidateReason == CandidateReason.MemberGroup) {
             ValidatorInfo? validator = null;
 
@@ -106,7 +106,7 @@ public class ValidatorFinder
                 if (symbol is not IMethodSymbol methodSymbol)
                     goto COULDNT_FIND_VALIDATOR;
 
-                if (TryGetValidatorFromMethod(methodSymbol, argType, out validator))
+                if (TryGetValidatorFromMethod(methodSymbol, operandType, out validator))
                     return validator;
             }
 
@@ -116,7 +116,7 @@ public class ValidatorFinder
 
             return new ValidatorInfo.Invalid(
                 Diagnostics.NoValidValidatorMethod,
-                attr.ValidatorName, argType.GetErrorName()
+                attr.ValidatorName, operandType.GetErrorName()
             );
         }
 
@@ -127,9 +127,33 @@ public class ValidatorFinder
         );
     }
 
+    private enum ArgTypeRelation {
+        Unvalidatable, IncompatibleTypes,
+        DirectlyCompatible, ElementWiseOnly
+    }
+
+    private ArgTypeRelation ClassifyTypeRelation(
+        ITypeSymbol srcType,
+        ITypeSymbol dstType,
+        Func<ITypeSymbol, ITypeSymbol, bool> areCompatible
+    ) {
+        if (srcType is not (INamedTypeSymbol or IArrayTypeSymbol)
+         || dstType is not (INamedTypeSymbol or IArrayTypeSymbol))
+            return ArgTypeRelation.Unvalidatable;
+
+        if (areCompatible(srcType, dstType))
+            return ArgTypeRelation.DirectlyCompatible;
+
+        if (srcType is IArrayTypeSymbol { ElementType: var itemType }
+         && areCompatible(itemType, dstType))
+            return ArgTypeRelation.ElementWiseOnly;
+
+        return ArgTypeRelation.IncompatibleTypes;
+    }
+
     bool TryGetValidatorFromMethod(
         IMethodSymbol method,
-        INamedTypeSymbol argType,
+        ITypeSymbol operandType,
         out ValidatorInfo validator
     ) {
         if (method.MethodKind != MethodKind.Ordinary) {
@@ -153,30 +177,42 @@ public class ValidatorFinder
         if (method.Parameters.Length != 1) {
             validator = new ValidatorInfo.Invalid(
                 Diagnostics.ValidatorWrongParameter,
-                argType.GetErrorName()
+                operandType.GetErrorName()
             );
 
             return false;
         }
 
-        var coreType = SymbolUtils.GetCoreTypeOfNullable(argType);
-
-        if (coreType is not INamedTypeSymbol) {
-            validator = new ValidatorInfo.Invalid(
-                Diagnostics.UnvalidatableType,
-                argType.GetErrorName()
-            );
-
-            return false;
+        // if it's an instance of Nullable<T>, unwrap it first
+        if (operandType is INamedTypeSymbol {
+                    ConstructedFrom.SpecialType: SpecialType.System_Nullable_T,
+                    TypeArguments: [var innerOperandType]
+                }
+        ) {
+            operandType = innerOperandType;
         }
 
-        if (!_implicitConversionsCache.GetValue(coreType, method.Parameters[0].Type)) {
-            validator = new ValidatorInfo.Invalid(
-                Diagnostics.ValidatorWrongParameter,
-                argType.GetErrorName()
-            );
+        bool elementWise = false;
+        switch (ClassifyTypeRelation(operandType, method.Parameters[0].Type, _implicitConversionsCache.GetValue)) {
+            case ArgTypeRelation.DirectlyCompatible:
+                break;
+            case ArgTypeRelation.ElementWiseOnly:
+                elementWise = true;
+                break;
+            case ArgTypeRelation.Unvalidatable:
+                validator = new ValidatorInfo.Invalid(
+                    Diagnostics.UnvalidatableType,
+                    operandType.GetErrorName()
+                );
 
-            return false;
+                return false;
+            case ArgTypeRelation.IncompatibleTypes:
+                validator = new ValidatorInfo.Invalid(
+                    Diagnostics.ValidatorWrongParameter,
+                    operandType.GetErrorName()
+                );
+
+                return false;
         }
 
         var minMethodInfo = MinimalMethodInfo.FromSymbol(method);
@@ -184,12 +220,16 @@ public class ValidatorFinder
         var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
 
         if (method.ReturnsVoid) {
-            validator = new ValidatorInfo.Method.Exception(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
+            validator = new ValidatorInfo.Method.Exception(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo) {
+                IsElementWiseValidator = elementWise
+            };
             return true;
         }
 
         if (minMethodInfo.ReturnType.SpecialType == SpecialType.System_Boolean) {
-            validator = new ValidatorInfo.Method.Bool(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo);
+            validator = new ValidatorInfo.Method.Bool(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo) {
+                IsElementWiseValidator = elementWise
+            };
             return true;
         }
 
@@ -203,22 +243,29 @@ public class ValidatorFinder
 
     ValidatorInfo GetValidatorFromProperty(
         IPropertySymbol prop,
-        INamedTypeSymbol argType
+        ITypeSymbol argType
     ) {
-        if (prop.Type.SpecialType != SpecialType.System_Boolean) {
+        if (prop.Type.SpecialType is not SpecialType.System_Boolean) {
             return new ValidatorInfo.Invalid(
                 Diagnostics.ValidatorPropertyReturnMismatch,
                 prop.GetErrorName()
             );
         }
 
-        if (!prop.ContainingType.IsBaseOf(argType)) {
-            return new ValidatorInfo.Invalid(
-                Diagnostics.PropertyValidatorNotOnArgType,
-                prop.GetErrorName(), argType.GetErrorName()
-            );
-        }
+        var targetType = prop.ContainingType;
 
-        return new ValidatorInfo.Property(prop.Name, MinimalMemberInfo.FromSymbol(prop));
+        switch (ClassifyTypeRelation(argType, targetType, SymbolUtils.IsBaseOrInterfaceOf)) {
+            case ArgTypeRelation.DirectlyCompatible:
+                return new ValidatorInfo.Property(prop.Name, MinimalMemberInfo.FromSymbol(prop));
+            case ArgTypeRelation.ElementWiseOnly:
+                return new ValidatorInfo.Property(prop.Name, MinimalMemberInfo.FromSymbol(prop)) {
+                    IsElementWiseValidator = true
+                };
+            default:
+                return new ValidatorInfo.Invalid(
+                    Diagnostics.PropertyValidatorNotOnArgType,
+                    targetType.GetErrorName(), prop.GetErrorName(), argType.GetErrorName()
+                );
+        }
     }
 }

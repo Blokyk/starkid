@@ -142,13 +142,10 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
             return;
 
         foreach (var arg in args) {
-            sb.Append('<');
-            sb.Append(FormatArgName(arg));
-
-            if (arg.IsParams)
-                sb.Append("...");
-
-            sb.Append("> ");
+            sb
+                .Append('<')
+                .Append(FormatArgName(arg))
+                .Append("> ");
         }
 
         sb.Length--; // remove the last space
@@ -273,8 +270,23 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
 
     private readonly Cache<string, string> _formattedNameCache
         = new(StringComparer.InvariantCulture, s => NameFormatter.Format(s, config.ArgNameCasing));
-    private string FormatArgName(Argument arg) => _formattedNameCache.GetValue(arg.Name);
-    private string FormatArgName(Option opt)
+
+    private string FormatArgName(Argument arg) {
+        var name = _formattedNameCache.GetValue(arg.Name);
+
+        if (arg.IsParams)
+            name += "...";
+
+        return name;
+    }
+
+    private string FormatArgName(Option opt) {
         // if the option was given a custom name, then don't format it
-        => opt.CustomArgName ?? _formattedNameCache.GetValue(opt.BackingSymbol.Name);
+        var name = opt.CustomArgName ?? _formattedNameCache.GetValue(opt.BackingSymbol.Name);
+
+        if (opt.IsRepeatableOption())
+            name += "...";
+
+        return name;
+    }
 }

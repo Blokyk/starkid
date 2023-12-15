@@ -239,10 +239,9 @@ internal sealed class GroupBuilder
                     ? MinimalParameterInfo.FromSymbol(paramSymbol)
                     : MinimalMemberInfo.FromSymbol(symbol);
 
-        // todo(#4): special-case arrays/lists to be "repeatable" options
         var type = GetTypeForSymbol(symbol);
 
-        if (!TryGetParser(attrInfo.ParseWith, type, symbol, out var parser))
+        if (!TryGetParser(attrInfo.ParseWith, type, symbol, isOption: true, out var parser))
             return false;
 
         if (!TryGetValidators(attrInfo.ValidateWithList.Array, type, symbol, out var validators))
@@ -297,7 +296,7 @@ internal sealed class GroupBuilder
             ? itemType
             : param.Type;
 
-        if (!TryGetParser(attrList.ParseWith, parserTargetType, param, out var parser))
+        if (!TryGetParser(attrList.ParseWith, parserTargetType, param, isOption: false, out var parser))
             return false;
 
         if (!TryGetValidators(attrList.ValidateWithList.Array, param.Type, param, out var validators))
@@ -321,13 +320,38 @@ internal sealed class GroupBuilder
         ParseWithAttribute? attr,
         ITypeSymbol type,
         ISymbol symbol,
+        bool isOption,
         [NotNullWhen(true)] out ParserInfo? parser
     ) {
+        parser = null;
         if (attr is null) {
-            if (!_parserFinder.TryFindParserForType(type, symbol.GetDefaultLocation(), out parser))
+            var targetType = type;
+
+            // if this is an array option, there's no way we can auto-find a parser
+            // for the array itself; however, this might be a repeatable option, in
+            // which case we instead want to parse the items' type
+            if (type is IArrayTypeSymbol { ElementType: var itemType }) {
+                if (!isOption) {
+                    _addDiagnostic(
+                        Diagnostic.Create(
+                            Diagnostics.NoAutoParserForArrayArg,
+                            symbol.GetDefaultLocation()
+                        )
+                    );
+
+                    return false;
+                }
+
+                targetType = itemType;
+            }
+
+            if (!_parserFinder.TryFindParserForType(targetType, symbol.GetDefaultLocation(), out parser))
                 return false;
         } else {
-            if (!_parserFinder.TryGetParserFromName(attr, type, out parser))
+            // in the case of arguments, no need to check afterwards if
+            // it's element-wise since passing `isOption = false` ensures
+            // that it'll get rejected anyway
+            if (!_parserFinder.TryGetParserFromName(attr, type, isOption, out parser))
                 return false;
         }
 

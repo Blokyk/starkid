@@ -15,6 +15,8 @@ public static partial class Main {
             AutoLibOption,
             EnumOption,
             AutoUserOption,
+            RepeatableStringOption,
+            RepeatableAutoOption,
             AutoParsedNullableStructOption,
 
             ParsedStringOption,
@@ -23,6 +25,11 @@ public static partial class Main {
             ManualFooOption,
             ManualParsedNullableStructOption,
             DirectParsedNullableStructOption,
+            RepeatManualItemOption,
+            ManualArrayOption,
+
+            RepeatManualItemValidatorOption,
+            RepeatItemArrayValidatorOption,
 
             ThrowingOption
         };
@@ -35,6 +42,8 @@ public static partial class Main {
     }
 
     [Option("global-switch", IsGlobal = true)] public static bool GlobalSwitch { get; set; }
+
+    // todo: global repeatable option
 
     internal static object Dummy2State = new();
     [Command("dummy2")] public static void Dummy2(
