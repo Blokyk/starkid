@@ -2,8 +2,7 @@ using StarKid.Generated;
 
 namespace StarKid.Tests.Options;
 
-
-public class ErrorTests
+public partial class ErrorTests
 {
     // todo: factor all those strings into methods with parameters
 
@@ -23,17 +22,6 @@ public class ErrorTests
         Assert.Empty(stdout);
         Assert.StartsWith( // we don't care about help text
             "Command 'test' doesn't have any option named '--cogito-ergo-sum'",
-            stderr
-        );
-    }
-
-    [Fact]
-    public void DirectParserFail() {
-        Assert.Equal(1, StarKidProgram.TestMain(["--parsed-switch=foo", "dummy"], out var stdout, out var stderr));
-        Assert.Empty(stdout);
-        Assert.StartsWith(
-            "Expression 'foo' is not a valid value for option '--parsed-switch': "+
-            "Couldn't parse 'foo' as an argument of type 'bool'",
             stderr
         );
     }
