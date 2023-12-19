@@ -359,19 +359,12 @@ partial class StarKidProgram
         catch (EnvironmentExitException) {
             throw;
         }
-        catch (Exception e) when (message != null && IsDefaultException(e)) {
+        catch (Exception) when (message != null) {
             throw new Exception(message);
         } catch {
             // if there's no message, the caller will handle the exception itself
             throw;
         }
-
-        return val;
-    }
-
-    private static T ThrowIfNotValid<T>(T val, Func<T, bool> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcExpr = "") {
-        if (!isValid(val))
-            throw new Exception(message ?? "'" + funcExpr + "' was false");
 
         return val;
     }
@@ -384,7 +377,7 @@ partial class StarKidProgram
         catch (EnvironmentExitException) {
             throw;
         }
-        catch (Exception e) when (message != null && IsDefaultException(e)) {
+        catch (Exception) when (message != null) {
             throw new Exception(message);
         } catch {
             throw;
@@ -407,11 +400,18 @@ partial class StarKidProgram
         catch (EnvironmentExitException) {
             throw;
         }
-        catch (Exception e) when (message != null && IsDefaultException(e)) {
+        catch (Exception) when (message != null) {
             throw new Exception(message);
         } catch {
             throw;
         }
+
+        return val;
+    }
+
+    private static T ThrowIfNotValid<T>(T val, Func<T, bool> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcExpr = "") {
+        if (!isValid(val))
+            throw new Exception(message ?? "'" + funcExpr + "' was false");
 
         return val;
     }
