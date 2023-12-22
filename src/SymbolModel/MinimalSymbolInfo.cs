@@ -2,11 +2,13 @@ using System.Diagnostics;
 
 namespace StarKid.Generator.SymbolModel;
 
+[DebuggerDisplay("{DbgStr(),nq}")]
 public abstract record MinimalSymbolInfo(
     string Name,
     MinimalTypeInfo? ContainingType,
     MinimalLocation Location
 ) : IEquatable<MinimalSymbolInfo> {
+    internal virtual string DbgStr() => SyntaxUtils.GetSafeName(Name);
     public override string ToString()
         => ContainingType is null
             ? Name
@@ -23,7 +25,6 @@ public abstract record MinimalSymbolInfo(
         || (other is not null && other.GetHashCode() == GetHashCode());
 }
 
-[DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
 public record MinimalTypeInfo(
     string Name,
     MinimalTypeInfo? ContainingType,
@@ -96,7 +97,6 @@ public record MinimalTypeInfo(
         );
 }
 
-[DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
 public sealed record MinimalArrayTypeInfo(
     MinimalTypeInfo ElementType,
     bool IsNullable,
@@ -118,12 +118,12 @@ public sealed record MinimalArrayTypeInfo(
     public override int GetHashCode() => MiscUtils.CombineHashCodes(base.GetHashCode(), ElementType.GetHashCode());
 }
 
-[DebuggerDisplay("`{Name,nq}")]
 public sealed record MinimalTypeParameterInfo(
     string Name,
     bool IsNullable,
     MinimalLocation Location
 ) : MinimalTypeInfo(Name, null, Name, IsNullable, Location) {
+    internal override string DbgStr() => "`" + Name;
     public override string ToString() => base.ToString(); // wouldn't wanna break codegen
 
     public static MinimalTypeParameterInfo FromSymbol(ITypeParameterSymbol type)
@@ -156,13 +156,13 @@ public sealed record MinimalNullableValueTypeInfo(
     public override int GetHashCode() => ValueType.GetHashCode() + 1;
 }
 
-[DebuggerDisplay("{ContainingType!.ToString(),nq} . {SymbolUtils.GetSafeName(Name),nq}")]
 public record MinimalMemberInfo(
     string Name,
     MinimalTypeInfo ContainingType,
     MinimalTypeInfo Type,
     MinimalLocation Location
 ) : MinimalSymbolInfo(Name, ContainingType, Location) {
+    internal override string DbgStr() => ContainingType!.ToString() + '.' + SyntaxUtils.GetSafeName(Name);
     public override string ToString() => ContainingType!.ToString() + ".@" + Name;
 
     public static MinimalMemberInfo FromSymbol(ISymbol symbol) {
@@ -187,6 +187,8 @@ public sealed record MinimalMethodInfo(
     ImmutableValueArray<MinimalTypeInfo> TypeParameters,
     MinimalLocation Location
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
+    internal override string DbgStr() =>
+        $"{ReturnType.Name} {Name}<{String.Join(", ", TypeParameters)}>({String.Join(", ", Parameters)})";
     public override string ToString() => ContainingType!.ToString() + ".@" + Name;
 
     public bool ReturnsVoid => ReturnType.SpecialType is SpecialType.System_Void;
@@ -218,7 +220,6 @@ public sealed record MinimalMethodInfo(
         && TypeParameters.Equals(other.TypeParameters);
 }
 
-[DebuggerDisplay("{SymbolUtils.GetSafeName(Name),nq}")]
 public sealed record MinimalParameterInfo(
     string Name, // need the name cause the help text might change otherwise
     MinimalTypeInfo Type,
