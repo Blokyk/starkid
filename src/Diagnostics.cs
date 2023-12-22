@@ -295,8 +295,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor OptNameAlreadyExists
         = new(
             "CLI201",
-            "Another option with the name '{0}' was already declared in this command, or in a parent group",
-            "Another option with the name '{0}' was already declared in this command, or in a parent group",
+            "Another option with the name '{0}' was already declared in this command or in a parent group",
+            "Another option with the name '{0}' was already declared in this command or in a parent group",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -305,8 +305,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor OptAliasAlreadyExists
         = new(
             "CLI201",
-            "Another option with the alias '{0}' was already declared in this command, or in a parent group",
-            "Another option with the alias '{0}' was already declared in this command, or in a parent group",
+            "Another option with the alias '{0}' was already declared in this command or in a parent group",
+            "Another option with the alias '{0}' was already declared in this command or in a parent group",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true

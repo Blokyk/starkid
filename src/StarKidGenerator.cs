@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using StarKid.Generator.CommandModel;
 using StarKid.Generator.SymbolModel;
 
@@ -226,22 +228,53 @@ using System;
             classNames[group.ParentClassFullName].AddSubgroup(group);
         }
 
-        if (rootGroup is not null)
-            ValidateOptionTree(rootGroup, addDiagnostic);
+        Debug.Assert(rootGroup is not null);
+
+        if (!ValidateOptionTree(rootGroup!, addDiagnostic))
+            return null;
 
         return rootGroup;
     }
 
-    internal static void ValidateOptionTree(Group rootGroup, Action<Diagnostic> addDiagnostic) {
-        void validate(Group group, HashSet<string> names, HashSet<char> aliases) {
-            var groupOptions = group.OptionsAndFlags;
-            var commandOptions = group.Commands.SelectMany(cmd => cmd.OptionsAndFlags);
+    // todo: make those local functions static
+    internal static bool ValidateOptionTree(Group rootGroup, Action<Diagnostic> addDiagnostic) {
+        return validate(rootGroup, new(), new());
 
-            foreach (var option in groupOptions.Concat(commandOptions)) {
+        bool validate(Group group, HashSet<string> globalNames, HashSet<char> globalAliases) {
+            var localGlobalNames = new HashSet<string>(globalNames);
+            var localGlobalAliases = new HashSet<char>(globalAliases);
+
+            if (!validateCore(group.OptionsAndFlags, localGlobalNames, localGlobalAliases))
+                return false;
+
+            foreach (var sub in group.SubGroups) {
+                // yes, we have to create new ones each time,
+                // cause otherwise the .Add()s would carry
+                // over between subs
+                if (!validate(sub, localGlobalNames, localGlobalAliases))
+                    return false;
+            }
+
+            foreach (var cmd in group.Commands) {
+                // commands shouldn't have any global options, so no need
+                // to allocate new registries
+                if (!validateCore(cmd.OptionsAndFlags, localGlobalNames, localGlobalAliases))
+                    return false;
+            }
+
+            return true;
+        }
+
+        bool validateCore(IEnumerable<Option> opts, HashSet<string> globalNames, HashSet<char> globalAliases) {
+            var localNames = new HashSet<string>();
+            var localAliases = new HashSet<char>();
+
+            foreach (var option in opts) {
+                // register it locally and check if it's an existing global option
+                // if it's new global option, register it in globalNames
                 var longNameExists
-                    = option.IsGlobal
-                    ? !names.Add(option.Name)
-                    : names.Contains(option.Name);
+                    =  !localNames.Add(option.Name)
+                    || (option.IsGlobal ? !globalNames.Add(option.Name) : globalNames.Contains(option.Name));
 
                 if (longNameExists) {
                     addDiagnostic(
@@ -251,13 +284,14 @@ using System;
                             option.Name
                         )
                     );
+
+                    return false;
                 }
 
                 if (option.Alias != default(char)) {
                     var aliasExists
-                        = option.IsGlobal
-                        ? !aliases.Add(option.Alias)
-                        : aliases.Contains(option.Alias);
+                        =  !localAliases.Add(option.Alias)
+                        || (option.IsGlobal ? !globalAliases.Add(option.Alias) : globalAliases.Contains(option.Alias));
 
                     if (aliasExists) {
                         addDiagnostic(
@@ -267,19 +301,14 @@ using System;
                                 option.Alias
                             )
                         );
+
+                        return false;
                     }
                 }
             }
 
-            foreach (var sub in group.SubGroups) {
-                // yes, we have to create new ones each time,
-                // cause otherwise the .Add()s would carry
-                // over between subs
-                validate(sub, new(names), new(aliases));
-            }
+            return true;
         }
-
-        validate(rootGroup, new(), new());
     }
 
     /// <summary>
