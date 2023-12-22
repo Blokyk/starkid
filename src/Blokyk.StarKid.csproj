@@ -55,11 +55,11 @@
     <_IsDesignTimeBuild Condition="'$(DesignTimeBuild)' == 'true'">true</_IsDesignTimeBuild>
     <PackageId>Blokyk.StarKid</PackageId>
     <Version>0.4</Version>
-    <Version
+    <VersionDate
         Condition="'$(Configuration)'=='Debug' AND '$(_IsDesignTimeBuild)' != 'true'"
-      >$([System.DateTime]::UtcNow.ToString("yyyy.MMdd.HHmm.ss"))</Version>
+      >$([System.DateTime]::UtcNow.ToString("yyyy.MMdd.HHmm.ss00"))</VersionDate>
     <Version Condition="'$(Configuration)'=='Debug' AND '$(_IsDesignTimeBuild)' != 'true'"
-      >$(Version.Replace(".0000", "").Replace(".0", ".").Replace(".0", ".").Replace(".0", "."))</Version>
+      >$(VersionDate.Replace(".0000", "").Replace(".0", ".").Replace(".0", ".").Replace(".0", "."))</Version>
     <Authors>Blokyk</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/blokyk/starkid</RepositoryUrl>
@@ -96,6 +96,8 @@
   </ItemGroup>
 
   <Target Name="UpdateLocalPackage" AfterTargets="Pack">
+    <Message Importance="high"
+      Text="Adding version=$(Version) (built @ $(VersionDate))" />
     <Exec Condition="'$(Configuration)'=='Debug'"
       Command="nuget add -Source /home/blokyk/.nuget/local '$(OutputPath)$(PackageId).$(Version).nupkg'"
     />
