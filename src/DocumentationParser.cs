@@ -54,6 +54,11 @@ public static class DocumentationParser
                 case "param":
                     var name = tag.Attribute("name")!.Value;
                     var desc = FormatTag(tag);
+
+                    // need to be resilient to repeated arg names in the xml
+                    if (paramSummaries.ContainsKey(name))
+                        break;
+
                     paramSummaries.Add(name, desc);
                     break;
             }
