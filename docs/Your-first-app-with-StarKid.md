@@ -63,8 +63,9 @@ can be executed.***
 And... that's about it! After adding some actual code to the `Open`,
 `Close`, and `Knock`, you should be able to build and run your app!
 
-> **Note**: To run your app with `dotnet run`, you'll need to add
-> `--` before youtype your arguments/commands/options, to make sure
+> [!IMPORTANT]
+> To run your app with `dotnet run`, you'll need to add
+> `--` before you type your arguments/commands/options, to make sure
 > that the dotnet CLI doesn't misinterpret any of them. For example:
 > ```shell
 > $ dotnet run -- open 5ecr3t_keii

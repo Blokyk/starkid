@@ -36,7 +36,8 @@ of subcommands, and has sensible defaults builtin; however, it also
 aims to provide some flexibility when needed, and has many ways to be
 tweaked to suit your needs (including via the [build-time config](StarKid-config.md)).
 
-> **Note**: Although there are quite a lot of references to `System.CommandLine`
+> [!NOTE]
+> Although there are quite a lot of references to `System.CommandLine`
 > throughout both StarKid's documentation and its codebase, it should
 > be noted that StarKid's functional goals are pretty different from
 > [System.CLI's goals](https://github.com/dotnet/command-line-api/blob/main/docs/Functional-goals.md).
@@ -125,7 +126,8 @@ you code structure.
 
 ## Commands, options, and groups
 
-> **Note**: This is mostly intended to be a piece of documentation,
+> [!NOTE]
+> This is mostly intended to be a piece of documentation,
 > not a tutorial. If you want a gentle introduction to StarKid's
 > base concepts and how to make your first app, you should check out
 > [Your first app with StarKid](./Your-first-app-with-StarKid.md).
@@ -141,6 +143,7 @@ methods together (+do some other stuff in OOP); it is such a good
 analogy, in fact, that commands are represented by methods, and
 groups by classes.
 
+> [!IMPORTANT]
 > Much like C# with methods and classes, StarKid does not allow
 > commands to exist outside of a group. See [the relevant paragraph](#one-command-apps-are-impossible-to-create)
 > for more details.
@@ -302,7 +305,8 @@ static class ToyGit {
 
 ## Parsing & validation
 
-> **Note:** In the following sections, *operand* refers to either an
+> [!NOTE]
+> In the following sections, *operand* refers to either an
 > argument or the value of an option. For example:
 >
 > ```shell
@@ -350,12 +354,16 @@ In case StarKid cannot find a parsing method automatically, or if
 you'd like to override the default one, you can specify one yourself
 using the `[ParseWith(...)]` attribute:
 
-> **Note**: For technical reasons, using a method or lambda as an
+> [!WARNING]
+> You ***have*** to specify the method's name inside a `nameof()`
+> expression. You *cannot* just use a string instead!
+>
+> Ideally, you could use the same syntax as when converting a method
+> group to a delegate, but for technical reasons, using delegates as
 > argument in attributes is currently impossible in .NET, and the
 > [issue](https://github.com/dotnet/csharplang/issues/343) currently
 > tracking it is mostly inactive (go revive it if you want to see
-> that feature!), so you ***have*** to specify the method > inside
-> a `nameof()` expression. You *cannot* just use a string instead!
+> that feature!).
 
 ```csharp
 [Option("range")]
