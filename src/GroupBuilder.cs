@@ -1,3 +1,4 @@
+using StarKid.Generator.AttributeModel;
 using StarKid.Generator.CommandModel;
 using StarKid.Generator.SymbolModel;
 
@@ -145,8 +146,8 @@ internal sealed class GroupBuilder
 
         var minMethodSymbol = MinimalMethodInfo.FromSymbol(method);
 
-        string cmdName = attrList.Command.CmdName;
-        string? desc = attrList.Command.ShortDesc;
+        string cmdName = attrList.Command.CommandName;
+        string? desc = attrList.Command.ShortDescription;
 
         bool isValid = true;
 

@@ -1,37 +1,6 @@
 using System.Diagnostics;
 
-namespace StarKid.Generator;
-
-internal enum CLIMemberKind {
-    None,
-    Argument,
-    Group,
-    Option,
-    Command,
-    Invalid
-}
-
-internal readonly record struct AttributeListInfo(
-    CommandGroupAttribute? CommandGroup,
-    CommandAttribute? Command,
-    OptionAttribute? Option,
-    ParseWithAttribute? ParseWith,
-    ImmutableValueArray<ValidateWithAttribute> ValidateWithList,
-    bool IsOnParameter
-)
-{
-    internal bool IsEmpty
-        => CommandGroup is null
-        && Command is null
-        && Option is null
-        && ParseWith is null
-        && ValidateWithList.Length == 0
-        ;
-    internal bool IsUninitialized
-        => ValidateWithList.Array.IsDefault;
-
-    internal CLIMemberKind Kind => AttributeListBuilder.CategorizeAttributeList(this);
-}
+namespace StarKid.Generator.AttributeModel;
 
 internal class AttributeListBuilder
 {
@@ -160,7 +129,7 @@ internal class AttributeListBuilder
                         return error();
 
                     isValid = ValidateName(
-                        cmd.CmdName,
+                        cmd.CommandName,
                         SyntaxUtils.GetApplicationLocation(attr),
                         isForCommands: true
                     );

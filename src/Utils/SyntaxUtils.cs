@@ -17,4 +17,14 @@ internal static class SyntaxUtils
 
         return name;
     }
+
+    public static int GetHashCode(SyntaxNode s) {
+        var h1 = s.RawKind; // equivalent to Kind().GetHashCode() (yes, down to jit output :p)
+
+        var h2 = s.ChildNodes().Aggregate(0, (acc, node) => MiscUtils.CombineHashCodes(acc, GetHashCode(node)));
+        if (h2 == 0) // it'll only be 0 if the node didn't have any child
+            h2 = s.ToString().GetHashCode();
+
+        return MiscUtils.CombineHashCodes(h1, h2);
+    }
 }

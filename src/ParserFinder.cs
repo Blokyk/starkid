@@ -1,3 +1,4 @@
+using StarKid.Generator.AttributeModel;
 using StarKid.Generator.CommandModel;
 using StarKid.Generator.SymbolModel;
 
@@ -96,7 +97,7 @@ public class ParserFinder
         addDiagnostic(
             Diagnostic.Create(
                 invalidParser.Descriptor,
-                attr.ParserNameSyntaxRef.GetLocation(),
+                attr.ParserNameExpr.GetLocation(),
                 invalidParser.MessageArgs
             )
         );
@@ -107,7 +108,7 @@ public class ParserFinder
     ParserInfo GetParserFromNameCore(ParseWithAttribute attr, ITypeSymbol targetType) {
         var members
             = _compilation
-                .GetMemberGroup(attr.ParserNameSyntaxRef.GetSyntax())
+                .GetMemberGroup(attr.ParserNameExpr)
                 .OfType<IMethodSymbol>()
                 .ToArray();
 
@@ -117,7 +118,7 @@ public class ParserFinder
             if (method.MethodKind != MethodKind.Ordinary) {
                 return new ParserInfo.Invalid(
                     Diagnostics.CouldntFindNamedParser,
-                    attr.ParserName
+                    attr.ParserNameExpr
                 );
             }
 
@@ -133,13 +134,13 @@ public class ParserFinder
         if (members.Length > 1) {
             return new ParserInfo.Invalid(
                 Diagnostics.NoValidParserOverload,
-                attr.ParserName
+                attr.ParserNameExpr
             );
         }
 
         return new ParserInfo.Invalid(
             Diagnostics.CouldntFindNamedParser,
-            attr.ParserName
+            attr.ParserNameExpr
         );
     }
 

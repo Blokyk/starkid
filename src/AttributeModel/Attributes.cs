@@ -1,0 +1,41 @@
+namespace StarKid.Generator.AttributeModel;
+
+public sealed record CommandGroupAttribute(
+    string GroupName,
+    string? DefaultCommandName,
+    string? ShortDescription
+);
+
+public sealed record CommandAttribute(
+    string CommandName,
+    string? ShortDescription
+);
+
+public sealed record OptionAttribute(
+    string LongName,
+    char Alias,
+    string? ArgName,
+    bool IsGlobal
+);
+
+public sealed record ParseWithAttribute(
+    ExpressionSyntax ParserNameExpr
+) {
+    public bool Equals(ParseWithAttribute? other)
+        => other is not null && ParserNameExpr.IsEquivalentTo(other.ParserNameExpr);
+    public override int GetHashCode() => SyntaxUtils.GetHashCode(ParserNameExpr);
+}
+
+public sealed record ValidateWithAttribute(
+    ExpressionSyntax ValidatorNameExpr,
+    string? ErrorMessage
+) {
+    public bool Equals(ValidateWithAttribute? other)
+        => other is not null
+        && ErrorMessage == other.ErrorMessage
+        && ValidatorNameExpr.IsEquivalentTo(other.ValidatorNameExpr);
+    public override int GetHashCode()
+        => ErrorMessage is null
+            ? SyntaxUtils.GetHashCode(ValidatorNameExpr)
+            : MiscUtils.CombineHashCodes(ErrorMessage.GetHashCode(), SyntaxUtils.GetHashCode(ValidatorNameExpr));
+}

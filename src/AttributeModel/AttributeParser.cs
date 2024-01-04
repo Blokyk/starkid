@@ -1,4 +1,4 @@
-namespace StarKid.Generator;
+namespace StarKid.Generator.AttributeModel;
 
 internal class AttributeParser(Action<Diagnostic> addDiagnostic)
 {
@@ -10,12 +10,10 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
             return false;
 
         // ShortDesc
-        if (!TryGetProp<string?>(attr, nameof(CommandAttribute.ShortDesc), SpecialType.System_String, null, out var shortDesc))
+        if (!TryGetProp<string?>(attr, "ShortDesc", SpecialType.System_String, null, out var shortDesc))
             return false;
 
-        cmdAttr = new(cmdName) {
-            ShortDesc = shortDesc
-        };
+        cmdAttr = new(cmdName, shortDesc);
 
         return true;
     }
@@ -24,21 +22,18 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         groupAttr = null;
 
         // groupName
-        if (!TryGetCtorArg<string>(attr, 0, SpecialType.System_String, out var appName))
+        if (!TryGetCtorArg<string>(attr, 0, SpecialType.System_String, out var groupName))
             return false;
 
         // DefaultCommandName
-        if (!TryGetProp<string?>(attr, nameof(CommandGroupAttribute.DefaultCmdName), SpecialType.System_String, null, out var defaultCmdName))
+        if (!TryGetProp<string?>(attr, "DefaultCommandName", SpecialType.System_String, null, out var defaultCmdName))
             return false;
 
         // ShortDesc
-        if (!TryGetProp<string?>(attr, nameof(CommandGroupAttribute.ShortDesc), SpecialType.System_String, null, out var shortDesc))
+        if (!TryGetProp<string?>(attr, "ShortDesc", SpecialType.System_String, null, out var shortDesc))
             return false;
 
-        groupAttr = new(appName) {
-            DefaultCmdName = defaultCmdName,
-            ShortDesc = shortDesc
-        };
+        groupAttr = new(groupName, defaultCmdName, shortDesc);
 
         return true;
     }
@@ -56,51 +51,15 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
                 return false;
         }
 
-        if (!TryGetProp<string?>(attr, nameof(OptionAttribute.ArgName), SpecialType.System_String, null, out var argName))
+        if (!TryGetProp<string?>(attr, "ArgName", SpecialType.System_String, null, out var argName))
             return false;
 
-        if (!TryGetProp<bool>(attr, nameof(OptionAttribute.IsGlobal), SpecialType.System_Boolean, false, out var isGlobal))
+        if (!TryGetProp<bool>(attr, "IsGlobal", SpecialType.System_Boolean, false, out var isGlobal))
             return false;
 
-        optAttr = new OptionAttribute(
-            longName,
-            shortName
-        ) {
-            ArgName = argName,
-            IsGlobal = isGlobal,
-        };
+        optAttr = new OptionAttribute(longName, shortName, argName, isGlobal);
 
         return true;
-    }
-
-    private bool TryGetNameOfArg(ExpressionSyntax expr, [NotNullWhen(true)] out ExpressionSyntax? nameExpr) {
-        nameExpr = null;
-
-        if (expr is not InvocationExpressionSyntax methodCallSyntax)
-            return false;
-
-        if (methodCallSyntax.Expression is not IdentifierNameSyntax nameofSyntax)
-            return false;
-
-        // no, IsKind or IsContextualKeyword don't work. don't ask me why
-        // technically, the proper way to do this seems to be:
-        //     SyntaxFacts.GetContextualKeywordKind(nameofSyntax.Identifier.ValueText)
-        //  == SyntaxKind.NameOfKeyword
-        if (nameofSyntax.Identifier.Text != "nameof")
-            return false;
-
-        if (methodCallSyntax.ArgumentList.Arguments.Count != 1)
-            return false;
-
-        var argExpr = methodCallSyntax.ArgumentList.Arguments[0].Expression;
-
-        nameExpr = argExpr switch {
-            MemberAccessExpressionSyntax maes => maes,
-            NameSyntax name => name,
-            _ => null
-        };
-
-        return nameExpr is not null;
     }
 
     public bool TryParseParseAttrib(AttributeData attr, [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
@@ -125,7 +84,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
             return false;
         }
 
-        parseWithAttr = new ParseWithAttribute(parserName.GetReference(), parserName.ToString());
+        parseWithAttr = new ParseWithAttribute(parserName);
 
         return true;
     }
@@ -159,13 +118,39 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
                 return false;
         }
 
-        ValidateWithAttr
-            = new ValidateWithAttribute(
-                validatorName.GetReference(),
-                validatorName.ToString()
-            ) { ErrorMessage = msg };
+        ValidateWithAttr = new ValidateWithAttribute(validatorName, msg);
 
         return true;
+    }
+
+    private bool TryGetNameOfArg(ExpressionSyntax expr, [NotNullWhen(true)] out ExpressionSyntax? nameExpr) {
+        nameExpr = null;
+
+        if (expr is not InvocationExpressionSyntax methodCallSyntax)
+            return false;
+
+        if (methodCallSyntax.Expression is not IdentifierNameSyntax nameofSyntax)
+            return false;
+
+        // no, IsKind or IsContextualKeyword don't work. don't ask me why
+        // technically, the proper way to do this seems to be:
+        //     SyntaxFacts.GetContextualKeywordKind(nameofSyntax.Identifier.ValueText)
+        //  == SyntaxKind.NameOfKeyword
+        if (nameofSyntax.Identifier.Text != "nameof")
+            return false;
+
+        if (methodCallSyntax.ArgumentList.Arguments.Count != 1)
+            return false;
+
+        var argExpr = methodCallSyntax.ArgumentList.Arguments[0].Expression;
+
+        nameExpr = argExpr switch {
+            MemberAccessExpressionSyntax maes => maes,
+            NameSyntax name => name,
+            _ => null
+        };
+
+        return nameExpr is not null;
     }
 
     public bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, SpecialType type, [NotNullWhen(true)] out T? val) {

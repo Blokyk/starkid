@@ -1,3 +1,4 @@
+using StarKid.Generator.AttributeModel;
 using StarKid.Generator.CommandModel;
 using StarKid.Generator.SymbolModel;
 
@@ -38,7 +39,7 @@ public class ValidatorFinder
         addDiagnostic(
             Diagnostic.Create(
                 invalidValidator.Descriptor,
-                attr.ValidatorNameSyntaxRef.GetLocation(),
+                attr.ValidatorNameExpr.GetLocation(),
                 invalidValidator.MessageArgs
             )
         );
@@ -50,7 +51,7 @@ public class ValidatorFinder
         if (type is not INamedTypeSymbol argType)
             return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, type.GetErrorName());
 
-        var members = _compilation.GetMemberGroup(attr.ValidatorNameSyntaxRef.GetSyntax());
+        var members = _compilation.GetMemberGroup(attr.ValidatorNameExpr);
 
         int candidateMethods = 0;
         ValidatorInfo? validator = null;
@@ -68,7 +69,7 @@ public class ValidatorFinder
         if (candidateMethods == 0) {
             return new ValidatorInfo.Invalid(
                 Diagnostics.CouldntFindValidator,
-                attr.ValidatorName
+                attr.ValidatorNameExpr
             );
         }
 
@@ -77,7 +78,7 @@ public class ValidatorFinder
 
         return new ValidatorInfo.Invalid(
             Diagnostics.NoValidValidatorMethod,
-            attr.ValidatorName, argType.GetErrorName()
+            attr.ValidatorNameExpr, argType.GetErrorName()
         );
     }
 
@@ -85,7 +86,7 @@ public class ValidatorFinder
         if (operandType is not (INamedTypeSymbol or IArrayTypeSymbol))
             return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, operandType.GetErrorName());
 
-        var memberSymbolInfo = _compilation.GetSymbolInfo(attr.ValidatorNameSyntaxRef.GetSyntax());
+        var memberSymbolInfo = _compilation.GetSymbolInfo(attr.ValidatorNameExpr);
 
         if (memberSymbolInfo.Symbol is not null) {
             var symbol = memberSymbolInfo.Symbol;
@@ -116,14 +117,14 @@ public class ValidatorFinder
 
             return new ValidatorInfo.Invalid(
                 Diagnostics.NoValidValidatorMethod,
-                attr.ValidatorName, operandType.GetErrorName()
+                attr.ValidatorNameExpr, operandType.GetErrorName()
             );
         }
 
     COULDNT_FIND_VALIDATOR:
         return new ValidatorInfo.Invalid(
             Diagnostics.CouldntFindValidator,
-            attr.ValidatorName
+            attr.ValidatorNameExpr
         );
     }
 
