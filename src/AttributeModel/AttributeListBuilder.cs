@@ -14,7 +14,7 @@ internal class AttributeListBuilder
         _attrListCache
             = new(
                 SymbolEqualityComparer.Default,
-                TryGetAttributeList
+                TryGetAttributeListCore
             );
 
         _parser = new(addDiagnostic);
@@ -97,7 +97,7 @@ internal class AttributeListBuilder
         return isValid;
     }
 
-    (bool, AttributeListInfo) TryGetAttributeList(ISymbol symbol) {
+    (bool, AttributeListInfo) TryGetAttributeListCore(ISymbol symbol) {
         var attribList = default(AttributeListInfo);
         var attrs = symbol.GetAttributes();
 
@@ -178,7 +178,7 @@ internal class AttributeListBuilder
         }
 
         if (name.StartsWith('-')) {
-            if (!name.StartsWith("--")) {
+            if (name.Length < 2 || name[1] == '-') {
                 _addDiagnostic(
                     Diagnostic.Create(
                             Diagnostics.NameCantStartWithDash,
@@ -200,7 +200,7 @@ internal class AttributeListBuilder
                                 ? Diagnostics.CmdNameCantBeginWithDashDash
                                 : Diagnostics.OptNameCantBeginWithDashDash,
                             location,
-                            name.Substring(2)
+                            name[2..]
                         )
                     );
                 }
@@ -211,17 +211,17 @@ internal class AttributeListBuilder
 
         var nameIsValid
             = name.All(
-                (Func<char, bool>)(                c => MiscUtils.IsAsciiLetter(c)
+                c => MiscUtils.IsAsciiLetter(c)
                   || MiscUtils.IsAsciiDigit(c)
                   || c == '-'
-                  || c == '_')
+                  || c == '_'
             );
 
         if (nameIsValid)
             return true;
 
         // if the only character is '#' (The Special Name(tm))
-        if (isForCommands && name.Length == 1 && name[0] == '#')
+        if (isForCommands && name == "#")
             return true;
 
         _addDiagnostic(

@@ -65,11 +65,8 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
     public bool TryParseParseAttrib(AttributeData attr, [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
         parseWithAttr = null;
 
-        var attrSyntax = (attr.ApplicationSyntaxReference!.GetSyntax() as AttributeSyntax)!;
-
-        var argList = attrSyntax.ArgumentList!.Arguments;
-
-        if (argList.Count != 1)
+        var attrSyntax = attr.ApplicationSyntaxReference?.GetSyntax();
+        if (attrSyntax is not AttributeSyntax { ArgumentList.Arguments: { Count: 1 } argList })
             return false;
 
         if (!TryGetNameOfArg(argList[0].Expression, out var parserName)) {
@@ -92,11 +89,8 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
     public bool TryParseValidateAttrib(AttributeData attr, [NotNullWhen(true)] out ValidateWithAttribute? ValidateWithAttr) {
         ValidateWithAttr = null;
 
-        var attrSyntax = (attr.ApplicationSyntaxReference!.GetSyntax() as AttributeSyntax)!;
-
-        var argList = attrSyntax.ArgumentList!.Arguments;
-
-        if (argList.Count is 0 or > 2)
+        var attrSyntax = attr.ApplicationSyntaxReference?.GetSyntax();
+        if (attrSyntax is not AttributeSyntax { ArgumentList.Arguments: { Count: 1 or 2 } argList })
             return false;
 
         if (!TryGetNameOfArg(argList[0].Expression, out var validatorName)) {
@@ -126,25 +120,16 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
     private bool TryGetNameOfArg(ExpressionSyntax expr, [NotNullWhen(true)] out ExpressionSyntax? nameExpr) {
         nameExpr = null;
 
-        if (expr is not InvocationExpressionSyntax methodCallSyntax)
+        if (expr is not InvocationExpressionSyntax { ArgumentList.Arguments: [ var arg ] } methodCallSyntax)
             return false;
 
-        if (methodCallSyntax.Expression is not IdentifierNameSyntax nameofSyntax)
-            return false;
-
-        // no, IsKind or IsContextualKeyword don't work. don't ask me why
-        // technically, the proper way to do this seems to be:
+        // technically, the proper way to do this is
         //     SyntaxFacts.GetContextualKeywordKind(nameofSyntax.Identifier.ValueText)
         //  == SyntaxKind.NameOfKeyword
-        if (nameofSyntax.Identifier.Text != "nameof")
+        if (methodCallSyntax.Expression is not IdentifierNameSyntax { Identifier.Text: "nameof" } nameofSyntax)
             return false;
 
-        if (methodCallSyntax.ArgumentList.Arguments.Count != 1)
-            return false;
-
-        var argExpr = methodCallSyntax.ArgumentList.Arguments[0].Expression;
-
-        nameExpr = argExpr switch {
+        nameExpr = arg?.Expression switch {
             MemberAccessExpressionSyntax maes => maes,
             NameSyntax name => name,
             _ => null
