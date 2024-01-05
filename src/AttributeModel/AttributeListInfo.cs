@@ -14,10 +14,10 @@ internal readonly record struct AttributeListInfo(
         && Command is null
         && Option is null
         && ParseWith is null
-        && ValidateWithList.Length == 0
+        && ValidateWithList.IsDefaultOrEmpty
         ;
     internal bool IsUninitialized
-        => ValidateWithList.Array.IsDefault;
+        => ValidateWithList.IsDefault;
 
     internal CLIMemberKind Kind => AttributeListBuilder.CategorizeAttributeList(this);
 }

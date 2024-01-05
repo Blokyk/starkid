@@ -14,6 +14,9 @@ public readonly record struct ImmutableValueArray<T>(ImmutableArray<T> Array, IE
 
     private readonly bool _useDefaultComparer = false;
 
+    public bool IsDefault => Array.IsDefault;
+    public bool IsDefaultOrEmpty => Array.IsDefaultOrEmpty;
+
     public ImmutableValueArray(ImmutableArray<T> array)
         : this(array, EqualityComparer<T>.Default)
         => _useDefaultComparer = true;

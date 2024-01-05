@@ -47,7 +47,7 @@ internal class AttributeListBuilder
                 );
             }
 
-            if (validateWithList.Length == 0) {
+            if (!validateWithList.IsDefaultOrEmpty) {
                 _addDiagnostic(
                     Diagnostic.Create(
                         Diagnostics.ValidateOnNonOptOrArg,
