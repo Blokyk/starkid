@@ -84,6 +84,8 @@ internal static partial class StarKidProgram
             RepeatItemArrayValidatorOption = Array.Empty<int>();
             RepeatItemArrayValidatorOptionBuilder = new();
 
+            ValidatorWithMessageOption = default;
+
             // ThrowingOption = "this shouldn't be set, remember?";
             hasThrowingOptionActionBeenTriggered = false;
         }

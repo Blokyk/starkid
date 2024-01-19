@@ -39,5 +39,20 @@ public partial class ErrorTests
                 stderr
             );
         }
+
+        [Fact]
+        public void ValidatorWithCustomMessage() {
+            Assert.Equal(1,
+                StarKidProgram.TestMain([
+                    "--validator-with-message-opt", "-5",
+                "dummy"], out var stdout, out var stderr)
+            );
+            Assert.Empty(stdout);
+            Assert.StartsWith(
+                "Expression '-5' is not a valid value for option '--validator-with-message-opt': " +
+                "Number must be positive",
+                stderr
+            );
+        }
     }
 }

@@ -13,6 +13,9 @@ public static partial class Main {
     [ValidateWith(nameof(NoDuplicates))]
     [Option("repeat-item-array-validator-opt")] public static int[] RepeatItemArrayValidatorOption { get; set; }
 #pragma warning restore
+
+    [ValidateWith(nameof(Int32.IsPositive), "Number must be positive")]
+    [Option("validator-with-message-opt")] public static int ValidatorWithMessageOption { get; set; }
 }
 
 public partial class Tests {

@@ -20,13 +20,20 @@ internal static class CodegenHelpers
             arg.Validators
         );
 
-    public static string GetFullExpression(Option opt)
-        => GetValidatingExpression(
-            GetParsingExpression(opt.Parser, opt.DefaultValueExpr),
-            opt.Name,
-            opt.Type.IsNullable,
-            opt.Validators.Where(v => v.IsElementWiseValidator)
-        );
+    public static string GetFullExpression(Option opt) {
+        var validators
+            = opt.IsRepeatableOption()
+            ? opt.Validators.Where(v => v.IsElementWiseValidator)
+            : opt.Validators.Where(v => !v.IsElementWiseValidator);
+
+        return
+            GetValidatingExpression(
+                GetParsingExpression(opt.Parser, opt.DefaultValueExpr),
+                opt.Name,
+                opt.Type.IsNullable,
+                validators
+            );
+    }
 
     public static string GetParsingExpression(ParserInfo parser, string? defaultValueExpr) {
         string expr = "";
@@ -83,7 +90,7 @@ internal static class CodegenHelpers
 
             var throwFunc = isNullable ? "ThrowIfNotValidNullable(" : "ThrowIfNotValid(";
 
-            var msg = validator.Message is null ? "null" : SymbolDisplay.FormatLiteral(validator.Message, quote: false);
+            var msg = validator.Message is null ? "null" : SymbolDisplay.FormatLiteral(validator.Message, quote: true);
 
             currExpr =
                 throwFunc +

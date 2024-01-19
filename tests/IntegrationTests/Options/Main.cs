@@ -31,6 +31,8 @@ public static partial class Main {
             RepeatManualItemValidatorOption,
             RepeatItemArrayValidatorOption,
 
+            ValidatorWithMessageOption,
+
             ThrowingOption
         };
 
