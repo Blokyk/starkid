@@ -174,6 +174,10 @@ public partial class StarKidGenerator : IIncrementalGenerator
             classNames.Add(group.FullClassName, group);
         }
 
+        // if there wasn't any actual groups
+        if (classNames.Count == 0)
+            return null;
+
         Group? rootGroup = null;
 
         // for each group, find the group in which it was
