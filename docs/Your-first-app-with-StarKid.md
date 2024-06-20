@@ -6,7 +6,7 @@ In this tutorial, we will be building a simple command-line app,
 `door-cli`, which simulates a house door. It has 3 sub-commands:
 - `open`, which takes a mandatory `key` argument
 - `close`, which takes a `key`argument as well as a `-t/--turns <n>`
-  option to cutomize the number of key turns.
+  option to customize the number of key turns.
 - `knock`, which takes an optional `name` argument, and has an
   `--angry` switch
 
@@ -56,7 +56,7 @@ doesn't have any inherent behavior: it's not "invokable" like methods
 are; instead it's meant to group together related commands a.k.a.
 methods.
 
-**This is one of StarKid's core cncepts, so it's worth repeating:
+**This is one of StarKid's core concepts, so it's worth repeating:
 *static classes are groups of related methods/commands; only methods
 can be executed.***
 
@@ -110,17 +110,17 @@ public static class Door
     [Command("close")]
 	/// <summary>tries to close the dor with the given key</summary>
 	/// <param name="key">A string representing the key to the door</param>
-    public static void Close(string key, [Option] int turns = 1) { ... }
+    public static void Close(string key, [Option("turns")] int turns = 1) { ... }
 
     [Command("knock")]
 	/// <summary>Knocks on the door, shouting a name if provided</summary>
 	/// <param name="name">An optional name to shout when knocking</param>
 	/// <param ame="angry">Knock *angrily* on the door</param>
-    public static void Knock(string? name = null, [Option] bool angry = false) { ... }
+    public static void Knock(string? name = null, [Option("angry")] bool angry = false) { ... }
 }
 ```
 
-And voilà! Now, our help option actually lives up to its name now:
+And voilà! Now, our help option actually lives up to its name:
 ```shell
 $ ./door-cli knock -h
 Usage:

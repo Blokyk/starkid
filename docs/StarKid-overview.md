@@ -254,7 +254,7 @@ command. For example, `git remote` is a group of commands that operate
 on remotes: `add`, `show`, `remove`, etc. In fact, `git` itself is
 also a group of commands that all operate on git repos: `status`,
 `add`, `commit`, etc. Those all have multiple common options or flags,
-like `--git-dir`, which would be annoying to reimlplement for each
+like `--git-dir`, which would be annoying to reimplement for each
 subcommand.
 
 StarKid has been built with command groups at its heart, and since
@@ -474,7 +474,7 @@ corresponding attribute.
 [Option("save-file")]
 [ValidateWith(nameof(FileHasSaveExtension), "Save files must end in either .sav or .dat")]
 [ValidateWith(nameof(FileInfo.Exists))]
-public static FileInfo savefile;
+public static FileInfo saveFile;
 
 public static bool FileIsAbsolute(FileInfo f)
     => Path.GetExtension(f.Name) is ".dat" or ".sav";
@@ -526,7 +526,7 @@ because it would:
 - be at odds with the simple mental model we want to keep, or
   otherwise conflict with the rest of the design
 - introduce some other, hidden, arbitrary restriction (see the
-  [visiblity restriction](#classesmethodsfields-must-be-internal)
+  [visibility restriction](#classesmethodsfields-must-be-internal)
   for an example)
 
 ### Classes/methods/fields must be `internal`
