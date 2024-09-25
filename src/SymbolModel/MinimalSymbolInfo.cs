@@ -191,13 +191,17 @@ public sealed record MinimalNullableValueTypeInfo : MinimalTypeInfo, IEquatable<
 
         var innerType = SymbolInfoCache.GetTypeInfo(type.TypeArguments[0]);
 
+        var specialType
+            = type.IsUnboundGenericType
+            ? SpecialType.System_Nullable_T
+            : innerType.SpecialType;
+
         return new(
             innerType,
             type.GetDefaultLocation()
         ) {
             TypeArguments = ImmutableArray.Create(innerType),
-            // if this is an unconstrained Nullable<T>, this will be System_Nullable_T, otherwise it'll be None
-            SpecialType = type.SpecialType
+            SpecialType = specialType
         };
     }
 }
