@@ -9,6 +9,8 @@ public static partial class Main {
     internal static bool BinaryToBool(string? s) => s switch { "f" => false, "t" => true, null => true, _ => throw new Exception() };
     [ParseWith(nameof(BinaryToBool))]
     [Option("parsed-switch")] public static bool ParsedSwitch { get; set; }
+
+    [Option("auto-switch")] public static bool? AutoSwitch { get; set; }
 }
 
 public partial class Tests
@@ -55,6 +57,22 @@ public partial class Tests
 
             TestMainDummy("--parsed-switch=f");
             AssertStateChange(new { ParsedSwitch = false });
+        }
+
+        [Fact]
+        public void AutoSwitch() {
+            TestMainDummy();
+            Assert.Equal(default(bool?), Main.AutoSwitch);
+            AssertNoStateChange();
+
+            TestMainDummy("--auto-switch");
+            AssertStateChange(new { AutoSwitch = true });
+
+            TestMainDummy("--auto-switch=true");
+            AssertStateChange(new { AutoSwitch = true });
+
+            TestMainDummy("--auto-switch=false");
+            AssertStateChange(new { AutoSwitch = false });
         }
     }
 }

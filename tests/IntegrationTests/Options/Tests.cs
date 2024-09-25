@@ -14,6 +14,9 @@ public partial class Tests
     static void TestMainDummy(params string[] args)
         => StarKidProgram.TestMain([..args, "dummy"]);
 
+    static void AssertNoStateChange()
+        => Assert.Equivalent(DefaultState, Utils.GetHostState());
+
     // we have to use equivalent and not equal because arrays are ref-equal, not value-equal
     static void AssertStateChange(object changedProps)
         => Assert.Equivalent(DefaultState.With(changedProps), Utils.GetHostState());

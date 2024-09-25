@@ -8,6 +8,7 @@ public static partial class Main {
             SwitchProp,
             TrueSwitch,
             ParsedSwitch,
+            AutoSwitch,
             GlobalSwitch,
 
             StringOption,

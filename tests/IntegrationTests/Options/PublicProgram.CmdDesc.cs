@@ -26,6 +26,9 @@ internal static partial class StarKidProgram
             ParsedSwitch = false;
             hasParsedSwitchActionBeenTriggered = false;
 
+            AutoSwitch = default;
+            hasAutoSwitchActionBeenTriggered = false;
+
             GlobalSwitch = false;
             hasGlobalSwitchActionBeenTriggered = false;
 
