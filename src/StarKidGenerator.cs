@@ -107,6 +107,27 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 )
                 .WithTrackingName("starkid_binding");
 
+        // get individual groups *after* they've been bound
+        var boundGroups
+            = groupTreeSource
+                .Data()
+                .SelectMany(
+                    (rootGroup, _)
+                        => rootGroup is null
+                            ? []
+                            : TraverseGroupTree(rootGroup)
+                );
+
+        var boundInvokables
+            = groupTreeSource
+                .Data()
+                .SelectMany(
+                    (rootGroup, _)
+                        => rootGroup is null
+                            ? []
+                            : TraverseInvokableTree(rootGroup)
+                );
+
         var globalConfigOptionsSource = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
 
         var starkidConfigSource
@@ -140,6 +161,18 @@ public partial class StarKidGenerator : IIncrementalGenerator
             }
         );
 
+        context.RegisterImplementationSourceOutput(
+            boundInvokables.Combine(starkidConfigSource.Data()),
+            static (spc, invokableAndConfig) => {
+                var invokable = invokableAndConfig.Left;
+                var config = invokableAndConfig.Right;
+
+                if (config is null)
+                    return;
+
+                GenerateHelpText(invokable, config, spc);
+            }
+        );
 
         context.RegisterDiagnosticSource(groupsSource);
         context.RegisterDiagnosticSource(groupTreeSource);
@@ -299,6 +332,33 @@ public partial class StarKidGenerator : IIncrementalGenerator
             }
 
             return true;
+        }
+    }
+
+    private static IEnumerable<Group> TraverseGroupTree(Group node) {
+        yield return node;
+
+        foreach (var directChild in node.SubGroups) {
+            // TraverseGroupTree will also return the root, no need to yield it here
+            foreach (var child in TraverseGroupTree(directChild)) {
+                yield return child;
+            }
+        }
+    }
+
+    private static IEnumerable<InvokableBase> TraverseInvokableTree(InvokableBase invokable) {
+        yield return invokable;
+
+        if (invokable is Group group) {
+            foreach (var cmd in group.Commands)
+                yield return cmd;
+
+            foreach (var directChild in group.SubGroups) {
+                // TraverseInvokableTree will also return the root, no need to yield it here
+                foreach (var child in TraverseInvokableTree(directChild)) {
+                    yield return child;
+                }
+            }
         }
     }
 }

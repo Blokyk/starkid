@@ -11,7 +11,31 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
     private const int padSize = 2;
     private readonly int _maxLineLength = config.ColumnLength;
 
-    public void AddHelpText(StringBuilder sb, InvokableBase groupOrCmd) {
+    private const string SRC_FMT = CodeGenerator.FILE_HEADER +
+"""
+namespace StarKid.Generated;
+
+internal
+#if !__STARKID_TESTING_NON_STATIC_PROGRAM
+    static
+#endif
+partial class StarKidProgram
+{{
+    static partial class {0}CmdDesc {{
+        internal const string _helpText = {1};
+    }}
+}}
+""";
+
+    public static string ToSourceCode(InvokableBase invokable, StarKidConfig config) {
+        var helpGenerator = new HelpGenerator(config);
+        var helpText = helpGenerator.GenerateHelpText(invokable);
+        return String.Format(SRC_FMT, invokable.ID, SymbolDisplay.FormatLiteral(helpText, quote: true));
+    }
+
+    public string GenerateHelpText(InvokableBase groupOrCmd) {
+        var sb = new StringBuilder();
+
         AddDescription(sb, groupOrCmd);
         AddUsage(sb, groupOrCmd);
 
@@ -83,6 +107,8 @@ internal sealed partial class HelpGenerator(StarKidConfig config)
             sb.Length--;
 
         AddNotes(sb, groupOrCmd);
+
+        return sb.ToString();
     }
 
     void AddUsage(StringBuilder sb, InvokableBase groupOrCmd) {

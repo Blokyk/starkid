@@ -56,10 +56,6 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        AppendHelpTextField(sb, cmd);
-
-        sb.AppendLine();
-
         AddCommandName(sb, cmd);
 
         sb.Append("\t}").AppendLine();

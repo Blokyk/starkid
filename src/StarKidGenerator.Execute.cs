@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis.Diagnostics;
-
 using StarKid.Generator.CodeGeneration;
 using StarKid.Generator.CommandModel;
 using StarKid.Generator.SymbolModel;
@@ -23,4 +21,12 @@ public partial class StarKidGenerator
 
         SymbolInfoCache.FullReset();
     }
+
+    // note: if we recreate a new help generator each time, its cache will also reset every
+    // time, so we could just remove it entirely
+    static void GenerateHelpText(InvokableBase invokable, StarKidConfig config, SourceProductionContext spc)
+        => spc.AddSource(
+            "StarKid_" + invokable.ID + ".HelpText.g.cs",
+            SourceText.From(HelpGenerator.ToSourceCode(invokable, config), Encoding.UTF8)
+        );
 }

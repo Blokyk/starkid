@@ -61,10 +61,6 @@ internal sealed partial class CodeGenerator
 
         sb.AppendLine();
 
-        AppendHelpTextField(sb, group);
-
-        sb.AppendLine();
-
         AddCommandName(sb, group);
 
         sb.AppendLine().Append("\t}").AppendLine();
@@ -110,7 +106,9 @@ internal sealed partial class CodeGenerator
 
             switch (cmdName) {
 """);
-        foreach (var sub in group.SubGroups.Concat((IEnumerable<InvokableBase>)group.Commands.Where(cmd => !cmd.IsHiddenCommand))) {
+
+        var nonHiddenCmds = group.Commands.Where(cmd => !cmd.IsHiddenCommand);
+        foreach (var sub in group.SubGroups.Concat(nonHiddenCmds.Cast<InvokableBase>())) {
             sb.Append(@"
                 case """).Append(sub.Name).Append(@""":
                     ").Append(sub.ID).Append(@"CmdDesc.Activate();
