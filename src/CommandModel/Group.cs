@@ -38,17 +38,17 @@ public sealed record Group(
         );
 
     public override int GetHashCode()
-        => MiscUtils.CombineHashCodes(
+        => Polyfills.CombineHashCodes(
             base.GetHashCode(),
-            MiscUtils.CombineHashCodes(
+            Polyfills.CombineHashCodes(
                 SequenceComparer<Command>.Instance.GetHashCode(_cmds),
-                MiscUtils.CombineHashCodes(
+                Polyfills.CombineHashCodes(
                     SequenceComparer<Group>.Instance.GetHashCode(_subgroups),
-                    MiscUtils.CombineHashCodes(
+                    Polyfills.CombineHashCodes(
                         FullClassName.GetHashCode(),
-                        MiscUtils.CombineHashCodes(
+                        Polyfills.CombineHashCodes(
                             ParentClassFullName?.GetHashCode() ?? 0,
-                            MiscUtils.CombineHashCodes(
+                            Polyfills.CombineHashCodes(
                                 BackingClass.GetHashCode(),
                                 DefaultCommand?.GetHashCode() ?? 0
                             )

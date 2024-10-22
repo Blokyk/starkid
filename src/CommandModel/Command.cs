@@ -47,13 +47,13 @@ public sealed record Command : InvokableBase, IEquatable<Command> {
     public bool HasParams => ParamsArg is not null;
 
     public override int GetHashCode()
-        => MiscUtils.CombineHashCodes(
+        => Polyfills.CombineHashCodes(
             base.GetHashCode(),
-            MiscUtils.CombineHashCodes(
+            Polyfills.CombineHashCodes(
                 BackingMethod.GetHashCode(),
-                MiscUtils.CombineHashCodes(
+                Polyfills.CombineHashCodes(
                     SequenceComparer<Argument>.Instance.GetHashCode(_args),
-                    MiscUtils.CombineHashCodes(
+                    Polyfills.CombineHashCodes(
                         ParamsArg?.GetHashCode() ?? 0,
                         IsHiddenCommand ? 1 : 0
                     )

@@ -52,9 +52,9 @@ public abstract record InvokableBase : IEquatable<InvokableBase> {
 
     public override int GetHashCode()
         // we don't compare parents here because otherwise it'd just be recursion
-        => MiscUtils.CombineHashCodes(
+        => Polyfills.CombineHashCodes(
             Description?.GetHashCode() ?? 0,
-            MiscUtils.CombineHashCodes(
+            Polyfills.CombineHashCodes(
                 SequenceComparer<Option>.Instance.GetHashCode(_options),
                 SequenceComparer<Flag>.Instance.GetHashCode(_flags)
             )

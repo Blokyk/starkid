@@ -37,5 +37,5 @@ public sealed record ValidateWithAttribute(
     public override int GetHashCode()
         => ErrorMessage is null
             ? SyntaxUtils.GetHashCode(ValidatorNameExpr)
-            : MiscUtils.CombineHashCodes(ErrorMessage.GetHashCode(), SyntaxUtils.GetHashCode(ValidatorNameExpr));
+            : Polyfills.CombineHashCodes(ErrorMessage.GetHashCode(), SyntaxUtils.GetHashCode(ValidatorNameExpr));
 }

@@ -14,7 +14,7 @@ public readonly struct SequenceComparer<T> : IEqualityComparer<IEnumerable<T>>
         int acc = 0;
 
         foreach (var item in obj) {
-            acc = MiscUtils.CombineHashCodes(
+            acc = Polyfills.CombineHashCodes(
                 acc,
                 item is null
                     ? acc

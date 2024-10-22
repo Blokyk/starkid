@@ -25,9 +25,9 @@ public sealed class MinimalLocation(string filePath, TextSpan textSpan, LinePosi
         => "MinimalLocation { FilePath = " + FilePath + ", TextSpan = " + TextSpan + ", LineSpan = " + LineSpan + " }";
 
     public override int GetHashCode()
-        => MiscUtils.CombineHashCodes(
+        => Polyfills.CombineHashCodes(
             FilePath.GetHashCode(),
-            MiscUtils.CombineHashCodes(
+            Polyfills.CombineHashCodes(
                 TextSpan.GetHashCode(),
                 LineSpan.GetHashCode()
             )

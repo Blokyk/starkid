@@ -37,7 +37,7 @@ public readonly record struct ImmutableValueArray<T>(ImmutableArray<T> Array, IE
     public override int GetHashCode() {
         int res = 0;
         for (int i = 0; i < Array.Length; i++)
-            res = MiscUtils.CombineHashCodes(res, Array[i] is null ? 0 : Comparer.GetHashCode(Array[i]!));
+            res = Polyfills.CombineHashCodes(res, Array[i] is null ? 0 : Comparer.GetHashCode(Array[i]!));
         return res;
     }
 

@@ -26,7 +26,7 @@ internal class TupleComparer<T, U>(
     public bool Equals((T, U) x, (T, U) y)
         => tComparer.Equals(x.Item1, y.Item1) && uComparer.Equals(x.Item2, y.Item2);
     public int GetHashCode((T, U) obj)
-        => MiscUtils.CombineHashCodes(
+        => Polyfills.CombineHashCodes(
             obj.Item1 is null ? 0 : tComparer.GetHashCode(obj.Item1),
             obj.Item2 is null ? 0 : uComparer.GetHashCode(obj.Item2)
         );
