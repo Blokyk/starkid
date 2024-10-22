@@ -17,7 +17,7 @@ public partial class StarKidGenerator
     public const string REPEATED_OPT_PROP_NAME = "StarKid_AllowRepeatingOptions";
     public const string NAMING_CONV_PROP_NAME = "StarKid_Help_ArgNameCasing";
 
-    public const int DEFAULT_COLUMN_LENGTH = 80, DEFAULT_HELP_EXIT_CODE = 1;
+    public const int DEFAULT_COLUMN_LENGTH = 80, DEFAULT_HELP_EXIT_CODE = 0;
     public const bool DEFAULT_REPEATED_OPT = false;
     public const NameCasing DEFAULT_NAMING_CONV = NameCasing.KebabCase;
 

@@ -14,7 +14,7 @@
 
     <PropertyGroup>
         <StarKid_Help_MaxCharsPerLine Condition="$(StarKid_Help_MaxCharsPerLine) == ''">80</StarKid_Help_MaxCharsPerLine>
-        <StarKid_Help_ExitCode Condition="$(StarKid_Help_ExitCode) == ''">1</StarKid_Help_ExitCode>
+        <StarKid_Help_ExitCode Condition="$(StarKid_Help_ExitCode) == ''">0</StarKid_Help_ExitCode>
         <StarKid_AllowRepeatingOptions Condition="$(StarKid_AllowRepeatingOptions) == ''">false</StarKid_AllowRepeatingOptions>
         <StarKid_Help_ArgNameCasing Condition="$(StarKid_Help_ArgNameCasing) == ''">kebab-case</StarKid_Help_ArgNameCasing>
     </PropertyGroup>

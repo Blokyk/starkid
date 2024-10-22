@@ -37,7 +37,7 @@ Purpose:
 Allowed values:
     Any integer.
 
-Default value: 1
+Default value: 0
 
 Example usage:
 ```xml
