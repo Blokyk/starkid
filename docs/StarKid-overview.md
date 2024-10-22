@@ -16,7 +16,10 @@
 5. [Help text generation and customization](#help-text-generation-and-customization)
    1. [How help text is generated](#how-help-text-is-generated)
    2. [Customization](#customization)
-6. [Restrictions](#restrictions)
+6. [Tips & Tricks](#tips--tricks)
+   1. [Creating a single-command app](#creating-a-single-command-app)
+   2. [Executable options, or how to implement `--version`](#executable-options-or-how-to-implement-version)
+7. [Restrictions](#restrictions)
    1. [Classes/methods/fields must be `internal`](#classesmethodsfields-must-be-internal)
    2. [Classes/methods/fields must be `static`](#classesmethodsfields-must-be-static)
    3. [No generics anywhere](#no-generics-anywhere)
@@ -296,8 +299,6 @@ static class ToyGit {
 
 ### Default commands
 
-#### Bonus: Using default commands to write a single-command app
-
 ### Special arguments
 
 > todo: params
@@ -510,6 +511,76 @@ as manual parsers (in addition to [StarKid's general restrictions](#restrictions
 
 #### Custom argument/option value names
 
+## Tips & Tricks
+
+### Creating a single-command app
+
+> *WARNING*: This is explicitly NOT an expected use-case for
+> StarKid. WHile I've bent StarKid in a few places to allow it,
+> bug reports or feature requests for this scenario will
+> probably have lower priority, and PRs focusing on it might
+> be rejected simply to avoid "bloat".
+
+Although StarKid is meant for subcommand-oriented CLIs, [default commands](#default-commands)
+make it possible to write an app without ay subcommand, controlled
+entirely with options and flags. Let's say we want to implement
+a terminal calculator like `bc`. Here's `bc`'s help text:
+
+```
+usage: bc [options] [file ...]
+  -h  --help         print this usage and exit
+  -i  --interactive  force interactive mode
+  -l  --mathlib      use the predefined math routines
+  -q  --quiet        don't print initial banner
+  -s  --standard     non-standard bc constructs are errors
+  -w  --warn         warn about non-standard bc constructs
+  -v  --version      print version information and exit
+```
+
+(The `file...` argument it accepts is a list of files containing
+expressions and `bc` statements.)
+
+As you can see, it doesn't have any subcommands, so we'll need to
+maneuver a bit to get this working under StarKid. To accomplish
+this, we'll create a root command group, and then give it a single
+**default** command:
+
+```csharp
+[CommandGroup("bc", DefaultCmdName = "_")]
+static class App {
+    [Command("_")]
+    public static void Main(params FileInfo[] files) => ...;
+}
+```
+
+The `_` command name is special: it makes the command un-invokable
+and hides it from the help text. Thus, the only way to invoke it
+is to set it as a default command for some group.
+
+In this case, we assign `Main()` as the root command group's default
+command. Since there is no other subcommand to invoke, it will be
+ran every time the group is invoked, which is every time, since it's
+the root group. We'd just have to add the options and implement `Main()`,
+and our `bc` clone would be complete!
+
+```csharp
+[CommandGroup("bc", DefaultCmdName = "_")]
+static class App {
+    [Option("interactive", 'i')]
+    public static bool forceInteractive;
+
+    /* ... */
+
+    [Command("_")]
+    public static void Main(params FileInfo[] files) {
+        Console.WriteLine("<?> = 42");
+    }
+}
+```
+
+A full sample can be found in [`samples/bc/Program.cs`](samples/bc/Program.cs).
+
+### Executable options, or how to implement `version`
 
 ## Restrictions
 
