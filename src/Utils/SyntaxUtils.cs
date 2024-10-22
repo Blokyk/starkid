@@ -27,4 +27,35 @@ internal static class SyntaxUtils
 
         return MiscUtils.CombineHashCodes(h1, h2);
     }
+
+    /// <summary>
+    /// Traverse a syntax node's ancestors to figure out the reachable namespaces
+    /// from its position, either through using directives or namespace declarations.
+    /// </summary>
+    internal static ImmutableArray<string> GetReachableNamespaceNames(SyntaxNode classDec) {
+        SyntaxNode? parent = classDec.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
+
+        var usings = new List<UsingDirectiveSyntax>();
+
+        var fullNamespaceNameParts = new List<string>();
+        while (parent is BaseNamespaceDeclarationSyntax { Usings: var nsUsings } ns) {
+            usings.AddRange(nsUsings);
+            fullNamespaceNameParts.Add(ns.Name.ToString());
+            parent = ns.Parent;
+        }
+
+        var unit = (parent ?? classDec).FirstAncestorOrSelf<CompilationUnitSyntax>();
+
+        if (unit is not null)
+            usings.AddRange(unit.Usings);
+
+        var names = usings
+            .Where(u => u.StaticKeyword == default && u.Name is not null)
+            .Select(u => u.Name!.ToString());
+
+        if (fullNamespaceNameParts.Count != 0)
+            names = names.Append(String.Join(".", fullNamespaceNameParts.Reverse<string>())); // Reverse<T>() is IEnumerable, Reverse() is void
+
+        return names.ToImmutableArray();
+    }
 }

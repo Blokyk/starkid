@@ -59,7 +59,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 .ForAttributeWithMetadataName(
                     _cmdGroupAttributeName,
                     (node, _) => node is ClassDeclarationSyntax,
-                    (ctx, _) => GetReachableNamespaceNames((ctx.TargetNode as ClassDeclarationSyntax)!)
+                    (ctx, _) => SyntaxUtils.GetReachableNamespaceNames(ctx.TargetNode)
                 )
                 .SelectMany((arr, _) => arr)
                 .Collect()
@@ -96,47 +96,54 @@ public partial class StarKidGenerator : IIncrementalGenerator
 
         var groupTreeSource
             = groupsSource
+                .Data()
                 .Collect()
                 .Select(
                     (groups, _) => {
                         var wrapper = new DataAndDiagnostics<Group?>();
-                        wrapper.Data = BindGroups(groups.Select(g => g.Data), wrapper.AddDiagnostic);
+                        wrapper.Data = BindGroups(groups, wrapper.AddDiagnostic);
                         return wrapper;
                     }
                 )
                 .WithTrackingName("starkid_binding");
 
-        var globalConfigSource = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
+        var globalConfigOptionsSource = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
 
-        // todo: add custom comparers for each
-        var combinedValueProvider
-            = groupTreeSource
-                .Combine(usingsSource)
-            .Combine(globalConfigSource.Combine(langVersionSource));
+        var starkidConfigSource
+            = globalConfigOptionsSource.Combine(langVersionSource)
+                .Select(
+                    static (combined, _) => {
+                        var wrapper = new DataAndDiagnostics<StarKidConfig>();
+                        wrapper.Data = ParseConfig(
+                            combined.Left, // analyzer config
+                            combined.Right, // lang version
+                            wrapper.AddDiagnostic
+                        );
+                        return wrapper;
+                    }
+                );
 
-        // Generate the source using the compilation and enums
+        // generates the parser + command infos
         context.RegisterImplementationSourceOutput(
-            combinedValueProvider,
-            static (spc, groupTreeAndConfig)
-                => GenerateFromData(
-                        groupTreeAndConfig.Left.Left.Data,   // root group
-                        groupTreeAndConfig.Left.Right,  // usings
-                        groupTreeAndConfig.Right.Left,  // config
-                        groupTreeAndConfig.Right.Right, // langVersion
-                        spc
-                )
+            groupTreeSource.Data()
+                .Combine(usingsSource)
+                .Combine(starkidConfigSource.Data()),
+            static (spc, groupTreeAndUsingsAndConfig) => {
+                var rootGroup = groupTreeAndUsingsAndConfig.Left.Left;
+                var usings = groupTreeAndUsingsAndConfig.Left.Right;
+                var config = groupTreeAndUsingsAndConfig.Right;
+
+                if (rootGroup is null || config is null)
+                    return;
+
+                GenerateParserAndHandlers(rootGroup, usings, config, spc);
+            }
         );
 
-        var starkidDiagnosticSource
-            = groupsSource
-                .Append(groupTreeSource)
-                .SelectMany((w, _) => w.GetDiagnostics())
-                .Where(diag => diag.Id != Diagnostics.GiveUp.Id);
 
-        context.RegisterSourceOutput(
-            starkidDiagnosticSource,
-            static (spc, diag) => spc.ReportDiagnostic(diag)
-        );
+        context.RegisterDiagnosticSource(groupsSource);
+        context.RegisterDiagnosticSource(groupTreeSource);
+        context.RegisterDiagnosticSource(starkidConfigSource);
     }
 
     internal static Group? CreateGroup(INamedTypeSymbol classSymbol, SemanticModel model, Action<Diagnostic> addDiagnostic) {
@@ -293,36 +300,5 @@ public partial class StarKidGenerator : IIncrementalGenerator
 
             return true;
         }
-    }
-
-    /// <summary>
-    /// Traverse a syntax node's ancestors to figure out the reachable namespaces
-    /// from its position, either through using directives or namespace declarations.
-    /// </summary>
-    internal static ImmutableArray<string> GetReachableNamespaceNames(SyntaxNode classDec) {
-        SyntaxNode? parent = classDec.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
-
-        var usings = new List<UsingDirectiveSyntax>();
-
-        var fullNamespaceNameParts = new List<string>();
-        while (parent is BaseNamespaceDeclarationSyntax { Usings: var nsUsings } ns) {
-            usings.AddRange(nsUsings);
-            fullNamespaceNameParts.Add(ns.Name.ToString());
-            parent = ns.Parent;
-        }
-
-        var unit = (parent ?? classDec).FirstAncestorOrSelf<CompilationUnitSyntax>();
-
-        if (unit is not null)
-            usings.AddRange(unit.Usings);
-
-        var names = usings
-            .Where(u => u.StaticKeyword == default && u.Name is not null)
-            .Select(u => u.Name!.ToString());
-
-        if (fullNamespaceNameParts.Count != 0)
-            names = names.Append(String.Join(".", fullNamespaceNameParts.Reverse<string>())); // Reverse<T>() is IEnumerable, Reverse() is void
-
-        return names.ToImmutableArray();
     }
 }

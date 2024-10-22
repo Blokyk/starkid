@@ -21,7 +21,7 @@ public partial class StarKidGenerator
     public const bool DEFAULT_REPEATED_OPT = false;
     public const NameCasing DEFAULT_NAMING_CONV = NameCasing.KebabCase;
 
-    static StarKidConfig ParseConfig(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, SourceProductionContext spc) {
+    static StarKidConfig ParseConfig(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, Action<Diagnostic> addDiagnostic) {
         int columnLength
             = GetProp(
                 COLUMN_LENGTH_PROP_NAME,
@@ -29,7 +29,7 @@ public partial class StarKidGenerator
                 Int32.TryParse,
                 static columnLength => columnLength is -1 or > 40,
                 analyzerConfig,
-                spc
+                addDiagnostic
             );
 
         // special case: -1 disables the limit entirely
@@ -41,7 +41,7 @@ public partial class StarKidGenerator
                 DEFAULT_HELP_EXIT_CODE,
                 Int32.TryParse,
                 analyzerConfig,
-                spc
+                addDiagnostic
             );
 
         bool allowRepeatingOptions
@@ -50,7 +50,7 @@ public partial class StarKidGenerator
                 DEFAULT_REPEATED_OPT,
                 Boolean.TryParse,
                 analyzerConfig,
-                spc
+                addDiagnostic
             );
 
         var namingConv
@@ -59,18 +59,18 @@ public partial class StarKidGenerator
                 DEFAULT_NAMING_CONV,
                 NameCasingUtils.TryParse,
                 analyzerConfig,
-                spc
+                addDiagnostic
             );
 
         return new(columnLength, helpExitCode, allowRepeatingOptions, namingConv, langVersion);
     }
 
     delegate bool TryParser<T>(string str, out T val);
-    private static T GetProp<T>(string key, T defaultVal, TryParser<T> parse, AnalyzerConfigOptions config, SourceProductionContext spc)
-        => GetProp(key, defaultVal, parse, (_) => true, config, spc);
-    private static T GetProp<T>(string key, T defaultVal, TryParser<T> parse, Func<T, bool> validate, AnalyzerConfigOptions config, SourceProductionContext spc) {
+    private static T GetProp<T>(string key, T defaultVal, TryParser<T> parse, AnalyzerConfigOptions config, Action<Diagnostic> addDiagnostic)
+        => GetProp(key, defaultVal, parse, (_) => true, config, addDiagnostic);
+    private static T GetProp<T>(string key, T defaultVal, TryParser<T> parse, Func<T, bool> validate, AnalyzerConfigOptions config, Action<Diagnostic> addDiagnostic) {
         if (!config.TryGetValue("build_property." + key, out var str)) {
-            spc.ReportDiagnostic(
+            addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.ConfigPropNotVisible,
                     Location.None,
@@ -82,7 +82,7 @@ public partial class StarKidGenerator
         }
 
         if (!parse(str, out var res) || !validate(res)) {
-            spc.ReportDiagnostic(
+            addDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.InvalidValueForProjectProperty,
                     Location.None,

@@ -13,4 +13,26 @@ internal static class ProviderUtils
             .Collect()
             .Combine(ivp2.Collect())
             .SelectMany((t, _) => t.Left.Concat(t.Right));
+
+    public static IncrementalValueProvider<T?> Data<T>(this IncrementalValueProvider<DataAndDiagnostics<T>> ivp)
+        => ivp.Select((wrapper, _) => wrapper.Data);
+    public static IncrementalValuesProvider<T?> Data<T>(this IncrementalValuesProvider<DataAndDiagnostics<T>> ivp)
+        => ivp.Select((wrapper, _) => wrapper.Data);
+
+    public static void RegisterDiagnosticSource<T>(this IncrementalGeneratorInitializationContext ctx, IncrementalValueProvider<DataAndDiagnostics<T>> wrapperProvider)
+        => ctx.RegisterSourceOutput(
+            wrapperProvider,
+            static (spc, wrappers) => {
+                foreach (var wrapper in wrappers.GetDiagnostics())
+                    spc.ReportDiagnostic(wrapper);
+            }
+        );
+    public static void RegisterDiagnosticSource<T>(this IncrementalGeneratorInitializationContext ctx, IncrementalValuesProvider<DataAndDiagnostics<T>> wrapperProvider)
+        => ctx.RegisterSourceOutput(
+            wrapperProvider,
+            static (spc, wrappers) => {
+                foreach (var wrapper in wrappers.GetDiagnostics())
+                    spc.ReportDiagnostic(wrapper);
+            }
+        );
 }

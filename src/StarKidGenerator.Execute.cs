@@ -8,12 +8,7 @@ namespace StarKid.Generator;
 
 public partial class StarKidGenerator
 {
-    static void GenerateFromData(Group? rootGroup, ImmutableArray<string> usings, AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, SourceProductionContext spc) {
-        if (rootGroup is null)
-            return;
-
-        var config = ParseConfig(analyzerConfig, langVersion, spc);
-
+    static void GenerateParserAndHandlers(Group rootGroup, ImmutableArray<string> usings, StarKidConfig config, SourceProductionContext spc) {
         var cmdDescCode = CodeGenerator.ToSourceCode(rootGroup, usings, config);
 
         spc.AddSource(
