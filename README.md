@@ -1,8 +1,10 @@
 # StarKid
 
-A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).
-
 [[ Quick Start ]](#tldr-docs-) | [[ Tutorial ]](docs/Your-first-app-with-StarKid.md) | [[ Overview ]](docs/StarKid-overview.md) | [[ Docs ]](docs/)
+
+---
+
+A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).
 
 ## What can it actually do?
 
