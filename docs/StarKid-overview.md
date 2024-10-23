@@ -546,9 +546,9 @@ this, we'll create a root command group, and then give it a single
 **default** command:
 
 ```csharp
-[CommandGroup("bc", DefaultCmdName = "_")]
+[CommandGroup("bc", DefaultCmdName = "#")]
 static class App {
-    [Command("_")]
+    [Command("#")]
     public static void Main(params FileInfo[] files) => ...;
 }
 ```
@@ -564,14 +564,14 @@ the root group. We'd just have to add the options and implement `Main()`,
 and our `bc` clone would be complete!
 
 ```csharp
-[CommandGroup("bc", DefaultCmdName = "_")]
+[CommandGroup("bc", DefaultCmdName = "#")]
 static class App {
     [Option("interactive", 'i')]
     public static bool forceInteractive;
 
     /* ... */
 
-    [Command("_")]
+    [Command("#")]
     public static void Main(params FileInfo[] files) {
         Console.WriteLine("<?> = 42");
     }

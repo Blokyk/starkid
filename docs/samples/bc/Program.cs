@@ -1,6 +1,6 @@
 using StarKid;
 
-[CommandGroup("bc", DefaultCmdName = "_")]
+[CommandGroup("bc", DefaultCmdName = "#")]
 static class App
 {
     [Option("interactive", 'i')] internal static bool forceInteractive;
@@ -18,7 +18,7 @@ static class App
         }
     }
 
-    [Command("_")]
+    [Command("#")]
     internal static void Main(params FileInfo[] files) {
         if (!dontPrintHeader) {
             PrintVersion();
@@ -27,6 +27,9 @@ static class App
         }
 
         /* nah too lazy to implement everything */
+
+        foreach (var file in files)
+            Console.WriteLine($"Reading file '{file}'");
 
         Console.WriteLine("<?> = 42");
     }
