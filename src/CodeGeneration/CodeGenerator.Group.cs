@@ -99,10 +99,8 @@ internal sealed partial class CodeGenerator
 
         sb.Append("""
 
-            if (!_displayHelp && ArgCount != 0) {
-                ExitWithError("Can't invoke sub-command '{0}' with arguments for the '" + _prevCmdName + "' command", _currCmdName);
+            if (ArgCount != 0)
                 return false;
-            }
 
             switch (cmdName) {
 """);
