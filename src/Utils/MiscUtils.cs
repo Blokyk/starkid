@@ -63,7 +63,7 @@ internal static class MiscUtils
         }
 
         public readonly IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-            => ((IEnumerable<KeyValuePair<TKey, TValue>>)Array.Empty<KeyValuePair<TKey, TValue>>()).GetEnumerator();
+            => ((IEnumerable<KeyValuePair<TKey, TValue>>)[]).GetEnumerator();
 
         readonly System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             => Array.Empty<KeyValuePair<TKey, TValue>>().GetEnumerator();

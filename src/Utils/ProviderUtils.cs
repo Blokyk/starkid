@@ -2,7 +2,7 @@ namespace StarKid.Generator.Utils;
 
 internal static class ProviderUtils
 {
-    public static IncrementalValuesProvider<T> Append<T>(this IncrementalValuesProvider<T> ivp1, IncrementalValueProvider<T> ivp2)
+    public static IncrementalValuesProvider<T> Zip<T>(this IncrementalValuesProvider<T> ivp1, IncrementalValueProvider<T> ivp2)
         => ivp1
             .Collect()
             .Combine(ivp2)
@@ -14,9 +14,9 @@ internal static class ProviderUtils
             .Combine(ivp2.Collect())
             .SelectMany((t, _) => t.Left.Concat(t.Right));
 
-    public static IncrementalValueProvider<T?> Data<T>(this IncrementalValueProvider<DataAndDiagnostics<T>> ivp)
+    public static IncrementalValueProvider<T> Data<T>(this IncrementalValueProvider<DataAndDiagnostics<T>> ivp)
         => ivp.Select((wrapper, _) => wrapper.Data);
-    public static IncrementalValuesProvider<T?> Data<T>(this IncrementalValuesProvider<DataAndDiagnostics<T>> ivp)
+    public static IncrementalValuesProvider<T> Data<T>(this IncrementalValuesProvider<DataAndDiagnostics<T>> ivp)
         => ivp.Select((wrapper, _) => wrapper.Data);
 
     public static void RegisterDiagnosticSource<T>(this IncrementalGeneratorInitializationContext ctx, IncrementalValueProvider<DataAndDiagnostics<T>> wrapperProvider)

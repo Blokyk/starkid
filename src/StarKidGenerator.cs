@@ -1,5 +1,5 @@
 using System.Diagnostics;
-
+using StarKid.Generator.AttributeModel;
 using StarKid.Generator.CommandModel;
 using StarKid.Generator.SymbolModel;
 
@@ -38,32 +38,22 @@ public partial class StarKidGenerator : IIncrementalGenerator
                     (comp, _) => (comp as CSharpCompilation)?.LanguageVersion ?? LanguageVersion.Default
                 );
 
-    #if DEBUG
-        var fawmnWarmup
-            = context
-                .SyntaxProvider
-                .ForAttributeWithMetadataName(
-                    _cmdGroupAttributeName,
-                    (node, _) => node is ClassDeclarationSyntax,
-                    (_, _) => 0
-                )
-                .Collect()
-                .WithTrackingName("fawmn_warmup");
+        #if DEBUG
+            var fawmnWarmup
+                = context
+                    .SyntaxProvider
+                    .ForAttributeWithMetadataName(
+                        _cmdGroupAttributeName,
+                        (node, _) => node is ClassDeclarationSyntax,
+                        (_, _) => 0
+                    )
+                    .Collect()
+                    .WithTrackingName("fawmn_warmup");
 
-        context.RegisterSourceOutput(fawmnWarmup, (_, _) => { });
-    #endif
+            context.RegisterSourceOutput(fawmnWarmup, (_, _) => { });
+        #endif
 
-        var usingsSource
-            = context
-                .SyntaxProvider
-                .ForAttributeWithMetadataName(
-                    _cmdGroupAttributeName,
-                    (node, _) => node is ClassDeclarationSyntax,
-                    (ctx, _) => SyntaxUtils.GetReachableNamespaceNames(ctx.TargetNode)
-                )
-                .SelectMany((arr, _) => arr)
-                .Collect()
-                .WithTrackingName("starkid_collect_usings");
+        var usingsSource = GetUsedNamespacesProvider(context).Collect().WithTrackingName("starkid_usings");
 
         // todo: separate this into three pipelines:
         //      - ParseWith resolution with FAWMN (returns a map between symbol name and parser)
@@ -86,11 +76,10 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 .ForAttributeWithMetadataName(
                     _cmdGroupAttributeName,
                     (node, _) => node is ClassDeclarationSyntax,
-                    (ctx, _) => {
-                        var wrapper = new DataAndDiagnostics<Group?>();
-                        wrapper.Data = CreateGroup((INamedTypeSymbol)ctx.TargetSymbol, ctx.SemanticModel, wrapper.AddDiagnostic);
-                        return wrapper;
-                    }
+                    (ctx, _) =>
+                        new DataAndDiagnostics<Group?>(addDiag =>
+                            CreateGroup((INamedTypeSymbol)ctx.TargetSymbol, ctx.SemanticModel, addDiag)
+                        )
                 )
                 .WithTrackingName("starkid_group_building");
 
@@ -99,24 +88,12 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 .Data()
                 .Collect()
                 .Select(
-                    (groups, _) => {
-                        var wrapper = new DataAndDiagnostics<Group?>();
-                        wrapper.Data = BindGroups(groups, wrapper.AddDiagnostic);
-                        return wrapper;
-                    }
+                    (groups, _) =>
+                        new DataAndDiagnostics<Group?>(
+                            addDiag => BindGroups(groups, addDiag)
+                        )
                 )
                 .WithTrackingName("starkid_binding");
-
-        // get individual groups *after* they've been bound
-        var boundGroups
-            = groupTreeSource
-                .Data()
-                .SelectMany(
-                    (rootGroup, _)
-                        => rootGroup is null
-                            ? []
-                            : TraverseGroupTree(rootGroup)
-                );
 
         var boundInvokables
             = groupTreeSource
@@ -125,53 +102,51 @@ public partial class StarKidGenerator : IIncrementalGenerator
                     (rootGroup, _)
                         => rootGroup is null
                             ? []
-                            : TraverseInvokableTree(rootGroup)
+                            : InvokableUtils.TraverseInvokableTree(rootGroup)
                 );
 
-        var globalConfigOptionsSource = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
+        var csprojOptionsSource
+            = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
 
         var starkidConfigSource
-            = globalConfigOptionsSource.Combine(langVersionSource)
+            = csprojOptionsSource.Combine(langVersionSource)
                 .Select(
-                    static (combined, _) => {
-                        var wrapper = new DataAndDiagnostics<StarKidConfig>();
-                        wrapper.Data = ParseConfig(
-                            combined.Left, // analyzer config
-                            combined.Right, // lang version
-                            wrapper.AddDiagnostic
-                        );
-                        return wrapper;
-                    }
+                    static (combined, _) =>
+                        new DataAndDiagnostics<StarKidConfig>(
+                            addDiag => ParseConfig(
+                                combined.Left, // analyzer config
+                                combined.Right, // lang version
+                                addDiag
+                            )
+                        )
                 );
 
-        // generates the parser + command infos
+        // generates the parser + command infos (`CmdDesc` classes)
         context.RegisterImplementationSourceOutput(
             groupTreeSource.Data()
                 .Combine(usingsSource)
                 .Combine(starkidConfigSource.Data()),
             static (spc, groupTreeAndUsingsAndConfig) => {
-                var rootGroup = groupTreeAndUsingsAndConfig.Left.Left;
-                var usings = groupTreeAndUsingsAndConfig.Left.Right;
-                var config = groupTreeAndUsingsAndConfig.Right;
+                var ((rootGroup, usings), config) = groupTreeAndUsingsAndConfig;
 
-                if (rootGroup is null || config is null)
+                if (rootGroup is null)
                     return;
 
                 GenerateParserAndHandlers(rootGroup, usings, config, spc);
             }
         );
 
+        // generates help text from (bound) invokables
+        // we need them to be bounded so that we now the full ID
+        // of each invokable, and thus its CmdDesc class's name
         context.RegisterImplementationSourceOutput(
             boundInvokables.Combine(starkidConfigSource.Data()),
-            static (spc, invokableAndConfig) => {
-                var invokable = invokableAndConfig.Left;
-                var config = invokableAndConfig.Right;
-
-                if (config is null)
-                    return;
-
-                GenerateHelpText(invokable, config, spc);
-            }
+            static (spc, invokableAndConfig) =>
+                GenerateHelpText(
+                    invokableAndConfig.Left,  // invokable (group or cmd)
+                    invokableAndConfig.Right, // config
+                    spc
+                )
         );
 
         context.RegisterDiagnosticSource(groupsSource);
@@ -180,7 +155,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
     }
 
     internal static Group? CreateGroup(INamedTypeSymbol classSymbol, SemanticModel model, Action<Diagnostic> addDiagnostic) {
-        var attrListBuilder = new AttributeModel.AttributeListBuilder(addDiagnostic);
+        var attrListBuilder = new AttributeListBuilder(addDiagnostic);
 
         static Group? bail() {
             SymbolInfoCache.FullReset();
@@ -262,7 +237,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
 
     // todo: make those local functions static
     internal static bool ValidateOptionTree(Group rootGroup, Action<Diagnostic> addDiagnostic) {
-        return validate(rootGroup, new(), new());
+        return validate(rootGroup, [], []);
 
         bool validate(Group group, HashSet<string> globalNames, HashSet<char> globalAliases) {
             var localGlobalNames = new HashSet<string>(globalNames);
@@ -335,30 +310,30 @@ public partial class StarKidGenerator : IIncrementalGenerator
         }
     }
 
-    private static IEnumerable<Group> TraverseGroupTree(Group node) {
-        yield return node;
+    /// <summary>
+    /// Creates a new IVsP<string> listing all the namespaces used
+    /// </summary>
+    private IncrementalValuesProvider<string> GetUsedNamespacesProvider(IncrementalGeneratorInitializationContext context) {
+        var groupUsings
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    _cmdGroupAttributeName, // fixme: we also need to check commands
+                    (node, _) => node is ClassDeclarationSyntax,
+                    (ctx, _) => SyntaxUtils.GetReachableNamespaceNames(ctx.TargetNode)
+                )
+                .SelectMany((arr, _) => arr);
 
-        foreach (var directChild in node.SubGroups) {
-            // TraverseGroupTree will also return the root, no need to yield it here
-            foreach (var child in TraverseGroupTree(directChild)) {
-                yield return child;
-            }
-        }
-    }
+        var cmdUsings
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    "CommandAttribute",
+                    (node, _) => node is MethodDeclarationSyntax,
+                    (ctx, _) => SyntaxUtils.GetReachableNamespaceNames(ctx.TargetNode)
+                )
+                .SelectMany((arr, _) => arr);
 
-    private static IEnumerable<InvokableBase> TraverseInvokableTree(InvokableBase invokable) {
-        yield return invokable;
-
-        if (invokable is Group group) {
-            foreach (var cmd in group.Commands)
-                yield return cmd;
-
-            foreach (var directChild in group.SubGroups) {
-                // TraverseInvokableTree will also return the root, no need to yield it here
-                foreach (var child in TraverseInvokableTree(directChild)) {
-                    yield return child;
-                }
-            }
-        }
+        return groupUsings.Concat(cmdUsings);
     }
 }

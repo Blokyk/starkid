@@ -1,8 +1,8 @@
 namespace StarKid.Generator;
 
-internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
+internal readonly struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
 {
-    public T? Data { get; set; }
+    public readonly T Data;
 
     // we specifically don't want order to matter here, because
     private readonly HashSet<Diagnostic> _diags;
@@ -11,18 +11,18 @@ internal struct DataAndDiagnostics<T> : IEquatable<DataAndDiagnostics<T>>
     public readonly ImmutableValueArray<Diagnostic> GetDiagnostics()
         => _diags.ToImmutableValueArray();
 
-    public DataAndDiagnostics() {
-        Data = default(T);
-        _diags = new();
+    public DataAndDiagnostics(Func<Action<Diagnostic>, T> dataFunc) {
+        _diags = [];
+        Data = dataFunc(AddDiagnostic);
     }
 
-    public DataAndDiagnostics(T data) : this()
-        => Data = data;
+    public DataAndDiagnostics(T data) : this() {
+        _diags = [];
+        Data = data;
+    }
 
-#pragma warning disable IDE0251 // Yes, roslyn, this method does in fact have side-effects :|
     public void AddDiagnostic(Diagnostic diag)
         => _diags.Add(diag);
-#pragma warning restore
 
     // fixme: implement different equality for diagnostics and data
 
