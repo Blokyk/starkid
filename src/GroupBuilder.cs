@@ -90,7 +90,8 @@ internal sealed class GroupBuilder
                             addDiagnostic(
                                 Diagnostic.Create(
                                     Diagnostics.UselessSpecialCmdName,
-                                    cmd.Location
+                                    cmd.Location,
+                                    defaultCmdName
                                 )
                             );
                         } else {

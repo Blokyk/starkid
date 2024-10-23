@@ -26,7 +26,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
             return false;
 
         // DefaultCommandName
-        if (!TryGetProp<string?>(attr, "DefaultCommandName", SpecialType.System_String, null, out var defaultCmdName))
+        if (!TryGetProp<string?>(attr, "DefaultCmdName", SpecialType.System_String, null, out var defaultCmdName))
             return false;
 
         // ShortDesc

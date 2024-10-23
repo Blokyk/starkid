@@ -204,8 +204,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor UselessSpecialCmdName
         = new(
             "CLI108",
-            "Special name '#' is illegal because the containing group's default command name isn't '#'",
-            "Special name '#' is illegal since the containing group's default command name isn't '#', "
+            "Special name '#' is illegal because the containing group's default command name is '{0}', not '#'",
+            "Special name '#' is illegal since the containing group's default command name is '{0}', not '#', "
                 + "therefore this command would never be invoked",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
