@@ -37,6 +37,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
+// duplicate usings warning, but we don't care about that
+#pragma warning disable CS0105
+
 ";
 
     void AddRootHeader(StringBuilder sb, Group rootGroup, ImmutableArray<string> externalUsings) {
