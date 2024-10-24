@@ -169,7 +169,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
     }
 
     internal static Group? BindGroups(IEnumerable<Group?> groups, Action<Diagnostic> addDiagnostic) {
-        var classNames = new Dictionary<string, Group>(8); // ¯\_(ツ)_/¯
+        var classNames = new Dictionary<string, Group>(7); // ¯\_(ツ)_/¯
 
         // collect the names of the each group's class
         foreach (var group in groups) {
