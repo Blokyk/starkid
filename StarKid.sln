@@ -19,7 +19,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTests.Op
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTests.NameCasing", "tests\IntegrationTests\NameCasing\StarKid.IntegrationTest.csproj", "{58104F71-DB4E-4CAA-B56A-D4EF47DF94DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTest", "tests\IntegrationTests\ProgramTests\StarKid.IntegrationTest.csproj", "{4F062D69-081C-438B-904C-E6B24432F7D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTest.ProgramTests", "tests\IntegrationTests\ProgramTests\StarKid.IntegrationTest.csproj", "{4F062D69-081C-438B-904C-E6B24432F7D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarKid.IntegrationTest.DefaultCmd", "tests\IntegrationTests\DefaultCmd\StarKid.IntegrationTest.csproj", "{41693A36-C544-4DC1-BF02-08E3EB25B9DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -58,6 +60,10 @@ Global
 		{4F062D69-081C-438B-904C-E6B24432F7D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F062D69-081C-438B-904C-E6B24432F7D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F062D69-081C-438B-904C-E6B24432F7D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41693A36-C544-4DC1-BF02-08E3EB25B9DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41693A36-C544-4DC1-BF02-08E3EB25B9DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41693A36-C544-4DC1-BF02-08E3EB25B9DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41693A36-C544-4DC1-BF02-08E3EB25B9DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E0999B1C-EF3A-4EA2-9A25-A6FFECD62C26} = {3F6CE76B-35E8-46CB-9A12-CCAC591DFE7A}
@@ -66,5 +72,6 @@ Global
 		{163F823B-6A61-4E90-AE75-063CECD77EB1} = {475ACE57-EB80-4032-8F07-43081317F9FF}
 		{58104F71-DB4E-4CAA-B56A-D4EF47DF94DD} = {475ACE57-EB80-4032-8F07-43081317F9FF}
 		{4F062D69-081C-438B-904C-E6B24432F7D5} = {475ACE57-EB80-4032-8F07-43081317F9FF}
+		{41693A36-C544-4DC1-BF02-08E3EB25B9DC} = {475ACE57-EB80-4032-8F07-43081317F9FF}
 	EndGlobalSection
 EndGlobal
