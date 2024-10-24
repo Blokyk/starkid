@@ -37,6 +37,39 @@ internal static class Polyfills
         => sb.Append(String.Join(separator.ToString(), values));
 #pragma warning restore RCS1197
 
+    public static IEnumerable<T> DistinctBy<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector)
+        => DistinctBy(source, keySelector, null);
+    public static IEnumerable<T> DistinctBy<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector, IEqualityComparer<TKey>? keyComparer) {
+        // BCL implementation from .net6+
+
+        using var enumerator = source.GetEnumerator();
+
+        if (enumerator.MoveNext()) {
+            var set = new HashSet<TKey>(keyComparer);
+            do {
+                var element = enumerator.Current;
+                if (set.Add(keySelector(element))) {
+                    yield return element;
+                }
+            }
+            while (enumerator.MoveNext());
+        }
+    }
+
+    // public static IEnumerable<T> DistinctBy<T, TKey>(this IEnumerable<T> arr, Func<T, TKey> keySelector, IEqualityComparer<TKey> keyComparer) {
+    //     keyComparer ??= EqualityComparer<TKey>.Default;
+    //
+    //     return arr
+    //         .Select(t => (t, keySelector(t))) // zip items and their key together
+    //         // apply .Distinct on the tuples, but compare only the keys
+    //         .Distinct(MiscUtils.CreateComparerFrom<(T item, TKey key)>(
+    //             (tup1, tup2) => keyComparer.Equals(tup1.key, tup2.key),
+    //             tup => keyComparer.GetHashCode(tup.key)
+    //         ))
+    //         // extract out the items again
+    //         .Select(t => t.Item1);
+    // }
+
     public static int CombineHashCodes(int h1, int h2) => ((h1 << 5) + h1) ^ h2;
 #else
     public static int CombineHashCodes(int h1, int h2) => HashCode.Combine(h1, h2);

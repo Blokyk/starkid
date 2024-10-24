@@ -14,6 +14,20 @@ internal static class ProviderUtils
             .Combine(ivp2.Collect())
             .SelectMany((t, _) => t.Left.Concat(t.Right));
 
+    public static IncrementalValuesProvider<T> Distinct<T>(this IncrementalValuesProvider<T> ivp)
+        => ivp.Distinct(null);
+    public static IncrementalValuesProvider<T> Distinct<T>(this IncrementalValuesProvider<T> ivp, IEqualityComparer<T>? comparer)
+        => ivp
+            .Collect()
+            .SelectMany((t, _) => t.Distinct(comparer));
+
+    public static IncrementalValuesProvider<T> DistinctBy<T, TKey>(this IncrementalValuesProvider<T> ivp, Func<T, TKey> keySelector)
+        => ivp.DistinctBy(keySelector, null);
+    public static IncrementalValuesProvider<T> DistinctBy<T, TKey>(this IncrementalValuesProvider<T> ivp, Func<T, TKey> keySelector, IEqualityComparer<TKey>? keyComparer)
+        => ivp
+            .Collect()
+            .SelectMany((t, _) => t.DistinctBy(keySelector, keyComparer));
+
     public static IncrementalValueProvider<T> Data<T>(this IncrementalValueProvider<DataAndDiagnostics<T>> ivp)
         => ivp.Select((wrapper, _) => wrapper.Data);
     public static IncrementalValuesProvider<T> Data<T>(this IncrementalValuesProvider<DataAndDiagnostics<T>> ivp)
