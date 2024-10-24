@@ -121,14 +121,18 @@ internal sealed partial class CodeGenerator
     }
 
     void AddParamsFields(StringBuilder sb, Group group) {
-        if (group.DefaultCommand is null) {
-            sb.Append(@"
-        internal static readonly Action<string> _addParams = DefaultParamsAdd;
-        internal const bool _hasParams = false;").AppendLine();
-            return;
-        }
+        var paramsFunc
+            = group.DefaultCommand is null
+            ? "DefaultParamsAdd"
+            : (group.DefaultCommand.ID + "CmdDesc._addParams");
 
-        AddParamsFields(sb, group.DefaultCommand);
+        // yes, we need to write that, since bool.ToString() returns capitalized versions
+        var hasParams = group.DefaultCommand is null ? "false" : "true";
+
+        sb.Append(@"
+        internal static readonly Action<string> _addParams = ").Append(paramsFunc).Append(@";
+        internal const bool _hasParams = ").Append(hasParams).Append(';').AppendLine();
+        return;
     }
 
     void AddPosArgActions(StringBuilder sb, Group group) {
