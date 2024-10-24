@@ -10,11 +10,11 @@ public static partial class GroupBuilderTests
     {
         [Fact]
         public void DoesntCrashOnInvalidParams() {
-            var source = @"
-class C {
-    public void M(params string arg1) {}
-}
-";
+            var source = """
+                class C {
+                    public void M(params int arg1) {}
+                }
+                """;
 
             var comp = Compilation.From(source);
             var param = ((IMethodSymbol)comp.GetSymbolsWithName("M").First()).Parameters[0];
@@ -24,7 +24,7 @@ class C {
             gb.TryGetArg_(param, out Argument _); // checks no crash
             Assert.Single(
                 comp.GetDeclarationDiagnostics().Where(d => d.Severity is DiagnosticSeverity.Error),
-                d => d.Id is "CS0225" // params must ba arrays
+                d => d.Id is "CS0225" // params must be arrays
             );
         }
 
