@@ -31,7 +31,7 @@
 StarKid is a source generator that aims to make writing command line
 interfaces (a.k.a. CLI) easier. To achieve that goal, it helps you
 focus on the actual *interface* part, i.e. options, commands and
-sub-commands, arguments, etc, and generates all the necessary
+subcommands, arguments, etc, and generates all the necessary
 plumbing for you, like formatting the help texts for each command, or
 validating each option or argument before calling any command.
 StarKid is mainly built for CLIs making use of "verbs," i.e. groups
@@ -674,7 +674,7 @@ best and confusing at worst.
 > originally from the "commands and groups" section:
 > This is because it is heavily geared towards
 > multi-command apps (CLIs with multiple levels of commands and
-> sub-commands), and there are quite a lot of difference between
+> subcommands), and there are quite a lot of difference between
 > single- and multi-command scenarios. [While it is possible](#bonus-using-default-commands-to-write-a-single-command-app),
 > to write single-command apps, please understand that this not
 > really a scenario we favor, and we will not be making any huge

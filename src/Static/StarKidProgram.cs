@@ -137,7 +137,7 @@ partial class StarKidProgram
 
     static readonly Func<int> NonInvokableGroupAction = () =>
         PrintHelpString(
-            "Can't use '{0}' without a sub-command",
+            "Can't use '{0}' without a subcommand",
             _currCmdName
         );
 

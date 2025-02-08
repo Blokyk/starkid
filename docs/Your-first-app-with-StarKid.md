@@ -3,7 +3,7 @@
 *The finished version of this example can be found [here](samples/door-cli/)*
 
 In this tutorial, we will be building a simple command-line app,
-`door-cli`, which simulates a house door. It has 3 sub-commands:
+`door-cli`, which simulates a house door. It has 3 subcommands:
 - `open`, which takes a mandatory `key` argument
 - `close`, which takes a `key`argument as well as a `-t/--turns <n>`
   option to customize the number of key turns.
