@@ -1,32 +1,32 @@
 # StarKid overview
 
-1. [What is StarKid](#what-is-starkid)
+1. [What is StarKid?](#what-is-starkid)
 2. [The core model](#the-core-model)
 3. [Commands, options, and groups](#commands-options-and-groups)
    1. [Commands](#commands)
    2. [Options and flags](#options-and-flags)
    3. [Command groups](#command-groups)
-   4. [Special arguments](#special-arguments)
-   5. [Global options](#global-options)
-   6. [Default commands](#default-commands)
 4. [Parsing & validation](#parsing--validation)
    1. [Auto-parsers](#auto-parsers)
    2. [Manual parsers](#manual-parsers)
    3. [Validators](#validators)
-5. [Help text generation and customization](#help-text-generation-and-customization)
+5. [Advanced notions](#advanced-notions)
+   1. [Special arguments](#special-arguments)
+   2. [Global options](#global-options)
+   3. [Default commands](#default-commands)
+6. [Help text generation and customization](#help-text-generation-and-customization)
    1. [How help text is generated](#how-help-text-is-generated)
    2. [Customization](#customization)
-6. [Tips & Tricks](#tips--tricks)
+7. [Tips & Tricks](#tips--tricks)
    1. [Creating a single-command app](#creating-a-single-command-app)
    2. [Executable options, or how to implement `--version`](#executable-options-or-how-to-implement-version)
-7. [Restrictions](#restrictions)
+8. [Restrictions](#restrictions)
    1. [Classes/methods/fields must be `internal`](#classesmethodsfields-must-be-internal)
    2. [Classes/methods/fields must be `static`](#classesmethodsfields-must-be-static)
    3. [No generics anywhere](#no-generics-anywhere)
    4. ["One command apps" are impossible to create](#one-command-apps-are-impossible-to-create)
 
-
-### What is StarKid?
+## What is StarKid?
 
 StarKid is a source generator that aims to make writing command line
 interfaces (a.k.a. CLI) easier. To achieve that goal, it helps you
@@ -295,15 +295,6 @@ static class ToyGit {
 
 > todo: the rest
 
-### Global options
-
-### Default commands
-
-### Special arguments
-
-> todo: params
-> todo: optional args
-
 ## Parsing & validation
 
 > [!NOTE]
@@ -486,6 +477,17 @@ whether it exists or not.
 
 In terms of restrictions, validators have mostly the same limitations
 as manual parsers (in addition to [StarKid's general restrictions](#restrictions))
+
+## Advanced notions
+
+### Global options
+
+### Default commands
+
+### Special arguments
+
+> todo: params
+> todo: optional args
 
 ## Help text generation and customization
 
