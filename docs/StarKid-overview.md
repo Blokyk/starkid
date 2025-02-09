@@ -723,6 +723,17 @@ A full sample can be found in [`samples/bc/Program.cs`](samples/bc/Program.cs).
 
 ### Executable options, or how to implement `version`
 
+> todo: explain trick with properties
+
+> todo: warn that this kinda breaks the semantics, and it's also
+> somewhat unsupported (I probably won't voluntarily break it, but
+> order of execution of options is definitely not stable, especially
+> w.r.t. when things are parsed vs validated vs assigned=executed)
+
+### Repeat-based verbosity level (and other count-based flags)
+
+> todo: `bool[]` + .Count
+
 ## Restrictions
 
 As a source generator, StarKid has some base restrictions that we
