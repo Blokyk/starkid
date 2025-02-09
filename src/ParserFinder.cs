@@ -1,6 +1,7 @@
 using StarKid.Generator.AttributeModel;
 using StarKid.Generator.CommandModel;
 using StarKid.Generator.SymbolModel;
+using System.Diagnostics;
 
 namespace StarKid.Generator;
 
@@ -77,22 +78,25 @@ public class ParserFinder
     }
 
     public bool TryGetParserFromName(ParseWithAttribute attr, ITypeSymbol targetType, bool isOption, out ParserInfo parser) {
+        // if this is an repeatable option, the parser is probably for items instead of the array.
+        // note: The order of evaluation is important for generics here; though there might be some
+        // methods like `T[] Foo<T>(string)`, we don't have *any* way to handle that right now, so
+        // this assumption (that the item type is always the more likely target) is probably fine.
+        if (targetType is IArrayTypeSymbol { ElementType: var itemType }) {
+            Debug.Assert(isOption, "GroupBuilder should never try to GetParserFromName for an array argument");
+
+            parser = GetParserFromNameCore(attr, itemType);
+
+            if (parser is not ParserInfo.Invalid)
+                return true;
+
+            // if it wasn't a valid item parser, maybe it's an array parser?
+        }
+
         parser = GetParserFromNameCore(attr, targetType);
 
         if (parser is not ParserInfo.Invalid invalidParser)
             return true;
-
-        // if this is an array option, the parser might be for items instead of the array
-        if (targetType is IArrayTypeSymbol { ElementType: var itemType }) {
-            if (isOption) {
-                parser = GetParserFromNameCore(attr, itemType);
-
-                if (parser is not ParserInfo.Invalid invalidItemParser)
-                    return true;
-
-                invalidParser = invalidItemParser;
-            }
-        }
 
         addDiagnostic(
             Diagnostic.Create(

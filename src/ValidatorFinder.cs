@@ -208,7 +208,11 @@ public class ValidatorFinder
             // assume the type parameter is supposed to be the symbol's type; so, we do
             // the rest of the checks with that assumption by substituting the type param
             // with the symbol's type
-            method = method.Construct(operandType);
+            var typeArg
+                = operandType is IArrayTypeSymbol { ElementType: var elemType }
+                ? elemType
+                : operandType;
+            method = method.Construct(typeArg);
         }
 
         bool elementWise = false;

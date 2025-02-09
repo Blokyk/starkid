@@ -26,6 +26,15 @@ public static partial class Main {
     [ParseWith(nameof(ParseNumber))]
     [ValidateWith(nameof(NotZero))]
     [Option("generic-validator-with-generic-parser-opt")] public static int GenericValidatorWithGenericParserOption { get; set; }
+
+#pragma warning disable CS8618 // see #41
+    [ValidateWith(nameof(NotZero))]
+    [Option("repeatable-generic-validator-opt")] public static int[] RepeatableGenericValidatorOption { get; set; }
+
+    [ParseWith(nameof(ParseNumber))]
+    [ValidateWith(nameof(NotZero))]
+    [Option("repeatable-generic-validator-with-generic-parser-opt")] public static int[] RepeatableGenericValidatorWithGenericParserOption { get; set; }
+#pragma warning restore
 }
 
 public partial class Tests {
@@ -52,6 +61,24 @@ public partial class Tests {
         public void GenericValidatorWithGenericParserOption() {
             TestMainDummy("--generic-validator-with-generic-parser-opt", "24");
             AssertStateChange(new { GenericValidatorWithGenericParserOption = 24 });
+        }
+
+        [Fact]
+        public void RepeatableGenericValidatorOption() {
+            TestMainDummy(
+                "--repeatable-generic-validator-opt", "56",
+                "--repeatable-generic-validator-opt", "-87"
+            );
+            AssertStateChange(new { RepeatableGenericValidatorOption = (int[])[56, -87] });
+        }
+
+        [Fact]
+        public void RepeatableGenericValidatorWithGenericParserOption() {
+            TestMainDummy(
+                "--repeatable-generic-validator-with-generic-parser-opt", "56",
+                "--repeatable-generic-validator-with-generic-parser-opt", "-87"
+            );
+            AssertStateChange(new { RepeatableGenericValidatorWithGenericParserOption = (int[])[56, -87] });
         }
     }
 }

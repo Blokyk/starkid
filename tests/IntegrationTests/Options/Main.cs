@@ -29,11 +29,14 @@ public static partial class Main {
             RepeatManualItemOption,
             ManualArrayOption,
             GenericParserOption,
+            RepeatableGenericParserOption,
 
             RepeatManualItemValidatorOption,
             RepeatItemArrayValidatorOption,
             GenericValidatorOption,
             GenericValidatorWithGenericParserOption,
+            RepeatableGenericValidatorOption,
+            RepeatableGenericValidatorWithGenericParserOption,
 
             ValidatorWithMessageOption,
 

@@ -41,6 +41,12 @@ public static partial class Main {
     public static T ParseNumber<T>(string? s) where T : INumber<T> => T.Parse(s, null);
     [ParseWith(nameof(ParseNumber))]
     [Option("generic-parser-opt")] public static int GenericParserOption { get; set; }
+
+#pragma warning disable CS8618 // see #41
+    [ParseWith(nameof(ParseNumber))]
+    [Option("repeatable-generic-parser-opt")] public static int[] RepeatableGenericParserOption { get; set; }
+#pragma warning restore
+
     #endregion
 
     #region TryParse
@@ -113,6 +119,12 @@ public partial class Tests {
         public void GenericParserOption() {
             TestMainDummy("--generic-parser-opt", "56");
             AssertStateChange(new { GenericParserOption = 56 });
+        }
+
+        [Fact]
+        public void RepeatableGenericParserOption() {
+            TestMainDummy("--repeatable-generic-parser-opt", "56", "--repeatable-generic-parser-opt", "-87");
+            AssertStateChange(new { RepeatableGenericParserOption = (int[])[56, -87] });
         }
     }
 }
