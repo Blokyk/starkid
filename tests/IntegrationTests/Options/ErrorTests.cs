@@ -35,4 +35,21 @@ public partial class ErrorTests
             stderr
         );
     }
+
+    [Fact]
+    public void MissingArg() {
+        Assert.Equal(1, StarKidProgram.TestMain(["dummy2", "--missing-arg"], out var stdout, out var stderr));
+        Assert.Empty(stdout);
+        Assert.StartsWith(
+            "Option '--missing-arg' needs an argument",
+            stderr
+        );
+
+        Assert.Equal(1, StarKidProgram.TestMain(["dummy2", "-m"], out stdout, out stderr));
+        Assert.Empty(stdout);
+        Assert.StartsWith(
+            "Option '--missing-arg' needs an argument",
+            stderr
+        );
+    }
 }

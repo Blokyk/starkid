@@ -91,9 +91,9 @@ partial class StarKidProgram
 
         if (!isFlags) {
             sb.AppendLine("""
-            void updateArg() {
+            void updateArg(string optName) {
                 if (arg is null && !TryGetNextArgFromArgv(out arg))
-                    ExitWithError("Option '--{0}' needs an argument", optName);
+                    ExitWithError("Option '{0}' needs an argument", optName);
             }
 """);
         }
@@ -124,8 +124,8 @@ partial class StarKidProgram
 
             // for options, we might need to parse the argument from argv
             if (!isFlags) {
-                sb.Append(@"
-                    updateArg();");
+                sb.AppendFormat(@"
+                    updateArg(""--{0}"");", opt.Name); // we pass the opt name for better error messages
             }
 
             sb.Append(@"
