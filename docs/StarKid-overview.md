@@ -264,7 +264,7 @@ StarKid has been built with command groups at its heart, and since
 commands are represented by methods, it seems only natural that groups
 of commands would be classes. Naturally, you can also have groups
 inside groups; this is achieved by nesting classes (and not
-subclassing, because [everything in StarKid is static](#classesmethodsfields-must-be-static))
+sub-classing, because [everything in StarKid is static](#classesmethodsfields-must-be-static))
 inside each other. Let's try to model `git`'s CLI using StarKid:
 
 ```csharp
@@ -545,7 +545,7 @@ expressions and `bc` statements.)
 As you can see, it doesn't have any subcommands, so we'll need to
 maneuver a bit to get this working under StarKid. To accomplish
 this, we'll create a root command group, and then give it a single
-**default** command:
+*default* command:
 
 ```csharp
 [CommandGroup("bc", DefaultCmdName = "#")]
@@ -555,7 +555,7 @@ static class App {
 }
 ```
 
-The `_` command name is special: it makes the command un-invokable
+The `#` command name is special: it makes the command un-invokable
 and hides it from the help text. Thus, the only way to invoke it
 is to set it as a default command for some group.
 
