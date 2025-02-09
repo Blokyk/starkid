@@ -173,6 +173,10 @@ public class ParserFinder
         if (sourceType.SpecialType == SpecialType.System_String)
             return ParserInfo.StringIdentity.Instance;
 
+        if (sourceType.IsUnboundGenericType) {
+            return new ParserInfo.Invalid(Diagnostics.GiveUp);
+        }
+
         // this will only be true for nullable *value types*, contrary to SymbolUtils.IsNullable
         if (sourceType.ConstructedFrom.SpecialType is SpecialType.System_Nullable_T) {
             return FindParserForType(sourceType.TypeArguments[0]);
@@ -181,10 +185,6 @@ public class ParserFinder
         // * too costly for now
         // if (_implicitConversionsCache.GetValue(CommonTypes.STR, sourceType))
         //     return new ParserInfo.Identity(MinimalTypeInfo.FromSymbol(sourceType));
-
-        if (sourceType.IsUnboundGenericType) {
-            return new ParserInfo.Invalid(Diagnostics.GiveUp);
-        }
 
         if (sourceType.EnumUnderlyingType is not null) {
             var minTypeInfo = MinimalTypeInfo.FromSymbol(sourceType);
@@ -235,7 +235,31 @@ public class ParserFinder
     bool CouldBeValidParser(IMethodSymbol method, [NotNullWhen(false)] out ParserInfo? reason) {
         reason = null;
 
-        // todo: add checks like bound generics, etc
+        if (method.DeclaredAccessibility < Accessibility.Internal) {
+            reason = new ParserInfo.Invalid(Diagnostics.NonAccessibleParser);
+            return false;
+        }
+
+        // if this is a ctor, the next conditions don't apply
+        if (method.MethodKind is not MethodKind.Constructor) {
+            if (!method.IsStatic) {
+                reason = new ParserInfo.Invalid(Diagnostics.ParserHasToBeStatic);
+                return false;
+            }
+
+            if (method.ReturnsByRef || method.ReturnsByRefReadonly) {
+                reason = new ParserInfo.Invalid(Diagnostics.ParserCantReturnRef);
+                return false;
+            }
+
+            // // note: when we refactor to lift the restriction on generic methods,
+            // // also change the Enum.Parse code in FindParserForType
+            // a parser method must be either non-generic OR have a single type parameter
+            if (method.Arity > 1) {
+                reason = new ParserInfo.Invalid(Diagnostics.ParserHasWrongTypeArity, method.Arity);
+                return false;
+            }
+        }
 
         if (method.Parameters.Length != 0) {
             var inputParam = method.Parameters[0];
@@ -251,32 +275,6 @@ public class ParserFinder
             }
         }
 
-        if (method.DeclaredAccessibility < Accessibility.Internal) {
-            reason = new ParserInfo.Invalid(Diagnostics.NonAccessibleParser);
-            return false;
-        }
-
-        // if this is a ctor, the next conditions don't apply
-        if (method.MethodKind is MethodKind.Constructor)
-            return true;
-
-        if (!method.IsStatic) {
-            reason = new ParserInfo.Invalid(Diagnostics.ParserHasToBeStatic);
-            return false;
-        }
-
-        // note: when we refactor to lift the restriction on generic methods,
-        // also change the Enum.Parse code in FindParserForType
-        if (method.IsGenericMethod) {
-            reason = new ParserInfo.Invalid(Diagnostics.ParserCantBeGenericMethod);
-            return false;
-        }
-
-        if (method.ReturnsByRef || method.ReturnsByRefReadonly) {
-            reason = new ParserInfo.Invalid(Diagnostics.ParserCantReturnRef);
-            return false;
-        }
-
         return true;
     }
 
@@ -286,9 +284,18 @@ public class ParserFinder
             return false;
         }
 
-        if (!CouldBeValidParser(method, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
+        // notnull: if CouldBeValidParser is false, parser will be a ParserInfo.Invalid object
+        if (!CouldBeValidParser(method, out parser!))
             return false;
 
+        // if this is a generic method, then substitute its type parameter for the target type
+        // and do the rest of the checks with that instead.
+        // yes, this is pretty inflexible, but it's a start (see #43)
+        if (method.IsGenericMethod)
+            method = method.Construct(targetType);
+
+        // todo: we can probably replace this check with a simpler one for generic methods,
+        // since it's very likely the return type is the type parameter we reified with the target type
         var isReturnTypeTarget = _implicitConversionsCache.GetValue(method.ReturnType, targetType);
 
         if (!isReturnTypeTarget) {
@@ -303,8 +310,12 @@ public class ParserFinder
         var targetTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
 
         var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
+        var methodName
+            = method.IsGenericMethod
+            ? $"{containingTypeFullName}.{method.Name}<{targetTypeInfo.FullName}>"
+            : $"{containingTypeFullName}.{method.Name}";
 
-        parser = new ParserInfo.DirectMethod(containingTypeFullName + "." + method.Name, targetTypeInfo);
+        parser = new ParserInfo.DirectMethod(methodName, targetTypeInfo);
         return true;
     }
 
@@ -314,7 +325,8 @@ public class ParserFinder
             return false;
         }
 
-        if (!CouldBeValidParser(ctor, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
+        // notnull: if CouldBeValidParser is false, parser will be a ParserInfo.Invalid object
+        if (!CouldBeValidParser(ctor, out parser!))
             return false;
 
         var isReturnTypeTarget
@@ -341,8 +353,15 @@ public class ParserFinder
             return false;
         }
 
-        if (!CouldBeValidParser(method, out parser!)) // notnull: if CouldBeValidParser is false, parser won't be false
+        // notnull: if CouldBeValidParser is false, parser will be a ParserInfo.Invalid object
+        if (!CouldBeValidParser(method, out parser!))
             return false;
+
+        // if this is a generic method, then substitute its type parameter for the target type
+        // and do the rest of the checks with that instead.
+        // yes, this is pretty inflexible, but it's a start (see #43)
+        if (method.IsGenericMethod)
+            method = method.Construct(targetType);
 
         // the return type should be exactly bool
         if (method.ReturnType.SpecialType != SpecialType.System_Boolean) {
@@ -367,12 +386,17 @@ public class ParserFinder
             return false;
         }
 
+        var targetTypeInfo = MinimalTypeInfo.FromSymbol(targetType);
         var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
 
-        parser = new ParserInfo.BoolOutMethod(
-            containingTypeFullName + "." + method.Name,
-            MinimalTypeInfo.FromSymbol(targetType)
-        );
+        // question: is this actually needed? i think it's only necessary with generic overloads to non-generic methods
+        //           but that's pretty niche and already not really well supported
+        var methodName
+            = method.IsGenericMethod
+            ? $"{containingTypeFullName}.{method.Name}<{targetTypeInfo.FullName}>"
+            : $"{containingTypeFullName}.{method.Name}";
+
+        parser = new ParserInfo.BoolOutMethod(methodName,targetTypeInfo);
 
         return true;
     }

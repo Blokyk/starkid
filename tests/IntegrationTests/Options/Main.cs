@@ -28,9 +28,12 @@ public static partial class Main {
             DirectParsedNullableStructOption,
             RepeatManualItemOption,
             ManualArrayOption,
+            GenericParserOption,
 
             RepeatManualItemValidatorOption,
             RepeatItemArrayValidatorOption,
+            GenericValidatorOption,
+            GenericValidatorWithGenericParserOption,
 
             ValidatorWithMessageOption,
 

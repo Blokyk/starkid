@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace StarKid.Tests.Options;
 
 public static partial class Main {
@@ -35,6 +37,10 @@ public static partial class Main {
     public static char[] AsUpperCharArray(string s) => s.ToUpper().ToCharArray();
     [ParseWith(nameof(AsUpperCharArray))]
     [Option("manual-array-opt")] public static char[]? ManualArrayOption { get; set; }
+
+    public static T ParseNumber<T>(string? s) where T : INumber<T> => T.Parse(s, null);
+    [ParseWith(nameof(ParseNumber))]
+    [Option("generic-parser-opt")] public static int GenericParserOption { get; set; }
     #endregion
 
     #region TryParse
@@ -101,6 +107,12 @@ public partial class Tests {
         public void ManualArrayOption() {
             TestMainDummy("--manual-array-opt", "hey");
             AssertStateChange(new { ManualArrayOption = (char[])[ 'H', 'E', 'Y' ] });
+        }
+
+        [Fact]
+        public void GenericParserOption() {
+            TestMainDummy("--generic-parser-opt", "56");
+            AssertStateChange(new { GenericParserOption = 56 });
         }
     }
 }

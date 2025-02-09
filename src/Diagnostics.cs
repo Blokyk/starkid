@@ -422,11 +422,11 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor ParserCantBeGenericMethod
+    public static readonly DiagnosticDescriptor ParserHasWrongTypeArity
         = new(
             "CLI406",
-            "Parsing methods cannot have any type parameters (see #43)",
-            "Parsing methods cannot have any type parameters (see #43)",
+            "Parsing methods can have at most on generic param, but this one has {0} (see #43)",
+            "Parsing methods can have at most on generic param, but this one has {0} (see #43)",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -588,6 +588,16 @@ internal static class Diagnostics {
             "CLI505",
             "Validator methods for this value must take a single parameter of type '{0}'",
             "Validator methods for this value must take a single parameter of type '{0}'",
+            "StarKid.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ValidatorHasWrongTypeArity
+        = new(
+            "CLI505",
+            "Validator must have at most 1 generic type parameter, but this one has '{0}' (see #43)",
+            "Validator must have at most 1 generic type parameter, but this one has '{0}' (see #43)",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true

@@ -259,7 +259,10 @@ public sealed record MinimalMethodInfo(
 ) : MinimalMemberInfo(Name, ContainingType, ReturnType, Location), IEquatable<MinimalMethodInfo> {
     internal override string DbgStr() =>
         $"{ReturnType.Name} {Name}<{String.Join(", ", TypeParameters)}>({String.Join(", ", Parameters)})";
-    public override string ToString() => ContainingType!.ToString() + ".@" + Name;
+    public override string ToString()
+        => !IsGeneric
+            ? $"{ContainingType!}.@{Name}"
+            : $"{ContainingType!}.@{Name}<{String.Join(", ", TypeParameters)}>";
 
     public bool ReturnsVoid => ReturnType.SpecialType is SpecialType.System_Void;
     public bool IsGeneric => TypeParameters.Length > 0;

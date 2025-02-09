@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace StarKid.Tests.Options;
 
 public static partial class Main {
@@ -16,6 +18,14 @@ public static partial class Main {
 
     [ValidateWith(nameof(Int32.IsPositive), "Number must be positive")]
     [Option("validator-with-message-opt")] public static int ValidatorWithMessageOption { get; set; }
+
+    public static bool NotZero<T>(T t) where T : INumber<T> => !T.IsZero(t);
+    [ValidateWith(nameof(NotZero))]
+    [Option("generic-validator-opt")] public static int GenericValidatorOption { get; set; }
+
+    [ParseWith(nameof(ParseNumber))]
+    [ValidateWith(nameof(NotZero))]
+    [Option("generic-validator-with-generic-parser-opt")] public static int GenericValidatorWithGenericParserOption { get; set; }
 }
 
 public partial class Tests {
@@ -30,6 +40,18 @@ public partial class Tests {
         public void RepeatItemArrayValidatorOption() {
             TestMainDummy("--repeat-item-array-validator-opt", "16", "--repeat-item-array-validator-opt", "10");
             AssertStateChange(new { RepeatItemArrayValidatorOption = (int[])[16, 10] });
+        }
+
+        [Fact]
+        public void GenericValidatorOption() {
+            TestMainDummy("--generic-validator-opt", "24");
+            AssertStateChange(new { GenericValidatorOption = 24 });
+        }
+
+        [Fact]
+        public void GenericValidatorWithGenericParserOption() {
+            TestMainDummy("--generic-validator-with-generic-parser-opt", "24");
+            AssertStateChange(new { GenericValidatorWithGenericParserOption = 24 });
         }
     }
 }

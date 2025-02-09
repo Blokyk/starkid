@@ -193,6 +193,24 @@ public class ValidatorFinder
             operandType = innerOperandType;
         }
 
+        if (method.IsGenericMethod) {
+            // if this validator has more than one type param, then we can't do anything
+            // with it right now (cf #43)
+            if (method.Arity > 1) {
+                validator = new ValidatorInfo.Invalid(
+                    Diagnostics.ValidatorHasWrongTypeArity,
+                    method.Arity
+                );
+                return false;
+            }
+
+            // fixme: this isn't correct for repeatable arguments
+            // assume the type parameter is supposed to be the symbol's type; so, we do
+            // the rest of the checks with that assumption by substituting the type param
+            // with the symbol's type
+            method = method.Construct(operandType);
+        }
+
         bool elementWise = false;
         switch (ClassifyTypeRelation(operandType, method.Parameters[0].Type, _implicitConversionsCache.GetValue)) {
             case ArgTypeRelation.DirectlyCompatible:
@@ -221,14 +239,16 @@ public class ValidatorFinder
         var containingTypeFullName = SymbolInfoCache.GetFullTypeName(method.ContainingType);
 
         if (method.ReturnsVoid) {
-            validator = new ValidatorInfo.Method.Exception(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo) {
+            var methodName = minMethodInfo.ToString();
+
+            validator = new ValidatorInfo.Method.Exception(minMethodInfo) {
                 IsElementWiseValidator = elementWise
             };
             return true;
         }
 
         if (minMethodInfo.ReturnType.SpecialType == SpecialType.System_Boolean) {
-            validator = new ValidatorInfo.Method.Bool(containingTypeFullName + "." + minMethodInfo.Name, minMethodInfo) {
+            validator = new ValidatorInfo.Method.Bool(minMethodInfo) {
                 IsElementWiseValidator = elementWise
             };
             return true;
