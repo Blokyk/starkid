@@ -99,7 +99,7 @@
     <Message Importance="high"
       Text="Adding version=$(Version) (built @ $(VersionDate))" />
     <Exec Condition="'$(Configuration)'=='Debug'"
-      Command="nuget add -Source /home/blokyk/.nuget/local '$(OutputPath)$(PackageId).$(Version).nupkg'"
+      Command="dotnet nuget push --source local '$(OutputPath)$(PackageId).$(Version).nupkg'"
     />
   </Target>
 </Project>
