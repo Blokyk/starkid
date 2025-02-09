@@ -100,6 +100,12 @@ internal static partial class StarKidProgram
 
     public static partial class Main_Dummy2CmdDesc {
         public static void Reset() {
+            missingArg = default;
+            hasmissingArgActionBeenTriggered = false;
+
+            flagShouldntHaveNonBoolArg = default;
+            hasflagShouldntHaveNonBoolArgActionBeenTriggered = false;
+
             defaultOpt = 5;
             hasdefaultOptActionBeenTriggered = false;
 
