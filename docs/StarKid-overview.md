@@ -480,9 +480,148 @@ as manual parsers (in addition to [StarKid's general restrictions](#restrictions
 
 ## Advanced notions
 
+### Repeatable options
+
+In general, options are meant to be specified at most once. Repeated
+options are almost always an error on the user's or programmer's part.
+However, sometimes you *do* want to have an option that can be used
+multiple times. This is possible in StarKid by using arrays!
+
+At its simplest, this just looks like adding `[]` to an option's type.
+```cs
+[Option("filter", 'f')]
+public static string[] Filters;
+```
+
+This then allows the user to specify the `--filter` option multiple
+times: `./foo process myfile.mp4 --filter vignette --filter grain -f invert`.
+
+This can also be combined with [parsers and validators](#parsing--validation)!
+
+In the case of auto-parsers, you don't need to do anything special: each
+use of an `int[]` option will be parsed as an `int` on the command line.
+
+For manual parsers, you can specify a parser for the element type, and
+every use of the option will be parsed individually using that parser:
+
+```cs
+[Option("output", 'o')]
+[ParseWith(nameof(Resolution.FromString))]
+public static Resolution[] OutputResolutions;
+```
+
+With this, we could have a command line like:
+```sh
+./foo process myfile.mp4 -f grain -o 1920x1080 -o 1280x720 -f invert
+```
+
+> [!NOTE] No need to worry about any interference with "one-off" options
+> with an array typed but that are parsed from a single string: direct
+> type equality takes precedence over element-type comparison, meaning
+> that a parser that outputs `int[]` will *not* create a repeatable
+> option. (Since arrays can never be auto-parsed directly, there is no
+> ambiguity there either!)
+
+You can also have validators for each item, and even for the entire
+array!
+
+```cs
+[Option("input", 'i')]
+[ValidateWith(nameof(FileInfo.Exists))] // you could also use a method, obviously
+[ValidateWith(nameof(NoDuplicateFiles))]
+public static FileInfo[] Inputs;
+
+static bool NoDuplicateFiles(FileInfo[] files)
+    => files.Length == files.Distinct().Count();
+```
+
+This would first validate each item by checking the `.Exists` property
+of each, and then **when building the final array**, call `NoDuplicateFiles`
+on the whole array.
+
 ### Global options
 
+By default, options are only scoped to the command or group they were
+defined in. For example, this means that an option defined for the
+`git subtree` group, like `--prefix`, cannot be used *after* a
+subcommand. You can write `git subtree --prefix ./vendor add`, but not
+`git subtree add --prefix ./vendor`. This is particularly useful when
+you might have conflicting options or aliases between a group and its
+subcommands.
+
+However, in some cases, you might want to have an option that can be
+used at any level and with any subcommand. This is often the case of the
+`verbose` option, which applies no matter what the command is. For this
+purpose, StarKid's `[Option]` has the `IsGlobal` property, which allows
+you to scope an option to all of a group's descendants.
+
+As an example, the following would allow `bdsys -v pkg update <name>`
+but also `bdsys pkg update -v <name>` or `bdsys pkg -v update <name>`.
+
+```cs
+[CommandGroup("bdsys")]
+public static class BdsysCli {
+    [Option("verbose", 'v', IsGlobal = true)]
+    public static bool ShouldBeVerbose { get; set; }
+
+    [CommandGroup("pkg")]
+    public static class Package {
+        public static void Update(string pkgName) {
+            if (ShouldBeVerbose)
+                Console.WriteLine($"Updating package {pkgName}");
+            ...
+        }
+    }
+}
+```
+
+> [!NOTE] There is now way to *shadow* global options, i.e. declare
+> an option that has the same name or alias as a global option from
+> a parent command group. In our example, `Package` couldn't declare
+> its own `verbose` option, nor an option with the `v` alias. Therefore,
+> you should think carefully about how making an option global might
+> impact your CLI's future design/evolution.
+
 ### Default commands
+
+Some CLIs do not adhere strictly to the group/command dichotomy, and
+instead allow some "groups" to also be used as commands. This is the
+case of `git remote`, for example. It can be used as a group (
+`git remote add`, `git-remote set-url`, etc.), but it can also be used
+as a standalone command, being equivalent to `git remote show`.
+
+To achieve this with StarKid, there is a `DefaultCmdName` property
+on the `[CommandGroup]` attribute. It allows you to specify the name of
+a command[^cmdname] that will be invoked by default in case no
+subcommand was specified.
+
+So, to replicate the `git remote` behavior:
+
+```cs
+[CommandGroup("git")]
+public static class GitCli {
+    [CommandGroup("remote", DefaultCmdName = "show")]
+    public static class Remote {
+        [Option("verbose", 'v', IsGlobal = true)]
+        public static bool ShouldBeVerbose { get; set; }
+
+        [Command("show")]
+        public static void Show(
+            [Option("dry", 'n')] bool isDryRun
+        ) { ... }
+
+        [Command("add")]
+        public static void Add(...) {...}
+    }
+}
+```
+
+This allows us to enjoy both `git remote add` to add new remotes, as
+well as the classic `git remote -v` to show a list of remote. Importantly,
+
+
+[^cmdname]: that is, the name of the command on the CLI, not its
+associated method, for annoying reasons
 
 ### Special arguments
 
