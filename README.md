@@ -25,7 +25,7 @@ That's it! For a quick tutorial, check out [Your first app with StarKid](docs/Yo
 ## TL;DR docs 📖
 
 ```csharp
-using Blokyk.StarKid;
+using StarKid;
 
 [CommandGroup("my-app")]
 public static class MyApp {
