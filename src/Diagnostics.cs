@@ -425,8 +425,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ParserCantBeGenericMethod
         = new(
             "CLI406",
-            "Parsing methods cannot have any type parameters",
-            "Parsing methods cannot have any type parameters",
+            "Parsing methods cannot have any type parameters (see #43)",
+            "Parsing methods cannot have any type parameters (see #43)",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -526,8 +526,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor UnvalidatableType
         = new(
             "CLI501",
-            "Can't use a validator with a pointer or unbound generic type",
-            "Can't use a validator with a pointer or unbound generic type",
+            "Can't use a validator with a pointer or unbound generic type (see #43)",
+            "Can't use a validator with a pointer or unbound generic type (see #43)",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
