@@ -37,6 +37,23 @@ public partial class ErrorTests
     }
 
     [Fact]
+    public void NonBoolArgToFlag() {
+        Assert.Equal(1, StarKidProgram.TestMain(["dummy2", "--flag-no-arg=maybe"], out var stdout, out var stderr));
+        Assert.Empty(stdout);
+        Assert.StartsWith(
+            "Expression 'maybe' is not a valid value for option '--flag-no-arg': Couldn't understand 'maybe' as a boolean value",
+            stderr
+        );
+
+        Assert.Equal(1, StarKidProgram.TestMain(["dummy2", "-f=maybe"], out stdout, out stderr));
+        Assert.Empty(stdout);
+        Assert.StartsWith(
+            "Expression 'maybe' is not a valid value for option '-f': Couldn't understand 'maybe' as a boolean value",
+            stderr
+        );
+    }
+
+    [Fact]
     public void MissingArg() {
         Assert.Equal(1, StarKidProgram.TestMain(["dummy2", "--missing-arg"], out var stdout, out var stderr));
         Assert.Empty(stdout);

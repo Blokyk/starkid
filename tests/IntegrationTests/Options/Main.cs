@@ -51,6 +51,7 @@ public static partial class Main {
     internal static object Dummy2State = new();
     [Command("dummy2")] public static void Dummy2(
         [Option("missing-arg", 'm')] string? missingArg,
+        [Option("flag-no-arg", 'f')] bool flagShouldntHaveNonBoolArg,
         [Option("cmd-opt-with-default")] int defaultOpt = 5
     ) {
         Dummy2State = new { defaultOpt };
