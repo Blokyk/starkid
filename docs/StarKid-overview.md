@@ -617,8 +617,12 @@ public static class GitCli {
 ```
 
 This allows us to enjoy both `git remote add` to add new remotes, as
-well as the classic `git remote -v` to show a list of remote. Importantly,
+well as the classic `git remote -v` to show a list of remote.
 
+> todo: should we detail the hidden-command thing here? rn it's only
+> "documented" in the middle of the "single command app" section, but
+> there might be other uses for it, and users needing that might not
+> think to look there
 
 [^cmdname]: that is, the name of the command on the CLI, not its
 associated method, for annoying reasons
