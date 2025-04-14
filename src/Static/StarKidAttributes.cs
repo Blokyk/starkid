@@ -22,10 +22,7 @@ namespace StarKid
             desc = ShortDesc;
         }
     }
-}
 
-namespace StarKid
-{
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class CommandGroupAttribute : System.Attribute
     {
@@ -47,10 +44,7 @@ namespace StarKid
             shortDesc = ShortDesc;
         }
     }
-}
 
-namespace StarKid
-{
     [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
     public sealed class OptionAttribute : System.Attribute
     {
@@ -79,10 +73,7 @@ namespace StarKid
             argName = ArgName;
         }
     }
-}
 
-namespace StarKid
-{
     /// <summary>
     /// Indicates the function used to convert the raw string argument into the desired type
     /// </summary>
@@ -97,10 +88,7 @@ namespace StarKid
         public ParseWithAttribute(string nameofParsingMethod)
             => ParserName = nameofParsingMethod;
     }
-}
 
-namespace StarKid
-{
     /// <summary>
     /// Indicates the function used to validate the argument/option
     /// </summary>
