@@ -148,7 +148,7 @@ internal sealed class GroupBuilder
         var minMethodSymbol = MinimalMethodInfo.FromSymbol(method);
 
         string cmdName = attrList.Command.CommandName;
-        string? desc = attrList.Command.ShortDescription;
+        string? desc = attrList.Command.ShortDesc;
 
         bool isValid = true;
 

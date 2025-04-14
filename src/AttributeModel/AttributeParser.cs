@@ -10,7 +10,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
             return false;
 
         // ShortDesc
-        if (!TryGetProp<string?>(attr, "ShortDesc", SpecialType.System_String, null, out var shortDesc))
+        if (!TryGetProp<string?>(attr, nameof(CommandAttribute.ShortDesc), SpecialType.System_String, null, out var shortDesc))
             return false;
 
         cmdAttr = new(cmdName, shortDesc);
@@ -26,11 +26,11 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
             return false;
 
         // DefaultCommandName
-        if (!TryGetProp<string?>(attr, "DefaultCmdName", SpecialType.System_String, null, out var defaultCmdName))
+        if (!TryGetProp<string?>(attr, nameof(CommandGroupAttribute.DefaultCmdName), SpecialType.System_String, null, out var defaultCmdName))
             return false;
 
         // ShortDesc
-        if (!TryGetProp<string?>(attr, "ShortDesc", SpecialType.System_String, null, out var shortDesc))
+        if (!TryGetProp<string?>(attr, nameof(CommandGroupAttribute.ShortDesc), SpecialType.System_String, null, out var shortDesc))
             return false;
 
         groupAttr = new(groupName, defaultCmdName, shortDesc);
@@ -51,10 +51,10 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
                 return false;
         }
 
-        if (!TryGetProp<string?>(attr, "ArgName", SpecialType.System_String, null, out var argName))
+        if (!TryGetProp<string?>(attr, nameof(OptionAttribute.ArgName), SpecialType.System_String, null, out var argName))
             return false;
 
-        if (!TryGetProp<bool>(attr, "IsGlobal", SpecialType.System_Boolean, false, out var isGlobal))
+        if (!TryGetProp<bool>(attr, nameof(OptionAttribute.IsGlobal), SpecialType.System_Boolean, false, out var isGlobal))
             return false;
 
         optAttr = new OptionAttribute(longName, shortName, argName, isGlobal);

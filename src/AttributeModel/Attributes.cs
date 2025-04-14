@@ -2,13 +2,13 @@ namespace StarKid.Generator.AttributeModel;
 
 public sealed record CommandGroupAttribute(
     string GroupName,
-    string? DefaultCommandName,
-    string? ShortDescription
+    string? DefaultCmdName,
+    string? ShortDesc
 );
 
 public sealed record CommandAttribute(
     string CommandName,
-    string? ShortDescription
+    string? ShortDesc
 );
 
 public sealed record OptionAttribute(
