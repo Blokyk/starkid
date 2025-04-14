@@ -63,11 +63,11 @@
       >$(VersionDate.Replace(".0000", "").Replace(".0", ".").Replace(".0", ".").Replace(".0", "."))</Version>
     <Authors>Blokyk</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/blokyk/starkid</RepositoryUrl>
+    <RepositoryUrl>https://github.com/blokyk/starkid.git</RepositoryUrl>
     <PackageReadmeFile>info/README.md</PackageReadmeFile>
     <PackageType>Dependency</PackageType>
 
-    <PackageTags>Source Generator; Roslyn; CLI; Command line; Command-line; AOT; AOT-friendly</PackageTags>
+    <PackageTags>Source-Generator; sourcegen; Roslyn; CLI; Command-line; AOT; AOT-friendly</PackageTags>
     <Description
       >A C# source generator to create command-line apps from a simple, code-based description (now with 80% less boilerplate!).</Description>
   </PropertyGroup>
@@ -87,6 +87,7 @@
   <ItemGroup>
     <None Include="$(OutputPath)netstandard2.0/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
     <None Include="../README.md" Pack="true" PackagePath="info"/>
+    <None Include="../LICENSE" Pack="true" PackagePath="info"/>
   </ItemGroup>
 
   <!-- Make sure the .props file (with the <CompilerVisible...> stuff) is included in the package -->
