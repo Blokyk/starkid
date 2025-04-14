@@ -6,7 +6,7 @@ using System;
 namespace StarKid
 {
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-    public class CommandAttribute : System.Attribute
+    public sealed class CommandAttribute : System.Attribute
     {
         public string CmdName { get; }
         public string? ShortDesc { get; set; }
@@ -24,7 +24,7 @@ namespace StarKid
     }
 
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    public class CommandGroupAttribute : System.Attribute
+    public sealed class CommandGroupAttribute : System.Attribute
     {
         public string GroupName { get; }
         public string? DefaultCmdName { get; set; }
