@@ -105,12 +105,8 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
             return false;
         }
 
-        string? msg = null;
-
-        if (argList.Count == 2) {
-            if (!TryGetCtorArg<string>(attr, 1, SpecialType.System_String, out msg))
-                return false;
-        }
+        if (!TryGetProp<string?>(attr, nameof(ValidateWithAttribute.ErrorMessage), SpecialType.System_String, null, out var msg))
+            return false;
 
         ValidateWithAttr = new ValidateWithAttribute(validatorName, msg);
 

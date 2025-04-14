@@ -93,7 +93,7 @@ namespace StarKid
     /// Indicates the function used to validate the argument/option
     /// </summary>
     /// <remarks>
-    /// The validating function must take a single parameter of this symbol's type and return <see cref="System.Boolean"/> or <see cref="System.Exception"/>.
+    /// The validating function must take a single parameter of this symbol's type and return <see cref="System.Boolean"/> or <see langword="void"/>.
     /// </remarks>
     [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = true)]
     public sealed class ValidateWithAttribute : System.Attribute
@@ -103,9 +103,5 @@ namespace StarKid
 
         public ValidateWithAttribute(string nameofValidatorMethod)
             => ValidatorName = nameofValidatorMethod;
-
-        public ValidateWithAttribute(string nameofValidatorMethod, string errorMessage)
-            : this(nameofValidatorMethod)
-            => ErrorMessage = errorMessage;
     }
 }

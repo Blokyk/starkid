@@ -106,6 +106,7 @@ internal static partial class StarKidProgram
             RepeatableGenericValidatorWithGenericParserOptionBuilder = new();
 
             ValidatorWithMessageOption = default;
+            hasValidatorWithMessageOptionActionBeenTriggered = false;
 
             // ThrowingOption = "this shouldn't be set, remember?";
             hasThrowingOptionActionBeenTriggered = false;
