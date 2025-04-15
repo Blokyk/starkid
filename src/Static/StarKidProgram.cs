@@ -409,6 +409,28 @@ partial class StarKidProgram
         return val;
     }
 
+    private static Nullable<T> ThrowIfNotValidNullable<T>(
+        Nullable<T> val,
+        Action<Nullable<T>> isValid,
+        string argName,
+        string? message,
+        [CallerArgumentExpression("isValid")] string funcName = ""
+    ) where T : struct {
+        try {
+            isValid(val);
+        }
+        catch (EnvironmentExitException) {
+            throw;
+        }
+        catch (Exception) when (message != null) {
+            throw new Exception(message);
+        } catch {
+            throw;
+        }
+
+        return val;
+    }
+
     private static T ThrowIfNotValid<T>(T val, Func<T, bool> isValid, string argName, string? message, [CallerArgumentExpression("isValid")] string funcExpr = "") {
         if (!isValid(val))
             throw new Exception(message ?? "'" + funcExpr + "' was false");
@@ -431,6 +453,19 @@ partial class StarKidProgram
         [CallerArgumentExpression("isValid")] string funcExpr = ""
     ) where T : struct {
         if (val.HasValue && !isValid(val.Value))
+            throw new Exception(message ?? "'" + funcExpr + "' was false");
+
+        return val;
+    }
+
+    private static Nullable<T> ThrowIfNotValidNullable<T>(
+        Nullable<T> val,
+        Func<Nullable<T>, bool> isValid,
+        string argName,
+        string? message,
+        [CallerArgumentExpression("isValid")] string funcExpr = ""
+    ) where T : struct {
+        if (!isValid(val))
             throw new Exception(message ?? "'" + funcExpr + "' was false");
 
         return val;
