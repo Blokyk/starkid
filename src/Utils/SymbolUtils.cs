@@ -86,21 +86,63 @@ internal static class SymbolUtils
     }
 
     public static bool IsBaseOf(this INamedTypeSymbol baseType, INamedTypeSymbol derived) {
-        var current = derived;
+        if (baseType.TypeKind is not TypeKind.Class)
+            return false;
 
-        while (current is not null && Equals(baseType, current))
+        // we don't want to allow `base == derived`, so we go up the chain before doing any comparison
+        var current = derived?.BaseType;
+
+        while (current is not null && !Equals(baseType, current))
             current = current.BaseType;
 
         // it'll only be null if we exited early
         return current is not null;
     }
 
-    public static bool IsBaseOrInterfaceOf(this ITypeSymbol baseType, ITypeSymbol derived)
-        => derived is INamedTypeSymbol derivedType && baseType.TypeKind switch {
-            TypeKind.Class => IsBaseOf((INamedTypeSymbol)baseType, derivedType),
-            TypeKind.Interface => IsInterfaceOn((INamedTypeSymbol)baseType, derivedType),
-            _ => false
-        };
+    public static bool IsSelfOrBaseOrInterfaceOf(this ITypeSymbol baseType, ITypeSymbol derivedType) {
+        if (baseType is not INamedTypeSymbol @base || derivedType is not INamedTypeSymbol derived)
+            return Equals(baseType, derivedType);
+
+        if (@base.TypeKind is TypeKind.Struct)
+            return derived.TypeKind is TypeKind.Struct && Equals(@base, derived);
+
+        switch (derived.TypeKind) {
+            case TypeKind.Struct:
+            case TypeKind.Interface:
+                return Equals(@base, derived)
+                    || @base.IsInterfaceOn(derived);
+            case TypeKind.Class:
+                return @base.IsBaseOrInterfaceOf(derived);
+            default:
+                return false;
+        }
+    }
+
+    public static bool IsBaseOrInterfaceOf(this ITypeSymbol baseType, ITypeSymbol derivedType)  {
+        if (baseType is not INamedTypeSymbol @base || derivedType is not INamedTypeSymbol derived)
+            return false;
+
+        // a struct can never be a base type
+        if (@base.TypeKind is TypeKind.Struct)
+            return false;
+
+        switch (derived.TypeKind) {
+            case TypeKind.Struct:
+            case TypeKind.Interface:
+                return @base.IsInterfaceOn(derived);
+            case TypeKind.Class:
+                switch (@base.TypeKind) {
+                    case TypeKind.Class:
+                        return @base.IsBaseOf(derived);
+                    case TypeKind.Interface:
+                        return @base.IsInterfaceOn(derived);
+                    default:
+                        return false;
+                }
+            default:
+                return false;
+        }
+    }
 
     public static string? GetDefaultValue(ISymbol symbol) {
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
