@@ -81,8 +81,9 @@ internal static class CodegenHelpers
                     exprStr = method.MethodInfo.Name + "(" + argName + ")";
                     break;
                 case ValidatorInfo.Property prop:
-                    funcExpr = "static (arg) => arg." + prop.PropertyName;
-                    exprStr = argName + "." + prop.PropertyName;
+                    var expected = prop.ExpectedValue ? "true":"false"; // coz it's uppercase by default
+                    funcExpr = "static (arg) => arg." + prop.PropertyName + " is " + expected;
+                    exprStr = argName + "." + prop.PropertyName + " is " + expected;
                     break;
                 default:
                     throw new Exception(validator.GetType().Name + " is not a supported ValidatorInfo type.");

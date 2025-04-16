@@ -6,6 +6,7 @@ internal readonly record struct AttributeListInfo(
     OptionAttribute? Option,
     ParseWithAttribute? ParseWith,
     ImmutableValueArray<ValidateWithAttribute> ValidateWithList,
+    ImmutableValueArray<ValidatePropAttribute> ValidatePropList,
     bool IsOnParameter
 )
 {
@@ -15,6 +16,7 @@ internal readonly record struct AttributeListInfo(
         && Option is null
         && ParseWith is null
         && ValidateWithList.IsDefaultOrEmpty
+        && ValidatePropList.IsDefaultOrEmpty
         ;
     internal bool IsUninitialized
         => ValidateWithList.IsDefault;

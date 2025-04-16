@@ -54,7 +54,7 @@ public static partial class Lotus
 
     [Option("log-level")]
     [ParseWith(nameof(ParseStuff))]
-    [ValidateWith(nameof(Stuff.IsPositive))]
+    [ValidateProp(nameof(Stuff.IsPositive))]
     [ValidateWith(nameof(FeelLikeIt), "Welp, looks like the oracle didn't like your value")]
     public static Stuff? logLevel = new(5);
 

@@ -13,7 +13,7 @@ public abstract record ValidatorInfo() {
         // public record String(string FullName, MinimalMethodInfo MethodInfo) : Method(FullName, MethodInfo);
     }
 
-    public record Property(string PropertyName, MinimalMemberInfo PropertyInfo) : ValidatorInfo;
+    public record Property(string PropertyName, bool ExpectedValue, MinimalMemberInfo PropertyInfo) : ValidatorInfo;
 
     public record Invalid(DiagnosticDescriptor Descriptor, params object[] MessageArgs) : ValidatorInfo;
 }

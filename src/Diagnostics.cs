@@ -44,8 +44,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor ValidateOnNonOptOrArg
         = new(
             "CLI003",
-            "[ValidateWith] can only be used on options or arguments",
-            "[ValidateWith] can only be used on options or arguments",
+            "[ValidateWith] and [ValidateProp] can only be used on options or arguments",
+            "[ValidateWith] and [ValidateProp] can only be used on options or arguments",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -513,11 +513,21 @@ internal static class Diagnostics {
             true
         );
 
-    public static readonly DiagnosticDescriptor CouldntFindValidator
+    public static readonly DiagnosticDescriptor CouldntFindValidatorMethod
         = new(
             "CLI500",
             "Couldn't find a method named '{0}' suitable for validation",
             "Couldn't find any method named '{0}' suitable to validate this option/argument",
+            "StarKid.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor CouldntFindValidatorProp
+        = new(
+            "CLI500",
+            "Couldn't find a property named '{0}' suitable for validation",
+            "Couldn't find any property named '{0}' suitable to validate this option/argument",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -536,8 +546,8 @@ internal static class Diagnostics {
     public static readonly DiagnosticDescriptor PropertyValidatorNotOnArgType
         = new(
             "CLI501",
-            "'{0}.{1}' isn't applicable for argument type '{2}'",
-            "'{0}.{1}' isn't applicable for argument type '{2}'",
+            "'{1}' isn't applicable for argument type '{2}'",
+            "'{1}' isn't applicable for argument type '{2}'",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,
             true
@@ -608,6 +618,17 @@ internal static class Diagnostics {
             "CLI599",
             "The parameter to a ValidateWith attribute must be a nameof expression",
             "Expression '{0}' can't be used as a parameter to a ValidateWith attribute; "
+            + "it must be a nameof expression",
+            "StarKid.Analysis",
+            DiagnosticSeverity.Error,
+            true
+        );
+
+    public static readonly DiagnosticDescriptor ValidatePropMustBeNameOfExpr
+        = new(
+            "CLI599",
+            "The parameter to a ValidateProp attribute must be a nameof expression",
+            "Expression '{0}' can't be used as a parameter to a ValidateProp attribute; "
             + "it must be a nameof expression",
             "StarKid.Analysis",
             DiagnosticSeverity.Error,

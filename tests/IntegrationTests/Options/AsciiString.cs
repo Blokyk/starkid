@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 public readonly struct AsciiString {
     public string InternalString { get; }
+    public bool IsEmpty => InternalString is null or "";
     private AsciiString(string s) => InternalString = s;
     public static AsciiString From(string s) {
         if (TryParse(s, out var res))

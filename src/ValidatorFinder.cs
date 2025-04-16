@@ -8,7 +8,8 @@ public class ValidatorFinder
 {
     private readonly Action<Diagnostic> addDiagnostic;
 
-    private readonly Cache<ValidateWithAttribute, ITypeSymbol, ValidatorInfo> _attrValidatorCache;
+    private readonly Cache<ValidateWithAttribute, ITypeSymbol, ValidatorInfo> _attrValidatorMethodCache;
+    private readonly Cache<ValidatePropAttribute, ITypeSymbol, ValidatorInfo> _attrValidatorPropCache;
     private readonly Cache<ITypeSymbol, ITypeSymbol, bool> _implicitConversionsCache;
 
     private readonly Compilation _compilation;
@@ -17,10 +18,16 @@ public class ValidatorFinder
         this.addDiagnostic = addDiagnostic;
         _compilation = compilation;
 
-        _attrValidatorCache = new(
+        _attrValidatorMethodCache = new(
             EqualityComparer<ValidateWithAttribute>.Default,
             SymbolEqualityComparer.Default,
-            GetValidatorCore
+            GetValidatorMethodCore
+        );
+
+        _attrValidatorPropCache = new(
+            EqualityComparer<ValidatePropAttribute>.Default,
+            SymbolEqualityComparer.Default,
+            GetValidatorPropertyCore
         );
 
         _implicitConversionsCache = new(
@@ -31,7 +38,7 @@ public class ValidatorFinder
     }
 
     public bool TryGetValidator(ValidateWithAttribute attr, ITypeSymbol argType, out ValidatorInfo validator) {
-        validator = _attrValidatorCache.GetValue(attr, argType) with { Message = attr.ErrorMessage };
+        validator = _attrValidatorMethodCache.GetValue(attr, argType) with { Message = attr.ErrorMessage };
 
         if (validator is not ValidatorInfo.Invalid invalidValidator)
             return true;
@@ -47,9 +54,26 @@ public class ValidatorFinder
         return false;
     }
 
-    ValidatorInfo GetValidatorCoreWithoutProperty(ValidateWithAttribute attr, ITypeSymbol type) {
-        if (type is not INamedTypeSymbol argType)
-            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, type.GetErrorName());
+    public bool TryGetValidator(ValidatePropAttribute attr, ITypeSymbol argType, out ValidatorInfo validator) {
+        validator = _attrValidatorPropCache.GetValue(attr, argType) with { Message = attr.ErrorMessage };
+
+        if (validator is not ValidatorInfo.Invalid invalidValidator)
+            return true;
+
+        addDiagnostic(
+            Diagnostic.Create(
+                invalidValidator.Descriptor,
+                attr.PropertyNameExpr.GetLocation(),
+                invalidValidator.MessageArgs
+            )
+        );
+
+        return false;
+    }
+
+    ValidatorInfo GetValidatorMethodCore(ValidateWithAttribute attr, ITypeSymbol operandType) {
+        if (operandType is not (INamedTypeSymbol or IArrayTypeSymbol))
+            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, operandType.GetErrorName());
 
         var members = _compilation.GetMemberGroup(attr.ValidatorNameExpr);
 
@@ -62,69 +86,23 @@ public class ValidatorFinder
 
             candidateMethods++;
 
-            if (TryGetValidatorFromMethod(method, argType, out validator))
+            if (TryGetValidatorFromMethod(method, operandType, out validator))
                 return validator;
         }
 
         if (candidateMethods == 0) {
             return new ValidatorInfo.Invalid(
-                Diagnostics.CouldntFindValidator,
+                Diagnostics.CouldntFindValidatorMethod,
                 attr.ValidatorNameExpr
             );
         }
 
         if (candidateMethods == 1)
-            return validator!; // nonull: always assigned when there's a candidate
+            return validator!; // notnull: always assigned when there's a candidate
 
         return new ValidatorInfo.Invalid(
             Diagnostics.NoValidValidatorMethod,
-            attr.ValidatorNameExpr, argType.GetErrorName()
-        );
-    }
-
-    ValidatorInfo GetValidatorCore(ValidateWithAttribute attr, ITypeSymbol operandType) {
-        if (operandType is not (INamedTypeSymbol or IArrayTypeSymbol))
-            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, operandType.GetErrorName());
-
-        var memberSymbolInfo = _compilation.GetSymbolInfo(attr.ValidatorNameExpr);
-
-        if (memberSymbolInfo.Symbol is not null) {
-            var symbol = memberSymbolInfo.Symbol;
-
-            // we don't need to check for methods, since those would be rejected by
-            // GetSymbolInfo since the expression technically refers to a method group
-
-            if (symbol is not IPropertySymbol propSymbol)
-                goto COULDNT_FIND_VALIDATOR;
-
-            // we return even if it's invalid because there's no alternative anyway
-            return GetValidatorFromProperty(propSymbol, operandType);
-        } else if (memberSymbolInfo.CandidateReason == CandidateReason.MemberGroup) {
-            ValidatorInfo? validator = null;
-
-            foreach (var symbol in memberSymbolInfo.CandidateSymbols) {
-                // we should only be getting methods here, cf note above
-                if (symbol is not IMethodSymbol methodSymbol)
-                    goto COULDNT_FIND_VALIDATOR;
-
-                if (TryGetValidatorFromMethod(methodSymbol, operandType, out validator))
-                    return validator;
-            }
-
-            // if there's only one candidate symbol, then return the error specific to it
-            if (memberSymbolInfo.CandidateSymbols.Length == 1)
-                return validator!; // nonnull: if there's any candidate, we will always have tried to find a validator
-
-            return new ValidatorInfo.Invalid(
-                Diagnostics.NoValidValidatorMethod,
-                attr.ValidatorNameExpr, operandType.GetErrorName()
-            );
-        }
-
-    COULDNT_FIND_VALIDATOR:
-        return new ValidatorInfo.Invalid(
-            Diagnostics.CouldntFindValidator,
-            attr.ValidatorNameExpr
+            attr.ValidatorNameExpr, operandType.GetErrorName()
         );
     }
 
@@ -266,8 +244,26 @@ public class ValidatorFinder
         return false;
     }
 
+    ValidatorInfo GetValidatorPropertyCore(ValidatePropAttribute attr, ITypeSymbol operandType) {
+        if (operandType is not (INamedTypeSymbol or IArrayTypeSymbol))
+            return new ValidatorInfo.Invalid(Diagnostics.UnvalidatableType, operandType.GetErrorName());
+
+        var memberSymbolInfo = _compilation.GetSymbolInfo(attr.PropertyNameExpr);
+
+        if (memberSymbolInfo.Symbol is not IPropertySymbol propSymbol) {
+            return new ValidatorInfo.Invalid(
+                Diagnostics.CouldntFindValidatorProp,
+                attr.PropertyNameExpr
+            );
+        }
+
+        // we return even if it's invalid because it'll probably have the most useful error message
+        return GetValidatorFromProperty(propSymbol, attr.ExpectedValue, operandType);
+    }
+
     ValidatorInfo GetValidatorFromProperty(
         IPropertySymbol prop,
+        bool expectedValue,
         ITypeSymbol argType
     ) {
         if (prop.Type.SpecialType is not SpecialType.System_Boolean) {
@@ -279,11 +275,28 @@ public class ValidatorFinder
 
         var targetType = prop.ContainingType;
 
-        switch (ClassifyTypeRelation(argType, targetType, SymbolUtils.IsBaseOrInterfaceOf)) {
+        // this functions does two things:
+        //    - it unwraps the types directly, since any combination is
+        //      valid in this case (thanks to ThrowIfNotValid* overloads)
+        //    - it reverses the order of the call to `IsBaseOrInterfaceOf`
+        // the reason why we need a different function for these is that
+        // ClassifyTypeRelation() also tries to match-up array-arg/item-target
+        // situations to enable repeatable options; thus, inverting the order
+        // of the parameters or changing the nullability would mess up that
+        // detection mecanism
+        Func<ITypeSymbol, ITypeSymbol, bool> reverseBaseOf =
+            (argType, targetType) => {
+                targetType = targetType.UnwrapNullable();
+                argType = argType.UnwrapNullable();
+
+                return targetType.IsSelfOrBaseOrInterfaceOf(argType);
+            };
+
+        switch (ClassifyTypeRelation(argType, targetType, reverseBaseOf)) {
             case ArgTypeRelation.DirectlyCompatible:
-                return new ValidatorInfo.Property(prop.Name, MinimalMemberInfo.FromSymbol(prop));
+                return new ValidatorInfo.Property(prop.Name, expectedValue, MinimalMemberInfo.FromSymbol(prop));
             case ArgTypeRelation.ElementWiseOnly:
-                return new ValidatorInfo.Property(prop.Name, MinimalMemberInfo.FromSymbol(prop)) {
+                return new ValidatorInfo.Property(prop.Name, expectedValue, MinimalMemberInfo.FromSymbol(prop)) {
                     IsElementWiseValidator = true
                 };
             default:

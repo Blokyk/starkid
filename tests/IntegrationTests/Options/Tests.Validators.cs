@@ -35,6 +35,15 @@ public static partial class Main {
     [ValidateWith(nameof(NotZero))]
     [Option("repeatable-generic-validator-with-generic-parser-opt")] public static int[] RepeatableGenericValidatorWithGenericParserOption { get; set; }
 #pragma warning restore
+
+    [ValidateProp(nameof(Vehicle.HasWheels))]
+    [Option("validator-prop-opt")] public static Vehicle? ValidatorPropOption { get; set; }
+
+    [ValidateProp(nameof(AsciiString.IsEmpty), false)]
+    [Option("false-validator-prop-opt")] public static AsciiString? FalseValidatorPropOption { get; set; }
+
+    [ValidateProp(nameof(Vehicle.HasWheels))]
+    [Option("validator-inherited-prop-opt")] public static GroundVehicle? ValidatorInheritedPropOption { get; set; }
 }
 
 public partial class Tests {
@@ -79,6 +88,27 @@ public partial class Tests {
                 "--repeatable-generic-validator-with-generic-parser-opt", "-87"
             );
             AssertStateChange(new { RepeatableGenericValidatorWithGenericParserOption = (int[])[56, -87] });
+        }
+
+        [Fact]
+        public void ValidatorPropOption() {
+            TestMainDummy("--validator-prop-opt", "car");
+
+            AssertStateChange(new { ValidatorPropOption = new Car() });
+        }
+
+        [Fact]
+        public void FalseValidatorPropOption() {
+            TestMainDummy("--false-validator-prop-opt", "i_luv_ascii");
+
+            AssertStateChange(new { FalseValidatorPropOption = AsciiString.From("i_luv_ascii") });
+        }
+
+        [Fact]
+        public void ValidatorInheritedPropOption() {
+            TestMainDummy("--validator-inherited-prop-opt", "car");
+
+            AssertStateChange(new { ValidatorInheritedPropOption = new Car() });
         }
     }
 }

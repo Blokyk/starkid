@@ -39,3 +39,23 @@ public sealed record ValidateWithAttribute(
             ? SyntaxUtils.GetHashCode(ValidatorNameExpr)
             : Polyfills.CombineHashCodes(ErrorMessage.GetHashCode(), SyntaxUtils.GetHashCode(ValidatorNameExpr));
 }
+
+public sealed record ValidatePropAttribute(
+    ExpressionSyntax PropertyNameExpr,
+    bool ExpectedValue,
+    string? ErrorMessage
+) {
+    public bool Equals(ValidatePropAttribute? other)
+        => other is not null
+        && ErrorMessage == other.ErrorMessage
+        && ExpectedValue == other.ExpectedValue
+        && PropertyNameExpr.IsEquivalentTo(other.PropertyNameExpr);
+    public override int GetHashCode()
+        => Polyfills.CombineHashCodes(
+            SyntaxUtils.GetHashCode(PropertyNameExpr),
+            Polyfills.CombineHashCodes(
+                ExpectedValue.GetHashCode(),
+                ErrorMessage?.GetHashCode() ?? 0
+            )
+        );
+}

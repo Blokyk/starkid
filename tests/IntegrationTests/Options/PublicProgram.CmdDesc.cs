@@ -105,6 +105,15 @@ internal static partial class StarKidProgram
             RepeatableGenericValidatorWithGenericParserOption = Array.Empty<int>();
             RepeatableGenericValidatorWithGenericParserOptionBuilder = new();
 
+            ValidatorPropOption = default;
+            hasValidatorPropOptionActionBeenTriggered = false;
+
+            FalseValidatorPropOption = default;
+            hasFalseValidatorPropOptionActionBeenTriggered = false;
+
+            ValidatorInheritedPropOption = default;
+            hasValidatorInheritedPropOptionActionBeenTriggered = false;
+
             ValidatorWithMessageOption = default;
             hasValidatorWithMessageOptionActionBeenTriggered = false;
 

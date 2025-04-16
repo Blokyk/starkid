@@ -33,7 +33,7 @@ public static class Lotus
     public static int SetupNewProject(
         string projectName,
         float f = 0.1f,
-        [ValidateWith(nameof(FileInfo.Exists))] FileInfo? outputDir = null,
+        [ValidateProp(nameof(FileInfo.Exists))] FileInfo? outputDir = null,
         [Option("framework")] string framework = "latest"
     ) {
         Console.WriteLine("Verbose: " + canBeVerbose);

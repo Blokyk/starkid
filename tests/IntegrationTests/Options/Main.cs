@@ -37,6 +37,9 @@ public static partial class Main {
             GenericValidatorWithGenericParserOption,
             RepeatableGenericValidatorOption,
             RepeatableGenericValidatorWithGenericParserOption,
+            ValidatorPropOption,
+            FalseValidatorPropOption,
+            ValidatorInheritedPropOption,
 
             ValidatorWithMessageOption,
 

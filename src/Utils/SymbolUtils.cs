@@ -24,6 +24,15 @@ internal static class SymbolUtils
     public static bool IsNullableValue(ITypeSymbol type)
         => type is INamedTypeSymbol { ConstructedFrom.SpecialType: SpecialType.System_Nullable_T };
 
+    // cf comment on IsNullableValue
+    public static ITypeSymbol UnwrapNullable(this ITypeSymbol type)
+        => type is INamedTypeSymbol {
+            ConstructedFrom.SpecialType: SpecialType.System_Nullable_T,
+            TypeArguments: [ var inner ]
+        }
+        ? inner
+        : type; // type.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+
     public static bool IsNullable(ITypeSymbol type)
         => type.IsReferenceType
         ?  type.NullableAnnotation == NullableAnnotation.Annotated
@@ -112,7 +121,8 @@ internal static class SymbolUtils
                 return Equals(@base, derived)
                     || @base.IsInterfaceOn(derived);
             case TypeKind.Class:
-                return @base.IsBaseOrInterfaceOf(derived);
+                return @base.Equals(derived)
+                    || @base.IsBaseOrInterfaceOf(derived);
             default:
                 return false;
         }

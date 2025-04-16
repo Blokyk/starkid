@@ -246,13 +246,18 @@ internal sealed class GroupBuilder
         if (!TryGetParser(attrInfo.ParseWith, type, symbol, isOption: true, out var parser))
             return false;
 
-        if (!TryGetValidators(attrInfo.ValidateWithList.Array, type, symbol, out var validators))
+        if (!TryGetMethodValidators(attrInfo.ValidateWithList.Array, type, symbol, out var methodValidators))
+            return false;
+
+        if (!TryGetPropertyValidators(attrInfo.ValidatePropList.Array, type, symbol, out var propValidators))
             return false;
 
         var typeMinInfo = MinimalTypeInfo.FromSymbol(type);
 
         var defaultValStr = SymbolUtils.GetDefaultValue(symbol);
         var docInfo = SymbolUtils.GetDocInfo(symbol);
+
+        var allValidators = methodValidators.AddRange(propValidators);
 
         // if it's a flag
         if (typeMinInfo.SpecialType == SpecialType.System_Boolean) {
@@ -264,7 +269,7 @@ internal sealed class GroupBuilder
                 backingSymbol,
                 defaultValStr
             ) {
-                Validators = validators.ToValueArray(),
+                Validators = allValidators.ToValueArray(),
                 Description = docInfo?.Summary
             };
 
@@ -280,7 +285,7 @@ internal sealed class GroupBuilder
             backingSymbol,
             defaultValStr
         ) {
-            Validators = validators.ToValueArray(),
+            Validators = allValidators.ToValueArray(),
             Description = docInfo?.Summary,
             CustomArgName = argName
         };
@@ -301,18 +306,23 @@ internal sealed class GroupBuilder
         if (!TryGetParser(attrList.ParseWith, parserTargetType, param, isOption: false, out var parser))
             return false;
 
-        if (!TryGetValidators(attrList.ValidateWithList.Array, param.Type, param, out var validators))
+        if (!TryGetMethodValidators(attrList.ValidateWithList.Array, param.Type, param, out var methodValidators))
+            return false;
+
+        if (!TryGetPropertyValidators(attrList.ValidatePropList.Array, param.Type, param, out var propValidators))
             return false;
 
         var paramMinInfo = MinimalParameterInfo.FromSymbol(param);
         var defaultVal = SymbolUtils.GetDefaultValue(param);
+
+        var allValidators = methodValidators.AddRange(propValidators);
 
         arg = new Argument(
             parser,
             paramMinInfo,
             defaultVal
         ) {
-            Validators = validators.ToValueArray(),
+            Validators = allValidators.ToValueArray(),
         };
 
         return true;
@@ -360,13 +370,40 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool TryGetValidators(
+    private bool TryGetMethodValidators(
         ImmutableArray<ValidateWithAttribute> attrs,
         ITypeSymbol type,
         ISymbol _,
         out ImmutableArray<ValidatorInfo> validators
     ) {
-        validators = ImmutableArray<ValidatorInfo>.Empty;
+        validators = [];
+
+        if (attrs is [])
+            return true;
+
+        var builder = ImmutableArray.CreateBuilder<ValidatorInfo>(attrs.Length);
+
+        for (int i = 0; i < attrs.Length; i++) {
+            if (!_validatorFinder.TryGetValidator(attrs[i], type, out var validator))
+                return false;
+            builder.Add(validator);
+        }
+
+        validators = builder.MoveToImmutable();
+        return true;
+    }
+
+    private bool TryGetPropertyValidators(
+        ImmutableArray<ValidatePropAttribute> attrs,
+        ITypeSymbol type,
+        ISymbol _,
+        out ImmutableArray<ValidatorInfo> validators
+    ) {
+        validators = [];
+
+        if (attrs.IsDefaultOrEmpty)
+            return true;
+
         var builder = ImmutableArray.CreateBuilder<ValidatorInfo>(attrs.Length);
 
         for (int i = 0; i < attrs.Length; i++) {

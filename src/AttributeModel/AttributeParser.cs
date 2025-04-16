@@ -113,6 +113,39 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
+    public bool TryParseValidatePropAttrib(AttributeData attr, [NotNullWhen(true)] out ValidatePropAttribute? ValidatePropAttr) {
+        ValidatePropAttr = null;
+
+        var attrSyntax = attr.ApplicationSyntaxReference?.GetSyntax();
+        if (attrSyntax is not AttributeSyntax { ArgumentList.Arguments: { Count: 1 or 2 } argList })
+            return false;
+
+        if (!TryGetNameOfArg(argList[0].Expression, out var propertyName)) {
+            addDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.ValidatePropMustBeNameOfExpr,
+                    SyntaxUtils.GetApplicationLocation(attr),
+                    argList[0].Expression
+                )
+            );
+
+            return false;
+        }
+
+        var expectedValue = true;
+        if (argList.Count == 2) {
+            if (!TryGetCtorArg<bool>(attr, 1, SpecialType.System_Boolean, out expectedValue))
+                return false;
+        }
+
+        if (!TryGetProp<string?>(attr, nameof(ValidatePropAttribute.ErrorMessage), SpecialType.System_String, null, out var msg))
+            return false;
+
+        ValidatePropAttr = new ValidatePropAttribute(propertyName, expectedValue, msg);
+
+        return true;
+    }
+
     private bool TryGetNameOfArg(ExpressionSyntax expr, [NotNullWhen(true)] out ExpressionSyntax? nameExpr) {
         nameExpr = null;
 

@@ -67,7 +67,7 @@ internal static partial class Utils {
             if (isAnonymous(propType) && isAnonymous(valType))
                 return prop.GetValue(target)?.With(val) ?? val;
 
-            if (propType == valType)
+            if (valType.IsAssignableTo(propType))
                 return val;
 
             throw new InvalidOperationException($"Type mismatch for property {prop.Name}: trying to assign value of type {valType} to {propType}.");

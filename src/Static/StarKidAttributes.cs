@@ -104,4 +104,22 @@ namespace StarKid
         public ValidateWithAttribute(string nameofValidatorMethod)
             => ValidatorName = nameofValidatorMethod;
     }
+
+    /// <summary>
+    /// Indicates that a certain property should be <see langword="true"/> to validate the operand.
+    /// </summary>
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = true)]
+    public sealed class ValidatePropAttribute : System.Attribute
+    {
+        public string PropertyName { get; }
+        public bool ExpectedValue { get; }
+        public string? ErrorMessage { get; set; }
+
+        public ValidatePropAttribute(string nameofValidatorProp)
+            => PropertyName = nameofValidatorProp;
+
+        public ValidatePropAttribute(string nameofValidatorProp, bool expected)
+            : this(nameofValidatorProp)
+            => ExpectedValue = expected;
+    }
 }

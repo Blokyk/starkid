@@ -54,5 +54,50 @@ public partial class ErrorTests
                 stderr
             );
         }
+
+        [Fact]
+        public void ValidatorProperty() {
+            Assert.Equal(1,
+                StarKidProgram.TestMain([
+                    "--validator-prop-opt", "boat",
+                "dummy"], out var stdout, out var stderr)
+            );
+            Assert.Empty(stdout);
+            Assert.StartsWith(
+                "Expression 'boat' is not a valid value for option '--validator-prop-opt': " +
+                "'validator-prop-opt.HasWheels is true' was false", // fixme: ewwwwwwwwwwwwwwww
+                stderr
+            );
+        }
+
+        [Fact]
+        public void FalseValidatorProperty() {
+            Assert.Equal(1,
+                StarKidProgram.TestMain([
+                    "--false-validator-prop-opt", "",
+                "dummy"], out var stdout, out var stderr)
+            );
+            Assert.Empty(stdout);
+            Assert.StartsWith(
+                "Expression '' is not a valid value for option '--false-validator-prop-opt': " +
+                "'false-validator-prop-opt.IsEmpty is false' was false", // fixme: ewwwwwwwwwwwwwwww
+                stderr
+            );
+        }
+
+        [Fact]
+        public void ValidatorInheritedProperty() {
+            Assert.Equal(1,
+                StarKidProgram.TestMain([
+                    "--validator-inherited-prop-opt", "sleigh",
+                "dummy"], out var stdout, out var stderr)
+            );
+            Assert.Empty(stdout);
+            Assert.StartsWith(
+                "Expression 'sleigh' is not a valid value for option '--validator-inherited-prop-opt': " +
+                "'validator-inherited-prop-opt.HasWheels is true' was false", // fixme: ewwwwwwwwwwwwwwww
+                stderr
+            );
+        }
     }
 }
