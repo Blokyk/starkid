@@ -10,7 +10,7 @@ namespace StarKid.Generator.Utils;
 /// </summary>
 public readonly record struct ImmutableValueArray<T>(ImmutableArray<T> Array, IEqualityComparer<T> Comparer) : IEnumerable<T>
 {
-    public static readonly ImmutableValueArray<T> Empty = new(ImmutableArray<T>.Empty);
+    public static readonly ImmutableValueArray<T> Empty = new([]);
 
     private readonly bool _useDefaultComparer = false;
 
@@ -56,10 +56,13 @@ public readonly record struct ImmutableValueArray<T>(ImmutableArray<T> Array, IE
 
 public static partial class CollectionExtensions
 {
-    public static ImmutableValueArray<T> ToImmutableValueArray<T>(this IEnumerable<T> source, IEqualityComparer<T> comparer) => new(source.ToImmutableArray(), comparer);
-    public static ImmutableValueArray<T> ToImmutableValueArray<T>(this IEnumerable<T> source) => new(source.ToImmutableArray());
+    public static ImmutableValueArray<T> ToImmutableValueArray<T>(this IEnumerable<T> source, IEqualityComparer<T> comparer) => new([..source], comparer);
+    public static ImmutableValueArray<T> ToImmutableValueArray<T>(this IEnumerable<T> source) => new([..source]);
     public static ImmutableValueArray<T> ToImmutableValueArray<T>(this ImmutableArray<T>.Builder builder, IEqualityComparer<T> comparer) => new(builder.ToImmutable(), comparer);
     public static ImmutableValueArray<T> ToImmutableValueArray<T>(this ImmutableArray<T>.Builder builder) => new(builder.ToImmutable());
+
+    public static ImmutableValueArray<T> DrainToImmutableValueArray<T>(this ImmutableArray<T>.Builder builder) => new(builder.DrainToImmutable());
+    public static ImmutableValueArray<T> MoveToImmutableValueArray<T>(this ImmutableArray<T>.Builder builder) => new(builder.MoveToImmutable());
 
     public static ImmutableValueArray<T> WithSequenceEquality<T>(this ImmutableArray<T> source) => new(source);
     public static ImmutableValueArray<T> ToValueArray<T>(this ImmutableArray<T> source) => new(source);

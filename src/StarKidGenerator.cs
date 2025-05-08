@@ -77,7 +77,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
                     _cmdGroupAttributeName,
                     (node, _) => node is ClassDeclarationSyntax,
                     (ctx, _) =>
-                        new DataAndDiagnostics<Group?>(addDiag =>
+                        DataOrDiagnostics.From(addDiag =>
                             CreateGroup((INamedTypeSymbol)ctx.TargetSymbol, ctx.SemanticModel, addDiag)
                         )
                 )
@@ -85,24 +85,18 @@ public partial class StarKidGenerator : IIncrementalGenerator
 
         var groupTreeSource
             = groupsSource
-                .Data()
                 .Collect()
                 .Select(
-                    (groups, _) =>
-                        new DataAndDiagnostics<Group?>(
-                            addDiag => BindGroups(groups, addDiag)
-                        )
+                    (groups, addDiag, _) =>
+                        BindGroups(groups, addDiag)
                 )
                 .WithTrackingName("starkid_binding");
 
         var boundInvokables
             = groupTreeSource
-                .Data()
                 .SelectMany(
-                    (rootGroup, _)
-                        => rootGroup is null
-                            ? []
-                            : InvokableUtils.TraverseInvokableTree(rootGroup)
+                    (rootGroup, _, _)
+                        => InvokableUtils.TraverseInvokableTree(rootGroup)
                 );
 
         var csprojOptionsSource
@@ -112,7 +106,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
             = csprojOptionsSource.Combine(langVersionSource)
                 .Select(
                     static (combined, _) =>
-                        new DataAndDiagnostics<StarKidConfig>(
+                        DataOrDiagnostics.From(
                             addDiag => ParseConfig(
                                 combined.Left, // analyzer config
                                 combined.Right, // lang version
@@ -123,9 +117,9 @@ public partial class StarKidGenerator : IIncrementalGenerator
 
         // generates the parser + command infos (`CmdDesc` classes)
         context.RegisterImplementationSourceOutput(
-            groupTreeSource.Data()
+            groupTreeSource
                 .Combine(usingsSource)
-                .Combine(starkidConfigSource.Data()),
+                .Combine(starkidConfigSource),
             static (spc, groupTreeAndUsingsAndConfig) => {
                 var ((rootGroup, usings), config) = groupTreeAndUsingsAndConfig;
 
@@ -140,7 +134,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
         // we need them to be bounded so that we now the full ID
         // of each invokable, and thus its CmdDesc class's name
         context.RegisterImplementationSourceOutput(
-            boundInvokables.Combine(starkidConfigSource.Data()),
+            boundInvokables.Combine(starkidConfigSource),
             static (spc, invokableAndConfig) =>
                 GenerateHelpText(
                     invokableAndConfig.Left,  // invokable (group or cmd)
@@ -149,7 +143,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 )
         );
 
-        context.RegisterDiagnosticSource(groupsSource);
+        // context.RegisterDiagnosticSource(usingsSource);
         context.RegisterDiagnosticSource(groupTreeSource);
         context.RegisterDiagnosticSource(starkidConfigSource);
     }
