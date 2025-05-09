@@ -1,8 +1,8 @@
 namespace StarKid.Generator.AttributeModel;
 
-internal class AttributeParser(Action<Diagnostic> addDiagnostic)
+internal class AttributeParser
 {
-    public bool TryParseCmdAttrib(AttributeData attr, [NotNullWhen(true)] out CommandAttribute? cmdAttr) {
+    public static bool TryParseCmdAttrib(AttributeData attr, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out CommandAttribute? cmdAttr) {
         cmdAttr = null;
 
         // cmdName
@@ -18,7 +18,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
-    public bool TryParseGroupAttrib(AttributeData attr, [NotNullWhen(true)] out CommandGroupAttribute? groupAttr) {
+    public static bool TryParseGroupAttrib(AttributeData attr, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out CommandGroupAttribute? groupAttr) {
         groupAttr = null;
 
         // groupName
@@ -38,7 +38,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
-    public bool TryParseOptAttrib(AttributeData attr, [NotNullWhen(true)] out OptionAttribute? optAttr) {
+    public static bool TryParseOptAttrib(AttributeData attr, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out OptionAttribute? optAttr) {
         optAttr = null;
 
         char shortName = '\0';
@@ -62,7 +62,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
-    public bool TryParseParseAttrib(AttributeData attr, [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
+    public static bool TryParseParseAttrib(AttributeData attr, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out ParseWithAttribute? parseWithAttr) {
         parseWithAttr = null;
 
         var attrSyntax = attr.ApplicationSyntaxReference?.GetSyntax();
@@ -86,7 +86,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
-    public bool TryParseValidateAttrib(AttributeData attr, [NotNullWhen(true)] out ValidateWithAttribute? ValidateWithAttr) {
+    public static bool TryParseValidateAttrib(AttributeData attr, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out ValidateWithAttribute? ValidateWithAttr) {
         ValidateWithAttr = null;
 
         var attrSyntax = attr.ApplicationSyntaxReference?.GetSyntax();
@@ -113,7 +113,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
-    public bool TryParseValidatePropAttrib(AttributeData attr, [NotNullWhen(true)] out ValidatePropAttribute? ValidatePropAttr) {
+    public static bool TryParseValidatePropAttrib(AttributeData attr, Action<Diagnostic> addDiagnostic, [NotNullWhen(true)] out ValidatePropAttribute? ValidatePropAttr) {
         ValidatePropAttr = null;
 
         var attrSyntax = attr.ApplicationSyntaxReference?.GetSyntax();
@@ -146,7 +146,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
-    private bool TryGetNameOfArg(ExpressionSyntax expr, [NotNullWhen(true)] out ExpressionSyntax? nameExpr) {
+    private static bool TryGetNameOfArg(ExpressionSyntax expr, [NotNullWhen(true)] out ExpressionSyntax? nameExpr) {
         nameExpr = null;
 
         if (expr is not InvocationExpressionSyntax { ArgumentList.Arguments: [ var arg ] } methodCallSyntax)
@@ -167,7 +167,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return nameExpr is not null;
     }
 
-    public bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, SpecialType type, [NotNullWhen(true)] out T? val) {
+    public static bool TryGetCtorArg<T>(AttributeData attrib, int ctorIdx, SpecialType type, [NotNullWhen(true)] out T? val) {
         val = default;
 
         var ctorArgs = attrib.ConstructorArguments;
@@ -184,7 +184,7 @@ internal class AttributeParser(Action<Diagnostic> addDiagnostic)
         return true;
     }
 
-    public bool TryGetProp<T>(AttributeData attrib, string propName, SpecialType type, T defaultVal, out T val) {
+    public static bool TryGetProp<T>(AttributeData attrib, string propName, SpecialType type, T defaultVal, out T val) {
         val = defaultVal;
 
         var namedArgs = attrib.NamedArguments;

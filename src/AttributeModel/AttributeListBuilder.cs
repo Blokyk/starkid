@@ -5,7 +5,6 @@ namespace StarKid.Generator.AttributeModel;
 internal class AttributeListBuilder(Action<Diagnostic> addDiagnostic)
 {
     private readonly Action<Diagnostic> _addDiagnostic = addDiagnostic;
-    private readonly AttributeParser _parser = new(addDiagnostic);
 
     /// <summary>
     /// Reports diagnostics for invalid member kinds
@@ -112,7 +111,7 @@ internal class AttributeListBuilder(Action<Diagnostic> addDiagnostic)
         foreach (var attr in attrs) {
             switch (attr.AttributeClass?.Name) {
                 case nameof(CommandGroupAttribute):
-                    if (!_parser.TryParseGroupAttrib(attr, out group))
+                    if (!AttributeParser.TryParseGroupAttrib(attr, _addDiagnostic, out group))
                         return false;
 
                     isValid = ValidateName(
@@ -123,7 +122,7 @@ internal class AttributeListBuilder(Action<Diagnostic> addDiagnostic)
 
                     break;
                 case nameof(CommandAttribute):
-                    if (!_parser.TryParseCmdAttrib(attr, out cmd))
+                    if (!AttributeParser.TryParseCmdAttrib(attr, _addDiagnostic, out cmd))
                         return false;
 
                     isValid = ValidateName(
@@ -134,7 +133,7 @@ internal class AttributeListBuilder(Action<Diagnostic> addDiagnostic)
 
                     break;
                 case nameof(OptionAttribute):
-                    if (!_parser.TryParseOptAttrib(attr, out opt))
+                    if (!AttributeParser.TryParseOptAttrib(attr, _addDiagnostic, out opt))
                         return false;
 
                     isValid = ValidateOptionName(
@@ -145,16 +144,16 @@ internal class AttributeListBuilder(Action<Diagnostic> addDiagnostic)
 
                     break;
                 case nameof(ParseWithAttribute):
-                    if (!_parser.TryParseParseAttrib(attr, out parseWith))
+                    if (!AttributeParser.TryParseParseAttrib(attr, _addDiagnostic, out parseWith))
                         return false;
                     break;
                 case nameof(ValidateWithAttribute):
-                    if (!_parser.TryParseValidateAttrib(attr, out var validateWith))
+                    if (!AttributeParser.TryParseValidateAttrib(attr, _addDiagnostic, out var validateWith))
                         return false;
                     validateWithList.Add(validateWith);
                     break;
                 case nameof(ValidatePropAttribute):
-                    if (!_parser.TryParseValidatePropAttrib(attr, out var validateProp))
+                    if (!AttributeParser.TryParseValidatePropAttrib(attr, _addDiagnostic, out var validateProp))
                         return false;
                     validatePropList.Add(validateProp);
                     break;
