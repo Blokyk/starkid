@@ -8,10 +8,7 @@ public record StarKidConfig(
     bool AllowRepeatingOptions,
     NameCasing ArgNameCasing,
     LanguageVersion LanguageVersion
-);
-
-public partial class StarKidGenerator
-{
+) {
     public const string COLUMN_LENGTH_PROP_NAME = "StarKid_Help_MaxCharsPerLine";
     public const string HELP_EXIT_CODE_PROP_NAME = "StarKid_Help_ExitCode";
     public const string REPEATED_OPT_PROP_NAME = "StarKid_AllowRepeatingOptions";
@@ -21,7 +18,7 @@ public partial class StarKidGenerator
     public const bool DEFAULT_REPEATED_OPT = false;
     public const NameCasing DEFAULT_NAMING_CONV = NameCasing.KebabCase;
 
-    static StarKidConfig ParseConfig(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, Action<Diagnostic> addDiagnostic) {
+    public static StarKidConfig Parse(AnalyzerConfigOptions analyzerConfig, LanguageVersion langVersion, Action<Diagnostic> addDiagnostic) {
         int columnLength
             = GetProp(
                 COLUMN_LENGTH_PROP_NAME,

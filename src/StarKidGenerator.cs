@@ -1,14 +1,16 @@
 using System.Diagnostics;
-using StarKid.Generator.AttributeModel;
-using StarKid.Generator.CommandModel;
-using StarKid.Generator.SymbolModel;
 
 namespace StarKid.Generator;
 
 [Generator(LanguageNames.CSharp)]
 public partial class StarKidGenerator : IIncrementalGenerator
 {
-    private static readonly string _cmdGroupAttributeName = "StarKid.CommandGroupAttribute";
+    private const string _cmdGroupAttributeName = "StarKid.CommandGroupAttribute";
+    private const string _cmdAttributeName = "StarKid.CommandAttribute";
+    private const string _optAttributeName = "StarKid.OptionAttribute";
+    private const string _parseAttributeName = "StarKid.ParseWithAttribute";
+    private const string _validateAttributeName = "StarKid.ValidateWithAttribute";
+    private const string _validatePropAttributeName = "StarKid.ValidatePropAttribute";
 
     internal static readonly string _starkidProgramCode;
 
@@ -22,21 +24,6 @@ public partial class StarKidGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         if (Debugger.IsAttached)
             Debugger.Break();
-
-        context.RegisterPostInitializationOutput(
-            static postInitCtx =>
-                postInitCtx.AddSource(
-                    "StarKid_Attributes.g.cs",
-                    SourceText.From(_attributeCode, Encoding.UTF8)
-                )
-        );
-
-        var langVersionSource
-            = context
-                .CompilationProvider
-                .Select(
-                    (comp, _) => (comp as CSharpCompilation)?.LanguageVersion ?? LanguageVersion.Default
-                );
 
         #if DEBUG
             var fawmnWarmup
@@ -53,7 +40,17 @@ public partial class StarKidGenerator : IIncrementalGenerator
             context.RegisterSourceOutput(fawmnWarmup, (_, _) => { });
         #endif
 
+        context.RegisterPostInitializationOutput(
+            static postInitCtx =>
+                postInitCtx.AddSource(
+                    "StarKid_Attributes.g.cs",
+                    SourceText.From(_attributeCode, Encoding.UTF8)
+                )
+        );
+
         var usingsSource = GetUsedNamespacesProvider(context).Collect().WithTrackingName("starkid_usings");
+
+        var starkidConfigSource = GetStarKidConfigProvider(context).WithTrackingName("starkid_config");
 
         // todo: separate this into three pipelines:
         //      - ParseWith resolution with FAWMN (returns a map between symbol name and parser)
@@ -88,53 +85,35 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 .Collect()
                 .Select(
                     (groups, addDiag, _) =>
-                        BindGroups(groups, addDiag)
+                        BindGroupTree(groups, addDiag)
                 )
                 .WithTrackingName("starkid_binding");
-
-        var boundInvokables
-            = groupTreeSource
-                .SelectMany(
-                    (rootGroup, _, _)
-                        => InvokableUtils.TraverseInvokableTree(rootGroup)
-                );
-
-        var csprojOptionsSource
-            = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
-
-        var starkidConfigSource
-            = csprojOptionsSource.Combine(langVersionSource)
-                .Select(
-                    static (combined, _) =>
-                        DataOrDiagnostics.From(
-                            addDiag => ParseConfig(
-                                combined.Left, // analyzer config
-                                combined.Right, // lang version
-                                addDiag
-                            )
-                        )
-                );
 
         // generates the parser + command infos (`CmdDesc` classes)
         context.RegisterImplementationSourceOutput(
             groupTreeSource
                 .Combine(usingsSource)
                 .Combine(starkidConfigSource),
-            static (spc, groupTreeAndUsingsAndConfig) => {
-                var ((rootGroup, usings), config) = groupTreeAndUsingsAndConfig;
+            static (spc, groupTreeAndUsingsAndConfig)
+                => GenerateParserAndHandlers(
+                    groupTreeAndUsingsAndConfig.Left.Left,  // root group
+                    groupTreeAndUsingsAndConfig.Left.Right, // usings
+                    groupTreeAndUsingsAndConfig.Right,      // config
+                    spc
+                ));
 
-                if (rootGroup is null)
-                    return;
-
-                GenerateParserAndHandlers(rootGroup, usings, config, spc);
-            }
-        );
+        var allInvokables
+            = groupsSource
+                .SelectMany(
+                    (rootGroup, _, _)
+                        => InvokableUtils.TraverseInvokableTree(rootGroup)
+                ).WithTrackingName("starkid_traverse_invokable");
 
         // generates help text from (bound) invokables
         // we need them to be bounded so that we now the full ID
         // of each invokable, and thus its CmdDesc class's name
         context.RegisterImplementationSourceOutput(
-            boundInvokables.Combine(starkidConfigSource),
+            allInvokables.Combine(starkidConfigSource),
             static (spc, invokableAndConfig) =>
                 GenerateHelpText(
                     invokableAndConfig.Left,  // invokable (group or cmd)
@@ -146,162 +125,6 @@ public partial class StarKidGenerator : IIncrementalGenerator
         // context.RegisterDiagnosticSource(usingsSource);
         context.RegisterDiagnosticSource(groupTreeSource);
         context.RegisterDiagnosticSource(starkidConfigSource);
-    }
-
-    internal static Group? CreateGroup(INamedTypeSymbol classSymbol, SemanticModel model, Action<Diagnostic> addDiagnostic) {
-        var attrListBuilder = new AttributeListBuilder(addDiagnostic);
-
-        static Group? bail() {
-            SymbolInfoCache.FullReset();
-            return null;
-        }
-
-        if (!GroupBuilder.TryCreateGroupFrom(classSymbol, attrListBuilder, model.Compilation, addDiagnostic, out var group))
-            return bail();
-
-        return group;
-    }
-
-    internal static Group? BindGroups(IEnumerable<Group?> groups, Action<Diagnostic> addDiagnostic) {
-        var classNames = new Dictionary<string, Group>(7); // ¯\_(ツ)_/¯
-
-        // collect the names of the each group's class
-        foreach (var group in groups) {
-            if (group is null)
-                return null;
-
-            // if we have duplicate class names, it means an attribute
-            // was repeated multiple times on the same class. That is pretty
-            // likely to happen in user code, since we should assume it is
-            // invalid most of the time; therefore might as well take the small
-            //perf hit of an additional lookup (since we don't have Dictionary<T,U>.TryAdd
-            // on ns2.0), and just ignore it, since we'd still like to bind as many
-            // group as possible in any case
-            if (classNames.ContainsKey(group.FullClassName))
-                continue;
-
-            classNames.Add(group.FullClassName, group);
-        }
-
-        // if there wasn't any actual groups
-        if (classNames.Count == 0)
-            return null;
-
-        Group? rootGroup = null;
-
-        // for each group, find the group in which it was
-        // contained and then add it as a subgroup to that parent
-
-        foreach (var group in classNames.Values) {
-            // a group is the root group if:
-            //      (1) It is not a nested class
-            //              => group.ParentClassFullName is null
-            //   OR
-            //      (2) Its parent class isn't marked with group
-            //              => group.ParentClassFullName is not in classNames
-
-            if (group.ParentClassFullName is null || !classNames.ContainsKey(group.ParentClassFullName)) {
-                if (rootGroup is null) {
-                    rootGroup = group;
-                    continue;
-                }
-
-                // if there already was a root group, then
-                addDiagnostic(
-                    Diagnostic.Create(
-                        Diagnostics.TooManyRootGroups,
-                        Location.None,
-                        rootGroup.FullClassName, group.FullClassName
-                    )
-                );
-
-                return null;
-            }
-
-            classNames[group.ParentClassFullName].AddSubgroup(group);
-        }
-
-        Debug.Assert(rootGroup is not null);
-
-        if (!ValidateOptionTree(rootGroup!, addDiagnostic))
-            return null;
-
-        return rootGroup;
-    }
-
-    // todo: make those local functions static
-    internal static bool ValidateOptionTree(Group rootGroup, Action<Diagnostic> addDiagnostic) {
-        return validate(rootGroup, [], []);
-
-        bool validate(Group group, HashSet<string> globalNames, HashSet<char> globalAliases) {
-            var localGlobalNames = new HashSet<string>(globalNames);
-            var localGlobalAliases = new HashSet<char>(globalAliases);
-
-            if (!validateCore(group.OptionsAndFlags, localGlobalNames, localGlobalAliases))
-                return false;
-
-            foreach (var sub in group.SubGroups) {
-                // yes, we have to create new ones each time,
-                // cause otherwise the .Add()s would carry
-                // over between subs
-                if (!validate(sub, localGlobalNames, localGlobalAliases))
-                    return false;
-            }
-
-            foreach (var cmd in group.Commands) {
-                // commands shouldn't have any global options, so no need
-                // to allocate new registries
-                if (!validateCore(cmd.OptionsAndFlags, localGlobalNames, localGlobalAliases))
-                    return false;
-            }
-
-            return true;
-        }
-
-        bool validateCore(IEnumerable<Option> opts, HashSet<string> globalNames, HashSet<char> globalAliases) {
-            var localNames = new HashSet<string>();
-            var localAliases = new HashSet<char>();
-
-            foreach (var option in opts) {
-                // register it locally and check if it's an existing global option
-                // if it's new global option, register it in globalNames
-                var longNameExists
-                    =  !localNames.Add(option.Name)
-                    || (option.IsGlobal ? !globalNames.Add(option.Name) : globalNames.Contains(option.Name));
-
-                if (longNameExists) {
-                    addDiagnostic(
-                        Diagnostic.Create(
-                            Diagnostics.OptNameAlreadyExists,
-                            option.GetLocation(),
-                            option.Name
-                        )
-                    );
-
-                    return false;
-                }
-
-                if (option.Alias != default(char)) {
-                    var aliasExists
-                        =  !localAliases.Add(option.Alias)
-                        || (option.IsGlobal ? !globalAliases.Add(option.Alias) : globalAliases.Contains(option.Alias));
-
-                    if (aliasExists) {
-                        addDiagnostic(
-                            Diagnostic.Create(
-                                Diagnostics.OptAliasAlreadyExists,
-                                option.GetLocation(),
-                                option.Alias
-                            )
-                        );
-
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
     }
 
     /// <summary>
@@ -329,5 +152,30 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 .SelectMany((arr, _) => arr);
 
         return groupUsings.Concat(cmdUsings);
+    }
+
+    private IncrementalValueProvider<DataOrDiagnostics<StarKidConfig>> GetStarKidConfigProvider(IncrementalGeneratorInitializationContext context) {
+        var langVersionSource
+            = context
+                .CompilationProvider
+                .Select(
+                    (comp, _) => (comp as CSharpCompilation)?.LanguageVersion ?? LanguageVersion.Default
+                );
+
+        var csprojOptionsSource
+            = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
+
+        return
+            csprojOptionsSource.Combine(langVersionSource)
+                .Select(
+                    static (combined, _) =>
+                        DataOrDiagnostics.From(
+                            addDiag => StarKidConfig.Parse(
+                                combined.Left, // analyzer config
+                                combined.Right, // lang version
+                                addDiag
+                            )
+                        )
+                );
     }
 }

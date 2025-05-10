@@ -23,7 +23,7 @@ internal static class InvokableUtils
                 yield return cmd;
 
             foreach (var directChild in group.SubGroups) {
-                // TraverseInvokableTree will also return the root, no need to yield it here
+                // TraverseInvokableTree will also return directChild, no need to yield it here
                 foreach (var child in TraverseInvokableTree(directChild)) {
                     yield return child;
                 }
