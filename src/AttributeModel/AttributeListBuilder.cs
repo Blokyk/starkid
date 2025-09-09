@@ -2,23 +2,10 @@ using System.Diagnostics;
 
 namespace StarKid.Generator.AttributeModel;
 
-internal class AttributeListBuilder
+internal class AttributeListBuilder(Action<Diagnostic> addDiagnostic)
 {
-    private readonly Action<Diagnostic> _addDiagnostic;
-    private readonly Cache<ISymbol, (bool, AttributeListInfo)> _attrListCache;
-    private readonly AttributeParser _parser;
-
-    public AttributeListBuilder(Action<Diagnostic> addDiagnostic) {
-        _addDiagnostic = addDiagnostic;
-
-        _attrListCache
-            = new(
-                SymbolEqualityComparer.Default,
-                TryGetAttributeListCore
-            );
-
-        _parser = new(addDiagnostic);
-    }
+    private readonly Action<Diagnostic> _addDiagnostic = addDiagnostic;
+    private readonly AttributeParser _parser = new(addDiagnostic);
 
     /// <summary>
     /// Reports diagnostics for invalid member kinds
@@ -100,15 +87,17 @@ internal class AttributeListBuilder
     }
 
     public bool TryGetAttributeList(ISymbol symbol, out AttributeListInfo attrList) {
-        (var isValid, attrList) = _attrListCache.GetValue(symbol);
+        var isValid = TryGetAttributeListCore(symbol, out attrList);
 
-        ValidateAttributeListAndGetKind(attrList, symbol);
+        if (!isValid)
+            return false;
 
-        return isValid;
+        _ = ValidateAttributeListAndGetKind(attrList, symbol);
+        return true;
     }
 
-    (bool, AttributeListInfo) TryGetAttributeListCore(ISymbol symbol) {
-        var attribList = default(AttributeListInfo);
+    bool TryGetAttributeListCore(ISymbol symbol, out AttributeListInfo attrList) {
+        attrList = default(AttributeListInfo);
         var attrs = symbol.GetAttributes();
 
         CommandGroupAttribute? group = null;
@@ -120,13 +109,11 @@ internal class AttributeListBuilder
 
         bool isValid = true;
 
-        (bool, AttributeListInfo) error() => (false, attribList);
-
         foreach (var attr in attrs) {
             switch (attr.AttributeClass?.Name) {
-                case "CommandGroupAttribute":
+                case nameof(CommandGroupAttribute):
                     if (!_parser.TryParseGroupAttrib(attr, out group))
-                        return error();
+                        return false;
 
                     isValid = ValidateName(
                         group.GroupName,
@@ -135,9 +122,9 @@ internal class AttributeListBuilder
                     );
 
                     break;
-                case "CommandAttribute":
+                case nameof(CommandAttribute):
                     if (!_parser.TryParseCmdAttrib(attr, out cmd))
-                        return error();
+                        return false;
 
                     isValid = ValidateName(
                         cmd.CommandName,
@@ -146,9 +133,9 @@ internal class AttributeListBuilder
                     );
 
                     break;
-                case "OptionAttribute":
+                case nameof(OptionAttribute):
                     if (!_parser.TryParseOptAttrib(attr, out opt))
-                        return error();
+                        return false;
 
                     isValid = ValidateOptionName(
                         opt.LongName,
@@ -157,18 +144,18 @@ internal class AttributeListBuilder
                     );
 
                     break;
-                case "ParseWithAttribute":
+                case nameof(ParseWithAttribute):
                     if (!_parser.TryParseParseAttrib(attr, out parseWith))
-                        return error();
+                        return false;
                     break;
-                case "ValidateWithAttribute":
+                case nameof(ValidateWithAttribute):
                     if (!_parser.TryParseValidateAttrib(attr, out var validateWith))
-                        return error();
+                        return false;
                     validateWithList.Add(validateWith);
                     break;
-                case "ValidatePropAttribute":
+                case nameof(ValidatePropAttribute):
                     if (!_parser.TryParseValidatePropAttrib(attr, out var validateProp))
-                        return error();
+                        return false;
                     validatePropList.Add(validateProp);
                     break;
                 default:
@@ -176,7 +163,7 @@ internal class AttributeListBuilder
             }
         }
 
-        attribList = new(
+        attrList = new(
             group,
             cmd,
             opt,
@@ -186,7 +173,7 @@ internal class AttributeListBuilder
             symbol is IParameterSymbol
         );
 
-        return (isValid, attribList);
+        return isValid;
     }
 
     public bool ValidateName(string name, Location location, bool isForCommands) {

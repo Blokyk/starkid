@@ -1,0 +1,6 @@
+cmd-desc:
+  - help-text
+  - opt-actions
+  - opt-switch + dispose
+  - cmd-action
+  - subcmd-switch

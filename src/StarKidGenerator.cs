@@ -8,7 +8,12 @@ namespace StarKid.Generator;
 [Generator(LanguageNames.CSharp)]
 public partial class StarKidGenerator : IIncrementalGenerator
 {
-    private static readonly string _cmdGroupAttributeName = "StarKid.CommandGroupAttribute";
+    private static readonly string _groupAttributeName = "StarKid.CommandGroupAttribute";
+    private static readonly string _cmdAttributeName = "StarKid.CommandAttribute";
+    private static readonly string _optAttributeName = "StarKid.OptionAttribute";
+    private static readonly string _parseWithAttributeName = "StarKid.ParseWithAttribute";
+    private static readonly string _validateWithAttributeName = "StarKid.ValidateWithAttribute";
+    private static readonly string _validatePropAttributeName = "StarKid.ValidatePropAttribute";
 
     internal static readonly string _starkidProgramCode;
 
@@ -43,7 +48,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 = context
                     .SyntaxProvider
                     .ForAttributeWithMetadataName(
-                        _cmdGroupAttributeName,
+                        _groupAttributeName,
                         (node, _) => node is ClassDeclarationSyntax,
                         (_, _) => 0
                     )
@@ -55,103 +60,107 @@ public partial class StarKidGenerator : IIncrementalGenerator
 
         var usingsSource = GetUsedNamespacesProvider(context).Collect().WithTrackingName("starkid_usings");
 
-        // todo: separate this into three pipelines:
-        //      - ParseWith resolution with FAWMN (returns a map between symbol name and parser)
-        //      - same with ValidateWith
-        //      - Group building, like before
-        // We can then bind parsers back to their original symbols by going through the whole
-        // command tree (maybe have an variable for like "needs a parser/validator" so that
-        // we don't lookup *every single symbol name*)
-        //
-        // do we also want to separate auto-parsers? the problem is that we need to do the group
-        // building first, but we could the ParseWith
-        // part after group_building, and have group_building output a list of stuff that needs
-        // an auto-parser
-        //
-        // todo: we could also make another pipeline to get the xml docs and use a similar strategy to merge back
-        // we'd have to do that for every symbol with either [Command], [CommandGroup], or [Option]
-        var groupsSource
+        GetParsedAttributeProviders(context,
+            out var groupAttrProvider,
+            out var cmdAttrProvider,
+            out var optAttrProvider,
+            out var parseWithAttrProvider,
+            out var validateWithAttrProvider,
+            out var validatePropAttrProvider
+        );
+    }
+
+    static void GetParsedAttributeProviders(
+        IncrementalGeneratorInitializationContext context,
+        out IncrementalValuesProvider<DataOrDiagnostics<(GeneratorAttributeSyntaxContext, CommandGroupAttribute)>> groupAttrProvider,
+        out IncrementalValuesProvider<DataOrDiagnostics<(GeneratorAttributeSyntaxContext, CommandAttribute)>> cmdAttrProvider,
+        out IncrementalValuesProvider<DataOrDiagnostics<(GeneratorAttributeSyntaxContext, OptionAttribute)>> optAttrProvider,
+        out IncrementalValuesProvider<DataOrDiagnostics<(GeneratorAttributeSyntaxContext, ParseWithAttribute)>> parseWithAttrProvider,
+        out IncrementalValuesProvider<DataOrDiagnostics<(GeneratorAttributeSyntaxContext, ValidateWithAttribute)>> validateWithAttrProvider,
+        out IncrementalValuesProvider<DataOrDiagnostics<(GeneratorAttributeSyntaxContext, ValidatePropAttribute)>> validatePropAttrProvider
+    ) {
+        var isClass = static (SyntaxNode node, CancellationToken _)
+            => node is ClassDeclarationSyntax;
+
+        var isMethod = static (SyntaxNode node, CancellationToken _)
+            => node is MethodDeclarationSyntax;
+
+        var isMemberOrParam = static (SyntaxNode node, CancellationToken _)
+            => node is PropertyDeclarationSyntax
+                    or FieldDeclarationSyntax
+                    or ParameterSyntax;
+
+        groupAttrProvider
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    _cmdGroupAttributeName,
-                    (node, _) => node is ClassDeclarationSyntax,
-                    (ctx, _) =>
-                        new DataAndDiagnostics<Group?>(addDiag =>
-                            CreateGroup((INamedTypeSymbol)ctx.TargetSymbol, ctx.SemanticModel, addDiag)
-                        )
-                )
-                .WithTrackingName("starkid_group_building");
-
-        var groupTreeSource
-            = groupsSource
-                .Data()
-                .Collect()
-                .Select(
-                    (groups, _) =>
-                        new DataAndDiagnostics<Group?>(
-                            addDiag => BindGroups(groups, addDiag)
-                        )
-                )
-                .WithTrackingName("starkid_binding");
-
-        var boundInvokables
-            = groupTreeSource
-                .Data()
-                .SelectMany(
-                    (rootGroup, _)
-                        => rootGroup is null
-                            ? []
-                            : InvokableUtils.TraverseInvokableTree(rootGroup)
+                    _groupAttributeName,
+                    isClass,
+                    static (ctx, _) => DataOrDiagnostics.From(addDiagnostics => {
+                        var isValid = new AttributeParser(addDiagnostics).TryParseGroupAttrib(ctx.Attributes[0], out var groupAttr);
+                        return isValid ? (ctx, groupAttr!) : default;
+                    })
                 );
 
-        var csprojOptionsSource
-            = context.AnalyzerConfigOptionsProvider.Select((opts, _) => opts.GlobalOptions);
-
-        var starkidConfigSource
-            = csprojOptionsSource.Combine(langVersionSource)
-                .Select(
-                    static (combined, _) =>
-                        new DataAndDiagnostics<StarKidConfig>(
-                            addDiag => ParseConfig(
-                                combined.Left, // analyzer config
-                                combined.Right, // lang version
-                                addDiag
-                            )
-                        )
+        cmdAttrProvider
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    _cmdAttributeName,
+                    isMethod,
+                    static (ctx, _) => DataOrDiagnostics.From(addDiagnostics => {
+                        var isValid = new AttributeParser(addDiagnostics).TryParseCmdAttrib(ctx.Attributes[0], out var cmdAttr);
+                        return isValid ? (ctx, cmdAttr!) : default;
+                    })
                 );
 
-        // generates the parser + command infos (`CmdDesc` classes)
-        context.RegisterImplementationSourceOutput(
-            groupTreeSource.Data()
-                .Combine(usingsSource)
-                .Combine(starkidConfigSource.Data()),
-            static (spc, groupTreeAndUsingsAndConfig) => {
-                var ((rootGroup, usings), config) = groupTreeAndUsingsAndConfig;
+        optAttrProvider
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    _optAttributeName,
+                    isMemberOrParam,
+                    static (ctx, _) => DataOrDiagnostics.From(addDiagnostics => {
+                        var isValid = new AttributeParser(addDiagnostics).TryParseOptAttrib(ctx.Attributes[0], out var optAttr);
+                        return isValid ? (ctx, optAttr!) : default;
+                    })
+                );
 
-                if (rootGroup is null)
-                    return;
+        parseWithAttrProvider
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    _parseWithAttributeName,
+                    isMemberOrParam,
+                    static (ctx, _) => DataOrDiagnostics.From(addDiagnostics => {
+                        var isValid = new AttributeParser(addDiagnostics).TryParseParseAttrib(ctx.Attributes[0], out var parseAttr);
+                        return isValid ? (ctx, parseAttr!) : default;
+                    })
+                );
 
-                GenerateParserAndHandlers(rootGroup, usings, config, spc);
-            }
-        );
+        validateWithAttrProvider
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    _validateWithAttributeName,
+                    isMemberOrParam,
+                    static (ctx, _) => DataOrDiagnostics.From(addDiagnostics => {
+                        var isValid = new AttributeParser(addDiagnostics).TryParseValidateAttrib(ctx.Attributes[0], out var validateAttr);
+                        return isValid ? (ctx, validateAttr!) : default;
+                    })
+                );
 
-        // generates help text from (bound) invokables
-        // we need them to be bounded so that we now the full ID
-        // of each invokable, and thus its CmdDesc class's name
-        context.RegisterImplementationSourceOutput(
-            boundInvokables.Combine(starkidConfigSource.Data()),
-            static (spc, invokableAndConfig) =>
-                GenerateHelpText(
-                    invokableAndConfig.Left,  // invokable (group or cmd)
-                    invokableAndConfig.Right, // config
-                    spc
-                )
-        );
-
-        context.RegisterDiagnosticSource(groupsSource);
-        context.RegisterDiagnosticSource(groupTreeSource);
-        context.RegisterDiagnosticSource(starkidConfigSource);
+        validatePropAttrProvider
+            = context
+                .SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    _validatePropAttributeName,
+                    isMemberOrParam,
+                    static (ctx, _) => DataOrDiagnostics.From(addDiagnostics => {
+                        var isValid = new AttributeParser(addDiagnostics).TryParseValidatePropAttrib(ctx.Attributes[0], out var validatePropAttr);
+                        return isValid ? (ctx, validatePropAttr!) : default;
+                    })
+                );
     }
 
     internal static Group? CreateGroup(INamedTypeSymbol classSymbol, SemanticModel model, Action<Diagnostic> addDiagnostic) {
@@ -318,7 +327,7 @@ public partial class StarKidGenerator : IIncrementalGenerator
             = context
                 .SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    _cmdGroupAttributeName, // fixme: we also need to check commands
+                    _groupAttributeName, // fixme: we also need to check commands
                     (node, _) => node is ClassDeclarationSyntax,
                     (ctx, _) => SyntaxUtils.GetReachableNamespaceNames(ctx.TargetNode)
                 )

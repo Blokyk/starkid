@@ -125,7 +125,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool TryCreateCommandFrom(IMethodSymbol method, AttributeListInfo attrList, Group containingGroup, [NotNullWhen(true)] out Command? cmd) {
+    public bool TryCreateCommandFrom(IMethodSymbol method, AttributeListInfo attrList, Group containingGroup, [NotNullWhen(true)] out Command? cmd) {
         cmd = null;
 
         if (method.MethodKind != MethodKind.Ordinary) {
@@ -217,7 +217,7 @@ internal sealed class GroupBuilder
         return isValid;
     }
 
-    private bool TryCreateOptionFrom(ISymbol symbol, AttributeListInfo attrInfo, [NotNullWhen(true)] out Option? option) {
+    public bool TryCreateOptionFrom(ISymbol symbol, AttributeListInfo attrInfo, [NotNullWhen(true)] out Option? option) {
         option = null;
 
         static ITypeSymbol GetTypeForSymbol(ISymbol symbol)
@@ -293,7 +293,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
+    public bool TryGetArg(IParameterSymbol param, AttributeListInfo attrList, [NotNullWhen(true)] out Argument? arg) {
         arg = null;
 
         var parserTargetType
@@ -328,7 +328,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool TryGetParser(
+    public bool TryGetParser(
         ParseWithAttribute? attr,
         ITypeSymbol type,
         ISymbol symbol,
@@ -370,7 +370,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool TryGetMethodValidators(
+    public bool TryGetMethodValidators(
         ImmutableArray<ValidateWithAttribute> attrs,
         ITypeSymbol type,
         ISymbol _,
@@ -393,7 +393,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool TryGetPropertyValidators(
+    public bool TryGetPropertyValidators(
         ImmutableArray<ValidatePropAttribute> attrs,
         ITypeSymbol type,
         ISymbol _,
@@ -416,7 +416,7 @@ internal sealed class GroupBuilder
         return true;
     }
 
-    private bool TryRegisterCommandName(Command cmd, ISymbol _) {
+    public bool TryRegisterCommandName(Command cmd, ISymbol _) {
         if (!_cmdNames.Add(cmd.Name)) {
             _addDiagnostic(
                 Diagnostic.Create(
