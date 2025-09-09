@@ -33,8 +33,6 @@ public partial class StarKidGenerator
             SourceText.From(HelpGenerator.ToSourceCode(invokable, config), Encoding.UTF8)
         );
 
-
-
     internal static Group? CreateGroup(INamedTypeSymbol classSymbol, SemanticModel model, Action<Diagnostic> addDiagnostic) {
         var attrListBuilder = new AttributeListBuilder(addDiagnostic);
 

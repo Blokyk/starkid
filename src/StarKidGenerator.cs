@@ -103,14 +103,14 @@ public partial class StarKidGenerator : IIncrementalGenerator
                 ));
 
         var allInvokables
-            = groupsSource
+            = groupTreeSource
                 .SelectMany(
                     (rootGroup, _, _)
                         => InvokableUtils.TraverseInvokableTree(rootGroup)
                 ).WithTrackingName("starkid_traverse_invokable");
 
-        // generates help text from (bound) invokables
-        // we need them to be bounded so that we now the full ID
+        // generates help text from *bound* invokables
+        // we need them to be bounded so that we know the full ID
         // of each invokable, and thus its CmdDesc class's name
         context.RegisterImplementationSourceOutput(
             allInvokables.Combine(starkidConfigSource),
