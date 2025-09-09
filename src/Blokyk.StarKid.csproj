@@ -55,7 +55,7 @@
     <_IsDesignTimeBuild>false</_IsDesignTimeBuild>
     <_IsDesignTimeBuild Condition="'$(DesignTimeBuild)' == 'true'">true</_IsDesignTimeBuild>
     <PackageId>Blokyk.StarKid</PackageId>
-    <Version>0.4</Version>
+    <Version>0.5</Version>
     <VersionDate
         Condition="'$(Configuration)'=='Debug' AND '$(_IsDesignTimeBuild)' != 'true'"
       >$([System.DateTime]::UtcNow.ToString("yyyy.MMdd.HHmm.ss00"))</VersionDate>
